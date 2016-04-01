@@ -1,0 +1,2105 @@
+use std::vec::Vec;
+use time;
+use jizu::{JiZu, JiJi};
+use dianzhan::DianZhan;
+use duanluqi::{DuanLuQi, DuanLuQiStatus};
+use fuzai::FuZai;
+use node::Node;
+use zhilu::ZhiLu;
+use zhilu::ZhiLuStatus;
+use zhiling::{ZhiLing, ZhiLingType, YingDaType, YingDaErr};
+
+use jizu;
+use dianzhan;
+use duanluqi;
+use fuzai;
+use node;
+use zhilu;
+use simctrl;
+use zhiling;
+#[derive(PartialEq, Clone, Debug)]
+pub enum PowerFlowResult {
+    Success,
+}
+#[derive(PartialEq, Clone, Debug)]
+pub enum PowerFlowErr {
+    HuiLuExist,
+}
+#[derive(PartialEq, Clone, Debug)]
+pub struct XiTong {
+  pub time_tag : time::Timespec,
+  pub id : u32,
+  pub yue_kong : bool,
+  pub p_shou_ti_dui : f64,
+  pub u_shou_ti_dui : f64,
+  pub f_shou_ti_dui : f64,
+  pub pd_shou_ti_dui : f64,
+  pub p_wei_ti_dui : f64,
+  pub u_wei_ti_dui : f64,
+  pub f_wei_ti_dui : f64,
+  pub pd_wei_ti_dui : f64,
+  pub p_quan_jian : f64,
+  pub ji_zu_vec : Vec<JiZu<JiJi> >,
+  pub dian_zhan_vec : Vec<DianZhan>,
+  pub duan_lu_qi_vec : Vec<DuanLuQi>,
+  pub fu_zai_vec : Vec<FuZai>,
+  pub node_vec : Vec<Node>,
+  pub zhi_lu_vec : Vec<ZhiLu>,
+  /*支路与节点之间的映射，key为支路，value为节点*/
+  pub zhilu_node_vec : Vec<(usize, usize)>,
+  /*支路与断路器映射，key为支路， value为断路器*/
+  pub zhilu_duanluqi_vec : Vec<(usize, usize)>,
+  /*构建发电机与发电机断路器之间的映射，key为发电机，value为机组断路器*/
+  pub jizu_duanluqi_vec : Vec<(usize, usize)>,
+  /*构建发电机与发电机断路器之间的映射，key为发电机，value为机组断路器*/
+  pub jizuchaiyou_duanluqi_vec : Vec<(usize, usize)>,
+  /*构建发电机与发电机断路器之间的映射，key为发电机，value为机组断路器*/
+  pub jizuqilun_duanluqi_vec : Vec<(usize, usize)>,
+  /*构建发电机与发电机断路器之间的映射，key为发电机，value为机组断路器*/
+  pub jizuandian_duanluqi_vec : Vec<(usize, usize)>,
+  /*节点与发电机之间的映射，key为节点，value为发电机*/
+  pub node_jizu_vec : Vec<(usize, usize)>,
+  /*节点与负载之间的映射，key为节点，value为负载*/
+  pub node_fuzai_vec : Vec<(usize, usize)>,
+  pub jizu_dianzhan_vec : Vec<(usize, usize)>,
+  pub fuzai_dianzhan_vec : Vec<(usize, usize)>,
+  pub duanluqi_dianzhan_vec : Vec<(usize, usize)>,
+  pub node_dianzhan_vec : Vec<(usize, usize)>,
+  /*节点临时链表，用于计算潮流*/
+  pub temp_node_vec : Vec<usize>,
+  /*所有相关节点放在一个group中，所有group链表放在_NodeGroupList中*/
+  pub node_group_vec : Vec<Vec<usize>>,
+  //获取所有与机组相关节点的id集合
+  pub jizunode_vec : Vec<usize>,
+  pub jizuduanluqi_vec : Vec<usize>,
+}
+
+impl XiTong {
+    pub fn build_zhilu_node_vec(&mut self) {
+        /*构建支路――节点之间的映射，key为支路，查找支路对应的节点*/
+        /*10条母联支路*/
+        self.zhilu_node_vec.push((0,0));
+        self.zhilu_node_vec.push((0,1));
+        self.zhilu_node_vec.push((1,1));
+        self.zhilu_node_vec.push((1,2));
+
+        self.zhilu_node_vec.push((2,3));
+        self.zhilu_node_vec.push((2,4));
+        self.zhilu_node_vec.push((3,4));
+        self.zhilu_node_vec.push((3,5));
+
+        self.zhilu_node_vec.push((4,0));
+        self.zhilu_node_vec.push((4,6));
+        self.zhilu_node_vec.push((5,6));
+        self.zhilu_node_vec.push((5,3));
+
+        self.zhilu_node_vec.push((6,2));
+        self.zhilu_node_vec.push((6,7));
+        self.zhilu_node_vec.push((7,5));
+        self.zhilu_node_vec.push((7,7));
+    }
+    pub fn build_zhilu_duanluqi_vec(&mut self){
+        /*构建支路与支路断路器之间的映射，key为支路id，value为支路断路器id*/
+        self.zhilu_duanluqi_vec.push((0,6));
+        self.zhilu_duanluqi_vec.push((1,7));
+        self.zhilu_duanluqi_vec.push((2,8));
+        self.zhilu_duanluqi_vec.push((3,9));
+
+        self.zhilu_duanluqi_vec.push((4,10));
+        self.zhilu_duanluqi_vec.push((5,12));
+        self.zhilu_duanluqi_vec.push((6,11));
+        self.zhilu_duanluqi_vec.push((7,13));
+    }
+    pub fn build_jizu_duanluqi_vec(&mut self){
+        /*6个柴油机与柴油机断路器*/
+        self.jizu_duanluqi_vec.push((0,0));
+        self.jizu_duanluqi_vec.push((1,1));
+        self.jizu_duanluqi_vec.push((2,2));
+        self.jizu_duanluqi_vec.push((3,3));
+
+        self.jizu_duanluqi_vec.push((4,4));
+        self.jizu_duanluqi_vec.push((5,5));
+        self.jizu_duanluqi_vec.push((6,14));
+    }
+    pub fn build_jizuandian_duanluqi_vec(&mut self){
+        self.jizuandian_duanluqi_vec.push((6,14));
+    }
+    pub fn build_jizuchaiyou_duanluqi_vec(&mut self){
+        /*6个柴油机与柴油机断路器*/
+        self.jizuchaiyou_duanluqi_vec.push((0,0));
+        self.jizuchaiyou_duanluqi_vec.push((1,1));
+        self.jizuchaiyou_duanluqi_vec.push((2,2));
+        self.jizuchaiyou_duanluqi_vec.push((3,3));
+
+        self.jizuchaiyou_duanluqi_vec.push((4,4));
+        self.jizuchaiyou_duanluqi_vec.push((5,5));
+    }
+    pub fn build_jizuqilun_duanluqi_vec(&mut self){
+    }
+    pub fn build_node_jizu_vec(&mut self){
+        self.node_jizu_vec.push((0,0));
+        self.node_jizu_vec.push((1,1));
+        self.node_jizu_vec.push((2,2));
+        self.node_jizu_vec.push((3,3));
+
+        self.node_jizu_vec.push((4,4));
+        self.node_jizu_vec.push((5,5));
+        self.node_jizu_vec.push((7,6));
+    }
+    pub fn build_node_fuzai_vec(&mut self){
+        self.node_fuzai_vec.push((0,0));
+        self.node_fuzai_vec.push((1,1));
+        self.node_fuzai_vec.push((2,2));
+        self.node_fuzai_vec.push((3,3));
+        self.node_fuzai_vec.push((4,4));
+        self.node_fuzai_vec.push((5,5));
+    }
+    pub fn build_jizunode_vec(&mut self){
+        self.jizunode_vec =  self.node_jizu_vec.iter().cloned().map(|node_jizu|node_jizu.0).collect()
+    }
+    pub fn build_jizuduanluqi_vec(&mut self){
+        self.jizuduanluqi_vec =  self.jizu_duanluqi_vec.iter().cloned().map(|jizu_duanluqi|jizu_duanluqi.1).collect()
+    }
+    pub fn build_jizu_dianzhan_vec(&mut self) {
+        self.jizu_dianzhan_vec.push((0, 0));
+        self.jizu_dianzhan_vec.push((1, 0));
+        self.jizu_dianzhan_vec.push((2, 0));
+        self.jizu_dianzhan_vec.push((3, 1));
+        self.jizu_dianzhan_vec.push((4, 1));
+        self.jizu_dianzhan_vec.push((5, 1));
+    }
+    pub fn build_fuzai_dianzhan_vec(&mut self) {
+        self.fuzai_dianzhan_vec.push((0, 0));
+        self.fuzai_dianzhan_vec.push((1, 0));
+        self.fuzai_dianzhan_vec.push((2, 0));
+        self.fuzai_dianzhan_vec.push((3, 1));
+        self.fuzai_dianzhan_vec.push((4, 1));
+        self.fuzai_dianzhan_vec.push((5, 1));
+    }
+    pub fn build_duanluqi_dianzhan_vec(&mut self) {
+        self.duanluqi_dianzhan_vec.push((0, 0));
+        self.duanluqi_dianzhan_vec.push((1, 0));
+        self.duanluqi_dianzhan_vec.push((2, 0));
+        self.duanluqi_dianzhan_vec.push((6, 0));
+
+        self.duanluqi_dianzhan_vec.push((7, 0));
+        self.duanluqi_dianzhan_vec.push((10, 0));
+        self.duanluqi_dianzhan_vec.push((11, 0));
+        self.duanluqi_dianzhan_vec.push((14, 0));
+
+        self.duanluqi_dianzhan_vec.push((3, 1));
+        self.duanluqi_dianzhan_vec.push((4, 1));
+        self.duanluqi_dianzhan_vec.push((5, 1));
+        self.duanluqi_dianzhan_vec.push((6, 1));
+
+        self.duanluqi_dianzhan_vec.push((9, 1));
+        self.duanluqi_dianzhan_vec.push((12, 1));
+        self.duanluqi_dianzhan_vec.push((13, 1));
+    }
+    pub fn build_node_dianzhan_vec(&mut self) {
+        self.node_dianzhan_vec.push((0, 0));
+        self.node_dianzhan_vec.push((1, 0));
+        self.node_dianzhan_vec.push((2, 0));
+        self.node_dianzhan_vec.push((3, 1));
+        self.node_dianzhan_vec.push((4, 1));
+        self.node_dianzhan_vec.push((5, 1));
+    }
+    pub fn new(_id : u32) -> XiTong {
+        let mut x = XiTong{
+            time_tag : time::get_time(),
+            id : _id,
+            yue_kong : false,
+            p_shou_ti_dui : 0.0f64,
+            u_shou_ti_dui : 0.0f64,
+            f_shou_ti_dui : 0.0f64,
+            pd_shou_ti_dui : 0.0f64,
+            p_wei_ti_dui : 0.0f64,
+            u_wei_ti_dui : 0.0f64,
+            f_wei_ti_dui : 0.0f64,
+            pd_wei_ti_dui : 0.0f64,
+            p_quan_jian : 0.0f64,
+            ji_zu_vec : vec![JiZu::new(0, JiJi::CY(jizu::ChaiYouJiJi::new())); simctrl::ZONG_SHU_JI_ZU_CHAI_YOU],
+            dian_zhan_vec : vec![DianZhan::new(0); simctrl::ZONG_SHU_DIAN_ZHAN],
+            duan_lu_qi_vec : vec![DuanLuQi::new(0); simctrl::ZONG_SHU_DUAN_LU_QI],
+            fu_zai_vec : vec![FuZai::new(0); simctrl::ZONG_SHU_FU_ZAI],
+            node_vec : vec![Node::new(0); simctrl::ZONG_SHU_NODE],
+            zhi_lu_vec : vec![ZhiLu::new(0); simctrl::ZONG_SHU_ZHI_LU],
+            zhilu_node_vec : Vec::new(),
+            zhilu_duanluqi_vec : Vec::new(),
+            jizu_duanluqi_vec : Vec::new(),
+            jizuchaiyou_duanluqi_vec : Vec::new(),
+            jizuandian_duanluqi_vec : Vec::new(),
+            jizuqilun_duanluqi_vec : Vec::new(),
+            node_jizu_vec : Vec::new(),
+            node_fuzai_vec : Vec::new(),
+            jizu_dianzhan_vec : Vec::new(),
+            fuzai_dianzhan_vec : Vec::new(),
+            duanluqi_dianzhan_vec : Vec::new(),
+            node_dianzhan_vec : Vec::new(),
+            temp_node_vec : Vec::new(),
+            node_group_vec : Vec::new(),
+            jizunode_vec : Vec::new(),
+            jizuduanluqi_vec : Vec::new(),
+        };
+        for i in 0..simctrl::ZONG_SHU_JI_ZU_CHAI_YOU {
+            x.ji_zu_vec[i].id = i;
+        }
+        x.ji_zu_vec.push(JiZu::new(simctrl::ZONG_SHU_JI_ZU_CHAI_YOU, JiJi::AD(jizu::AnDianJiJi)));
+        for i in 0..simctrl::ZONG_SHU_DIAN_ZHAN {
+            x.dian_zhan_vec[i].id = i;
+        }
+        for i in 0..simctrl::ZONG_SHU_DUAN_LU_QI {
+            x.duan_lu_qi_vec[i].id = i;
+        }
+        for i in 0..simctrl::ZONG_SHU_FU_ZAI {
+            x.fu_zai_vec[i].id = i;
+        }
+        for i in 0..simctrl::ZONG_SHU_NODE {
+            x.node_vec[i].id = i;
+        }
+        for i in 0..simctrl::ZONG_SHU_ZHI_LU {
+            x.zhi_lu_vec[i].id = i;
+        }
+        x.build_zhilu_node_vec();
+        x.build_zhilu_duanluqi_vec();
+        x.build_jizu_duanluqi_vec();
+        x.build_jizuandian_duanluqi_vec();
+        x.build_jizuchaiyou_duanluqi_vec();
+        x.build_jizuqilun_duanluqi_vec();
+        x.build_node_jizu_vec();
+        x.build_node_fuzai_vec();
+        x.build_jizu_dianzhan_vec();
+        x.build_fuzai_dianzhan_vec();
+        x.build_duanluqi_dianzhan_vec();
+        x.build_node_dianzhan_vec();
+        x.build_jizunode_vec();
+        x.build_jizuduanluqi_vec();
+        x.update_node_group_vec();
+        x
+    }
+    pub fn get_zhiluid_group_from_nodeid(&mut self, node_id : usize)->Option<Vec<usize>>{
+        let mut zhiluid_group = Vec::new();
+        for zhilu_node in self.zhilu_node_vec.to_vec() {
+            if zhilu_node.1 == node_id {
+                zhiluid_group.push(zhilu_node.0);
+            }
+        }
+        if zhiluid_group.is_empty() {
+            return None;
+        }
+        else {
+            zhiluid_group.sort();
+            zhiluid_group.dedup();
+            return Some(zhiluid_group);
+        }
+    }
+
+    pub fn get_zhiluid_group_from_nodeid_group(&mut self, node_id_group : Vec<usize>)->Option<Vec<usize>>{
+        let mut zhiluid_group = Vec::new();
+        for zhilu_node in self.zhilu_node_vec.to_vec() {
+            for node_id in node_id_group.to_vec() {
+                if zhilu_node.1 == node_id {
+                    zhiluid_group.push(zhilu_node.0);
+                }
+            }
+        }
+        if zhiluid_group.is_empty() {
+            return None;
+        }
+        else {
+            zhiluid_group.sort();
+            zhiluid_group.dedup();
+            return Some(zhiluid_group);
+        }
+    }
+
+    pub fn get_nodeid_group_from_zhiluid(&mut self, zhilu_id : usize)->Option<Vec<usize>>{
+        let mut nodeid_group = Vec::new();
+        for zhilu_node in self.zhilu_node_vec.to_vec() {
+            if zhilu_node.0 == zhilu_id {
+                nodeid_group.push(zhilu_node.1);
+            }
+        }
+        if nodeid_group.is_empty() {
+            return None;
+        }
+        else {
+            nodeid_group.sort();
+            nodeid_group.dedup();
+            return Some(nodeid_group);
+        }
+    }
+
+    pub fn get_nodeid_group_from_zhiluid_group(&mut self, zhilu_id_group : Vec<usize>)->Option<Vec<usize>>{
+        let mut nodeid_group = Vec::new();
+        for zhilu_node in self.zhilu_node_vec.to_vec() {
+            for zhilu_id in zhilu_id_group.iter().cloned() {
+                if zhilu_node.0 == zhilu_id {
+                    nodeid_group.push(zhilu_node.1);
+                }
+            }
+        }
+        if nodeid_group.is_empty() {
+            return None;
+        }
+        else {
+            nodeid_group.sort();
+            nodeid_group.dedup();
+            return Some(nodeid_group);
+        }
+    }
+
+    pub fn get_jizu_from_node(&mut self, _node : &node::Node)->Option<&mut jizu::JiZu<jizu::JiJi>>{
+        match self.node_jizu_vec.iter()
+        .cloned()
+        .find(|node_jizu|node_jizu.0 == _node.id) {
+            Some(node_jizu) => return Some(&mut self.ji_zu_vec[node_jizu.1]),
+            None => return None,
+        }
+    }
+
+    pub fn get_jizu_from_nodeid(&mut self, _node_id : usize)->Option<&mut jizu::JiZu<jizu::JiJi>>{
+        match self.node_jizu_vec.iter()
+        .cloned()
+        .find(|node_jizu|node_jizu.0 == _node_id) {
+            Some(node_jizu) => return Some(&mut self.ji_zu_vec[node_jizu.1]),
+            None => return None,
+        }
+    }
+
+    pub fn get_jizuid_from_nodeid(&mut self, _node_id : usize)->Option<usize>{
+        match self.node_jizu_vec.iter()
+        .cloned()
+        .find(|node_jizu|node_jizu.0 == _node_id) {
+            Some(node_jizu) => return Some(node_jizu.1),
+            None => return None,
+        }
+    }
+
+    pub fn get_node_from_jizu(&mut self, ji_zu : &JiZu<JiJi>)->Option<&mut node::Node>{
+        match self.node_jizu_vec.iter()
+        .cloned()
+        .find(|node_jizu|node_jizu.1 == ji_zu.id) {
+            Some(node_jizu) => return Some(&mut self.node_vec[node_jizu.0]),
+            None => return None,
+        }
+    }
+
+    pub fn get_nodeid_from_jizuid(&mut self, ji_zu_id : usize)->Option<usize>{
+        match self.node_jizu_vec.iter()
+        .cloned()
+        .find(|node_jizu|node_jizu.1 == ji_zu_id) {
+            Some(node_jizu) => return Some(node_jizu.0),
+            None => return None,
+        }
+    }
+
+    pub fn get_fuzai_from_node(&mut self, _node : &node::Node)->Option<&mut fuzai::FuZai>{
+        match self.node_fuzai_vec.iter()
+        .cloned()
+        .find(|node_fuzai|node_fuzai.0 == _node.id) {
+            Some(node_fuzai) => return Some(&mut self.fu_zai_vec[node_fuzai.1]),
+            None => return None,
+        }
+    }
+
+    pub fn get_fuzai_from_nodeid(&mut self, node_id : usize)->Option<&mut fuzai::FuZai>{
+        match self.node_fuzai_vec.iter()
+        .cloned()
+        .find(|node_fuzai|node_fuzai.0 == node_id) {
+            Some(node_fuzai) => return Some(&mut self.fu_zai_vec[node_fuzai.1]),
+            None => return None,
+        }
+    }
+
+    pub fn get_fuzaiid_from_nodeid(&mut self, node_id : usize)->Option<usize>{
+        match self.node_fuzai_vec.iter()
+        .cloned()
+        .find(|node_fuzai|node_fuzai.0 == node_id) {
+            Some(node_fuzai) => return Some(node_fuzai.1),
+            None => return None,
+        }
+    }
+
+    //获取发电机断路器状态
+    pub fn get_jizuduanluqi_status(&self, ji_zu : &JiZu<JiJi>) -> Option<duanluqi::DuanLuQiStatus> {
+        self.jizu_duanluqi_vec.iter()
+        .cloned()
+        .find(|jizu_duanluqi|jizu_duanluqi.0 == ji_zu.id)
+        .map(|jizu_duanluqi|self.duan_lu_qi_vec[jizu_duanluqi.1].status)
+    }
+    //根据支路断路器状态判断支路通断情况
+    pub fn update_zhilu_status(&mut self) {
+        for zhi_lu in self.zhi_lu_vec.iter_mut() {
+            match self.zhilu_duanluqi_vec.iter()
+            .find(|zhilu_duanluqi|zhilu_duanluqi.0 == zhi_lu.id) {
+                Some(zhilu_duanluqi) => {
+                    match self.duan_lu_qi_vec[zhilu_duanluqi.1].status {
+                        duanluqi::DuanLuQiStatus::On{..} => zhi_lu.status = zhilu::ZhiLuStatus::On,
+                        duanluqi::DuanLuQiStatus::Off{..} => zhi_lu.status = zhilu::ZhiLuStatus::Off,
+                    }
+                }
+                None => {}
+            }
+        }
+    }
+
+    pub fn get_dianzhan_from_jizu(&mut self, ji_zu : &JiZu<JiJi>) -> Option<&mut dianzhan::DianZhan> {
+        match self.jizu_dianzhan_vec.iter()
+        .cloned()
+        .find(|jizu_dianzhan|jizu_dianzhan.0 == ji_zu.id) {
+            Some(jizu_dianzhan) => return Some(&mut self.dian_zhan_vec[jizu_dianzhan.1]),
+            None => return None,
+        }
+    }
+    pub fn get_dianzhan_from_jizuid(&mut self, ji_zu_id : usize) -> Option<&mut dianzhan::DianZhan> {
+        match self.jizu_dianzhan_vec.iter()
+        .cloned()
+        .find(|jizu_dianzhan|jizu_dianzhan.0 == ji_zu_id) {
+            Some(jizu_dianzhan) => return Some(&mut self.dian_zhan_vec[jizu_dianzhan.1]),
+            None => return None,
+        }
+    }
+    pub fn get_jizuid_vec_from_dianzhanid(&mut self, dianzhanid : usize) -> Vec<usize> {
+        self.jizu_dianzhan_vec.iter().filter(|jizu_dianzhan|jizu_dianzhan.1 == dianzhanid).map(|jizu_dianzhan|jizu_dianzhan.0).collect()
+    }
+    pub fn get_dianzhan_from_fuzai(&mut self, fu_zai : &fuzai::FuZai) -> Option<&mut dianzhan::DianZhan> {
+        match self.fuzai_dianzhan_vec.iter()
+        .cloned()
+        .find(|fuzai_dianzhan|fuzai_dianzhan.0 == fu_zai.id) {
+            Some(fuzai_dianzhan) => return Some(&mut self.dian_zhan_vec[fuzai_dianzhan.1]),
+            None => return None,
+        }
+    }
+    pub fn get_dianzhan_from_duanluqi(&mut self, duan_lu_qi : &duanluqi::DuanLuQi) -> Option<&mut dianzhan::DianZhan> {
+        match self.duanluqi_dianzhan_vec.iter()
+        .cloned()
+        .find(|duanluqi_dianzhan|duanluqi_dianzhan.0 == duan_lu_qi.id) {
+            Some(duanluqi_dianzhan) => return Some(&mut self.dian_zhan_vec[duanluqi_dianzhan.1]),
+            None => return None,
+        }
+    }
+    pub fn get_dianzhanid_from_duanluqiid(&mut self, duanluqiid:usize) -> Option<usize> {
+        match self.duanluqi_dianzhan_vec.iter()
+        .cloned()
+        .find(|duanluqi_dianzhan|duanluqi_dianzhan.0 == duanluqiid) {
+            Some(duanluqi_dianzhan) => return Some(duanluqi_dianzhan.1),
+            None => return None,
+        }
+    }
+    pub fn get_dianzhan_from_node(&mut self, _node : &node::Node) -> Option<&mut dianzhan::DianZhan> {
+        match self.node_dianzhan_vec.iter()
+        .cloned()
+        .find(|node_dianzhan|node_dianzhan.0 == _node.id) {
+            Some(node_dianzhan) => return Some(&mut self.dian_zhan_vec[node_dianzhan.1]),
+            None => return None,
+        }
+    }
+
+    pub fn get_dianzhan_from_nodeid(&mut self, node_id : usize) -> Option<&mut dianzhan::DianZhan> {
+        match self.node_dianzhan_vec.iter()
+        .cloned()
+        .find(|node_dianzhan|node_dianzhan.0 == node_id) {
+            Some(node_dianzhan) => return Some(&mut self.dian_zhan_vec[node_dianzhan.1]),
+            None => return None,
+        }
+    }
+
+    pub fn get_dianzhanid_from_nodeid(&mut self, node_id : usize) -> Option<usize> {
+        match self.node_dianzhan_vec.iter()
+        .cloned()
+        .find(|node_dianzhan|node_dianzhan.0 == node_id) {
+            Some(node_dianzhan) => return Some(node_dianzhan.1),
+            None => return None,
+        }
+    }
+
+    pub fn get_jizu_from_duanluqi(&mut self, duan_lu_qi : &duanluqi::DuanLuQi) -> Option<&mut JiZu<JiJi>> {
+        match self.jizu_duanluqi_vec.iter()
+        .cloned()
+        .find(|jizu_duanluqi|jizu_duanluqi.1 == duan_lu_qi.id) {
+            Some(jizu_duanluqi) => return Some(&mut self.ji_zu_vec[jizu_duanluqi.0]),
+            None => return None,
+
+        }
+    }
+
+    pub fn get_duanluqi_from_jizu(&mut self, ji_zu : &JiZu<JiJi>) -> Option<&mut duanluqi::DuanLuQi> {
+        match self.jizu_duanluqi_vec.iter()
+        .cloned()
+        .find(|jizu_duanluqi|jizu_duanluqi.0 == ji_zu.id) {
+            Some(jizu_duanluqi) => return Some(&mut self.duan_lu_qi_vec[jizu_duanluqi.1]),
+            None => return None,
+        }
+    }
+
+    pub fn get_duanluqi_from_jizuid(&mut self, ji_zu_id : usize) -> Option<&mut duanluqi::DuanLuQi> {
+        match self.jizu_duanluqi_vec.iter()
+        .cloned()
+        .find(|jizu_duanluqi|jizu_duanluqi.0 == ji_zu_id) {
+            Some(jizu_duanluqi) => return Some(&mut self.duan_lu_qi_vec[jizu_duanluqi.1]),
+            None => return None,
+        }
+    }
+
+    pub fn get_duanluqiid_from_jizuid(&mut self, ji_zu_id : usize) -> Option<usize> {
+        match self.jizu_duanluqi_vec.iter()
+        .cloned()
+        .find(|jizu_duanluqi|jizu_duanluqi.0 == ji_zu_id) {
+            Some(jizu_duanluqi) => return Some(jizu_duanluqi.1),
+            None => return None,
+        }
+    }
+
+    pub fn get_duanluqi_from_zhilu(&mut self, zhi_lu : &zhilu::ZhiLu) -> Option<&mut duanluqi::DuanLuQi> {
+        match self.zhilu_duanluqi_vec.iter().cloned()
+        .find(|zhilu_duanluqi|zhilu_duanluqi.0 == zhi_lu.id) {
+            Some(zhilu_duanluqi) => return Some(&mut self.duan_lu_qi_vec[zhilu_duanluqi.1]),
+            None => return None,
+        }
+    }
+    pub fn get_duanluqiid_from_zhiluid(&mut self, zhi_lu_id : usize) -> Option<usize> {
+        self.zhilu_duanluqi_vec.iter().cloned()
+        .find(|zhilu_duanluqi|zhilu_duanluqi.0 == zhi_lu_id)
+        .map(|zhilu_duanluqi|zhilu_duanluqi.1)
+    }
+    pub fn get_duanluqi_from_zhiluid(&mut self, zhi_lu_id : usize) -> Option<&mut duanluqi::DuanLuQi> {
+        match self.zhilu_duanluqi_vec.iter().cloned()
+        .find(|zhilu_duanluqi|zhilu_duanluqi.0 == zhi_lu_id) {
+            Some(zhilu_duanluqi) => return Some(&mut self.duan_lu_qi_vec[zhilu_duanluqi.1]),
+            None => return None,
+        }
+    }
+    //判断两个节点是否连通
+    pub fn is_nodes_connected(&mut self, n1 : &node::Node, n2 : &node::Node) -> bool {
+        for group in self.node_group_vec.iter(){
+            if group.contains(&(n1.id)) && group.contains(&(n2.id)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    pub fn is_nodes_id_connected(&mut self, n1 : usize, n2 : usize) -> bool {
+        for group in self.node_group_vec.iter(){
+            if group.contains(&n1) && group.contains(&n2) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    //指定机组是否与其他机组并联运行
+    pub fn is_ji_zu_bing_lian(&mut self, ji_zu : &JiZu<JiJi>) -> bool {
+        let status = self.get_duanluqi_from_jizu(ji_zu).unwrap().status;
+        match status {
+            duanluqi::DuanLuQiStatus::On{..} => {
+                let n1_id = self.get_node_from_jizu(ji_zu).unwrap().id;
+                for n2_id in self.jizunode_vec.to_vec(){
+                    if n1_id != n2_id && self.is_nodes_id_connected(n1_id, n2_id) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            duanluqi::DuanLuQiStatus::Off{..} => return false,
+        }
+    }
+    //获取与指定机组并联的所有机组，不包括指定机组
+    pub fn get_jizuid_vec_bing_lian(&mut self, ji_zu : &JiZu<JiJi>) -> Option<Vec<usize>> {
+        let status = self.get_duanluqi_from_jizu(ji_zu).unwrap().status;
+        let mut jizuid_vec = Vec::new();
+        match status {
+            duanluqi::DuanLuQiStatus::On{..} => {
+                let n1_id = self.get_node_from_jizu(ji_zu).unwrap().id;
+                for n2_id in 0..simctrl::ZONG_SHU_NODE{
+                    if n1_id != n2_id && self.is_nodes_id_connected(n1_id, n2_id) {
+                        let jizuid_option = self.get_jizuid_from_nodeid(n2_id);
+                        if jizuid_option != None &&  self.get_duanluqi_from_jizuid(jizuid_option.unwrap()).unwrap().is_on() {
+                            jizuid_vec.push(jizuid_option.unwrap());
+                        }
+                    }
+                }
+
+            }
+            _ => {}
+        }
+        if jizuid_vec.is_empty() {
+            return None;
+        }
+        else {
+            return Some(jizuid_vec);
+        }
+    }
+
+    //获取与指定机组并联的所有机组，不包括指定机组
+    pub fn get_jizuid_vec_bing_lian_from_id(&mut self, ji_zu_id : usize) -> Option<Vec<usize>> {
+        let status = self.get_duanluqi_from_jizuid(ji_zu_id).unwrap().status;
+        let mut jizuid_vec = Vec::new();
+        match status {
+            duanluqi::DuanLuQiStatus::On{..} => {
+                let n1_id = self.get_nodeid_from_jizuid(ji_zu_id).unwrap();
+                for n2_id in 0..simctrl::ZONG_SHU_NODE{
+                    if n1_id != n2_id && self.is_nodes_id_connected(n1_id, n2_id) {
+                        let jizuid_option = self.get_jizuid_from_nodeid(n2_id);
+                        if jizuid_option != None &&  self.get_duanluqi_from_jizuid(jizuid_option.unwrap()).unwrap().is_on() {
+                            jizuid_vec.push(jizuid_option.unwrap());
+                        }
+                    }
+                }
+
+            }
+            _ => {}
+        }
+        if jizuid_vec.is_empty() {
+            return None;
+        }
+        else {
+            return Some(jizuid_vec);
+        }
+    }
+
+    ///获取与机组相关的节点组对应的所有非机组断路器
+    pub fn get_duanluqiid_vec_related_to_jizu(&mut self, ji_zu : &JiZu<JiJi>) -> Option<Vec<usize>> {
+        let mut duanluqiid_vec = Vec::new();
+        let n1_id = self.get_node_from_jizu(ji_zu).unwrap().id;
+        let mut zhiluid_group = Vec::new();
+        for group in self.node_group_vec.to_vec(){
+            if group.contains(&n1_id) {
+                zhiluid_group  = self.get_zhiluid_group_from_nodeid_group(group).unwrap();
+            }
+        }
+        if zhiluid_group.is_empty() {
+            return None;
+        }
+        else {
+            for zhiluid in zhiluid_group {
+                match self.get_duanluqiid_from_zhiluid(zhiluid) {
+                    Some(duanluqiid) => duanluqiid_vec.push(duanluqiid),
+                    None => return None,
+                }
+            }
+            if duanluqiid_vec.is_empty() {
+                return None;
+            }
+            else {
+                return Some(duanluqiid_vec);
+            }
+        }
+    }
+
+    //比较一个非机组断路器合闸后系统拓扑变化情况，返回合并的节点组
+    pub fn compare_two_xi_tong_he_zha_node(&mut self, xt_hou : &mut XiTong) -> Vec<Vec<usize>> {
+        let mut node_id_group_vec = Vec::new();
+        let mut is_finded = false;
+        for i in 0..self.node_group_vec.len() {
+            for j in 0..self.node_group_vec.len() {
+                if xt_hou.is_nodes_id_connected(self.node_group_vec[i][0], self.node_group_vec[j][0]) {
+                    is_finded = true;
+                    node_id_group_vec.push(self.node_group_vec[i].to_vec());
+                    node_id_group_vec.push(self.node_group_vec[j].to_vec());
+                    break;
+                }
+            }
+            if is_finded {
+                break;
+            }
+        }
+        return node_id_group_vec;
+    }
+
+    //比较一个非机组断路器合闸后系统拓扑变化情况,返回合并的电机组
+    pub fn compare_two_xi_tong_he_zha_ji_zu(&mut self, xt_hou : &mut XiTong) -> Vec<Vec<usize>> {
+        let node_id_group_vec_bing_che = self.compare_two_xi_tong_he_zha_node(xt_hou);
+        let mut ji_zu_group_vec_bing_che = Vec::new();
+        for i in 0..node_id_group_vec_bing_che.len() {
+            let mut ji_zu_id_group = Vec::new();
+            for j in 0..node_id_group_vec_bing_che[i].len() {
+                let ji_zu_id_option = self.get_jizuid_from_nodeid(node_id_group_vec_bing_che[i][j]);
+                let duanluqi = self.get_duanluqi_from_jizuid(ji_zu_id_option.unwrap()).unwrap();
+                if ji_zu_id_option.is_some() && duanluqi.is_off() {
+                    ji_zu_id_group.push(ji_zu_id_option.unwrap());
+                }
+            }
+            ji_zu_group_vec_bing_che.push(ji_zu_id_group);
+        }
+        return ji_zu_group_vec_bing_che;
+    }
+
+    // QList<QList<uint> > compareTwoXiTongHeZhaFuZai(
+    //         XiTong * xiTongQian, XiTong * xiTongHou);
+    pub fn compare_two_xi_tong_he_zha_fu_zai(&mut self, xt_hou : &mut XiTong) -> Vec<Vec<usize>> {
+        let node_id_group_vec_bing_che = self.compare_two_xi_tong_he_zha_node(xt_hou);
+        let mut fu_zai_group_vec_bing_che = Vec::new();
+        for i in 0..node_id_group_vec_bing_che.len() {
+            let mut fu_zai_id_group = Vec::new();
+            for j in 0..node_id_group_vec_bing_che[i].len() {
+                let fu_zai_id = self.get_jizuid_from_nodeid(node_id_group_vec_bing_che[i][j]).unwrap();
+                fu_zai_id_group.push(fu_zai_id);
+            }
+            fu_zai_group_vec_bing_che.push(fu_zai_id_group);
+        }
+        return fu_zai_group_vec_bing_che;
+    }
+
+    //由某一节点获取与此节点相关联的节点组
+    pub fn get_node_group_from_node_id(&mut self, node_id : usize) -> Option<Vec<usize>> {
+        for group in self.node_group_vec.to_vec() {
+            if group.contains(&node_id) {
+                return Some(group);
+            }
+        }
+        return None;
+    }
+
+    //由某一负载获取与此负载相关联的所有并联机组
+    pub fn get_ji_zu_group_from_fu_zai_id(&mut self, fu_zai_id : usize) -> Option<Vec<usize>> {
+        let node_id = self.get_nodeid_from_jizuid(fu_zai_id).unwrap();
+        let node_group = self.get_node_group_from_node_id(node_id).unwrap();
+        let mut ji_zu_id_group = Vec::new();
+        for node_id in node_group {
+            let ji_zu_id = self.get_jizuid_from_nodeid(node_id).unwrap();
+            if self.get_duanluqi_from_jizuid(ji_zu_id).unwrap().is_on() {
+                ji_zu_id_group.push(ji_zu_id);
+            }
+        }
+        if ji_zu_id_group.is_empty() {
+            return None;
+        }
+        return Some(ji_zu_id_group);
+    }
+
+    /// 更新node_group_vec
+    /// 1、利用节点Id列表集合node_id_vec
+    /// 2、如果node_id_vec中存在元素，取出一个节点，构造一个新列表group
+    /// 3、查找此节点的所有支路，判断支路是否闭合，若闭合则将支路另一端节点加入group
+    /// 4、group循环元素递增1后，继续3、否则跳出，将其加入node_group_vec
+    /// 5、继续2，否则完成构造。
+
+    pub fn update_node_group_vec(&mut self){
+        let mut node_id_vec : Vec<usize> = (0..simctrl::ZONG_SHU_NODE).collect();
+        let mut node_group_vec : Vec<Vec<usize>> = Vec::new();
+        while !node_id_vec.is_empty() {
+            let mut group : Vec<usize> = Vec::new();
+            match node_id_vec.pop() {
+                Some(node_id) => group.push(node_id),
+                None => {},
+            }
+            let mut cur_i = 0;
+            while cur_i >= group.len() {
+                let cur_node_id = group[cur_i];
+                //找到当前节点关联的所有支路
+                let zhilus = self.get_zhiluid_group_from_nodeid(cur_node_id).unwrap();
+                for zhilu_id in zhilus {
+                    //查找每条支路上的断路器
+                    let duanluqi_id = self.get_duanluqiid_from_zhiluid(zhilu_id).unwrap();
+                    //判断支路是否连通
+                    if self.duan_lu_qi_vec[duanluqi_id].is_on() {
+                        let mut nodes : Vec<usize> = self.get_nodeid_group_from_zhiluid(zhilu_id).unwrap();
+                        nodes.retain(|&node_id| node_id != cur_node_id);
+                        for node_id in nodes {
+                            node_id_vec.retain(|&id| id != node_id);
+                            group.push(node_id);
+                        }
+                    }
+                }
+                cur_i += 1;
+            }
+            node_group_vec.push(group);
+        }
+    }
+    ///判断某个子系统是否有回路
+    /// 由于每个子系统均为连通图，所以连通图没有回路的充要条件是连通图为树，即连通图的支路数=节点数-1
+    pub fn is_hui_lu_one_path(&mut self, node_id_group : &Vec<usize>)->bool {
+        let node_group = (*node_id_group).to_vec();
+        let node_group_len = node_group.len();
+        let zhilu_group : Vec<usize> = self.get_zhiluid_group_from_nodeid_group(node_group).unwrap();
+        if zhilu_group.len() < node_group_len {
+            return true;
+        }
+        return false;
+    }
+
+    ///判断系统是否有回路
+    pub fn is_hui_lu(&mut self) -> bool {
+        let node_group_vec = self.node_group_vec.to_vec();
+        for  group in node_group_vec {
+            if self.is_hui_lu_one_path(&group) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// 判断断路器是否为机组断路器
+    pub fn is_ji_zu_duan_lu_qi(&mut self, duanluqi_id : usize) -> bool {
+        if self.jizuchaiyou_duanluqi_vec.to_vec().into_iter().find(|&x|x.1==duanluqi_id) != None || self.jizuqilun_duanluqi_vec.to_vec().into_iter().find(|&x|x.1==duanluqi_id) != None {
+            return true;
+        }
+        return false;
+    }
+
+    /// 判断断路器是否为岸电断路器
+    pub fn is_an_dian_duan_lu_qi(&mut self, duanluqi_id : usize) -> bool {
+        if self.jizuandian_duanluqi_vec.to_vec().into_iter().find(|&x|x.1==duanluqi_id) != None {
+            return true;
+        }
+        return false;
+    }
+
+    /// 根据电站Id得到电站中的所有节点
+    pub fn get_node_vec_from_dian_zhan_id(&mut self, dianzhan_id : usize) -> Vec<usize> {
+        self.node_dianzhan_vec.to_vec().iter().filter(|&t|t.1 == dianzhan_id).map(|&t|t.0).collect()
+    }
+
+    /// 根据电站Id得到与电站相关联的其他所有电站
+    /// 1. 根据电站找到电站中的所有节点id
+    /// 2. 根据节点id在node_group_vec中找到所有的相关节点id
+    /// 2. 根据所有相关节点id找到对应电站id
+    /// 3. 电站id排序去重，并去掉给定的电站
+    pub fn get_dian_zhan_guan_lian_vec_from_dian_zhan_id(&mut self, dianzhan_id : usize) -> Vec<usize> {
+        let n_vec : Vec<usize> = self.get_node_vec_from_dian_zhan_id(dianzhan_id);
+        let node_group_vec = self.node_group_vec.to_vec();
+        let mut node_vec_r : Vec<usize> = Vec::new();
+        for node_group in node_group_vec {
+            for n in n_vec.to_vec() {
+                if node_group.contains(&n) {
+                    node_vec_r.extend(node_group.iter().cloned());
+                    break;
+                }
+            }
+        }
+        let mut d_vec_r : Vec<usize> = node_vec_r.iter().map(|&n|self.get_dianzhanid_from_nodeid(n).unwrap()).collect();
+        d_vec_r.sort();
+        d_vec_r.dedup();
+        d_vec_r.iter().filter(|d|**d != dianzhan_id).map(|&x|x).collect()
+    }
+    /// 电站母联断路器是否全部连通
+    /// 由电站id获取节点id组
+    /// 去和node_group_vec中的元素一一对比，如果有相同的则返回true，否则返回false
+    pub fn is_mu_lian_lian_tong(&mut self, dianzhan_id : usize) -> bool {
+        let n_group : Vec<usize> = self.node_dianzhan_vec.to_vec().iter().filter(|n_d|n_d.1 == dianzhan_id).map(|n_d|n_d.0).collect();
+        for ng in self.node_group_vec.to_vec() {
+            if n_group == ng {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    ///计算一个相互连通的电网络路径潮流,与CalculateBranch功能相同，
+    ///返回值为1，说明潮流计算成功，返回值为0，说明有回路存在
+    pub fn compute_path_pf(&mut self, i_group_list : Vec<usize>, pf_fang_fa : u32) {
+        //当前负载在网有功,无功按(FU_ZAI_Q_P * 有功)计算，
+        //key为负载id，value为负载在网值
+        let mut pd_online_vec : Vec<(usize, f64)> = Vec::new();
+        //当前电源注入节点有功，key为节点id, value为注入值，当无电源时，为0
+        let mut pg_node_vec : Vec<(usize, f64)>  = Vec::new();
+        //当前负载流出节点有功，key为节点id, value为流出值，当无负载时，为0
+        let mut pd_node_vec : Vec<(usize, f64)> = Vec::new();
+        //路径中所有节点列表
+        let all_node_in_path_vec = i_group_list.to_vec();
+        //未计算节点列表
+        let mut node_not_computed_vec : Vec<usize> = i_group_list.to_vec();
+        let mut node_not_computed_0_zhi_lu_vec : Vec<usize> = Vec::new();
+        let mut node_not_computed_1_zhi_lu_vec : Vec<usize> = Vec::new();
+        let mut node_not_computed_2_zhi_lu_vec : Vec<usize> = Vec::new();
+        let mut node_not_computed_duo_zhi_lu_vec : Vec<usize> = Vec::new();
+        //所有已计算节点列表
+        let mut node_computed_vec : Vec<usize> = Vec::new();
+        //系统所有支路通断情况更新
+        for z_d in self.zhilu_duanluqi_vec.to_vec() {
+            if self.duan_lu_qi_vec[z_d.1].is_off() {
+                self.zhi_lu_vec[z_d.0].status = ZhiLuStatus::Off;
+            }
+            else {
+                self.zhi_lu_vec[z_d.0].status = ZhiLuStatus::On;
+            }
+        }
+        //系统所有电机在网情况更新
+        for i in 0..simctrl::ZONG_SHU_JI_ZU {
+            if self.get_duanluqi_from_jizuid(i).unwrap().is_on() && self.ji_zu_vec[i].common_ji.uab_ext > 0.0 {
+                self.ji_zu_vec[i].common_ji.is_online = true;
+            }
+            else {
+                self.ji_zu_vec[i].common_ji.is_online = false;
+            }
+        }
+        //路径中所有在网支路Map，key为节点，value为支路
+        let mut node_zhi_lu_online_vec : Vec<(usize, usize)> = Vec::new();
+        let mut node_zhi_lu_offline_vec : Vec<(usize, usize)> = Vec::new();
+        let mut zhi_lu_online_vec : Vec<usize> = Vec::new();
+        let mut zhi_lu_offline_vec : Vec<usize> = Vec::new();
+        for z_n in self.zhilu_node_vec.to_vec() {
+            if self.zhi_lu_vec[z_n.1].status == ZhiLuStatus::On {
+                node_zhi_lu_online_vec.push((z_n.1, z_n.0));
+                zhi_lu_online_vec.push(z_n.0);
+            }
+            else {
+                node_zhi_lu_offline_vec.push((z_n.1, z_n.0));
+                zhi_lu_offline_vec.push(z_n.0);
+            }
+        }
+        //路径中所有在网电机Map，key为节点，value为电机
+        let mut node_ji_zu_online_vec : Vec<(usize, usize)> = Vec::new();
+        let mut node_ji_zu_offline_vec : Vec<(usize, usize)> = Vec::new();
+        let mut ji_zu_online_vec : Vec<usize> = Vec::new();
+        let ji_zu_offline_vec : Vec<usize> = Vec::new();
+        for n_j in self.node_jizu_vec.to_vec() {
+            if self.ji_zu_vec[n_j.1].common_ji.is_online {
+                node_ji_zu_online_vec.push(n_j);
+                ji_zu_online_vec.push(n_j.1);
+            }
+            else {
+                node_ji_zu_offline_vec.push(n_j);
+                node_ji_zu_offline_vec.push(n_j);
+            }
+        }
+
+        let mut zhi_lu_computed_vec : Vec<usize> = Vec::new();
+        let mut zhi_lu_not_computed_vec : Vec<usize> = zhi_lu_offline_vec.to_vec();
+        //构造节点各列表
+        for n in all_node_in_path_vec.to_vec() {
+            let iter = node_zhi_lu_online_vec.iter().filter(|n_z|n_z.0 == n);
+            match iter.count(){
+                0 => node_not_computed_0_zhi_lu_vec.push(n),
+                1 => node_not_computed_1_zhi_lu_vec.push(n),
+                2 => node_not_computed_2_zhi_lu_vec.push(n),
+                _ => node_not_computed_duo_zhi_lu_vec.push(n),
+            }
+        }
+        //所有不在网的电机、支路、断路器值为0
+        for j in ji_zu_offline_vec {
+            self.ji_zu_vec[j].common_ji.p = 0.0;
+            self.ji_zu_vec[j].common_ji.q = 0.0;
+            self.ji_zu_vec[j].common_ji.ia_ext = 0.0;
+            self.ji_zu_vec[j].common_ji.ib_ext = 0.0;
+            self.ji_zu_vec[j].common_ji.ic_ext = 0.0;
+            self.ji_zu_vec[j].common_ji.ia_in = 0.0;
+            self.ji_zu_vec[j].common_ji.ib_in = 0.0;
+            self.ji_zu_vec[j].common_ji.ic_in = 0.0;
+            let mut duanluqi = self.get_duanluqi_from_jizuid(j).unwrap();
+            duanluqi.uab = 0.0;
+            duanluqi.ubc = 0.0;
+            duanluqi.uca = 0.0;
+            duanluqi.ia = 0.0;
+            duanluqi.ib = 0.0;
+            duanluqi.ic = 0.0;
+            duanluqi.f = 0.0;
+        }
+        for z in zhi_lu_offline_vec.to_vec() {
+            self.zhi_lu_vec[z].p = 0.0;
+            self.zhi_lu_vec[z].q = 0.0;
+            self.zhi_lu_vec[z].i = 0.0;
+            let mut duanluqi = self.get_duanluqi_from_zhiluid(z).unwrap();
+            duanluqi.uab = 0.0;
+            duanluqi.ubc = 0.0;
+            duanluqi.uca = 0.0;
+            duanluqi.ia = 0.0;
+            duanluqi.ib = 0.0;
+            duanluqi.ic = 0.0;
+            duanluqi.f = 0.0;
+        }
+        //1. 是否存在在网机组，若不存在，所有参数为0，并返回1，若存在，所有节点值为电网值，转入2
+        if ji_zu_online_vec.is_empty() {
+            //所有节点参数为0
+            for n in all_node_in_path_vec {
+                self.node_vec[n].vm = 0.0;
+                self.node_vec[n].f = 0.0;
+            }
+            //所有支路参数为0
+            //所有断路器参数为0
+            for z in zhi_lu_online_vec {
+                self.zhi_lu_vec[z].p = 0.0;
+                self.zhi_lu_vec[z].p = 0.0;
+                self.zhi_lu_vec[z].p = 0.0;
+                let mut duanluqi = self.get_duanluqi_from_zhiluid(z).unwrap();
+                duanluqi.uab = 0.0;
+                duanluqi.ubc = 0.0;
+                duanluqi.uca = 0.0;
+                duanluqi.ia = 0.0;
+                duanluqi.ib = 0.0;
+                duanluqi.ic = 0.0;
+                duanluqi.f = 0.0;
+            }
+            return ;
+        }
+
+        //确定所有节点参数
+        for n in all_node_in_path_vec.to_vec() {
+            self.node_vec[n].vm = jizu::JI_ZU_E_DING_DIAN_YA;
+            self.node_vec[n].f = jizu::JI_ZU_E_DING_PIN_LV;
+        }
+        //2. 由_chaoLiuFangFa选择潮流计算方法
+        //3. _chaoLiuFangFa==0，由机组确定负载值，_chaoLiuFangFa==1，由负载确定机组值
+        let fang_fa = pf_fang_fa;
+        // for j_d in jizuandian_duanluqi_vec {
+        //     if self.duan_lu_qi_vec[j_d.1].is_on() {
+        //         fang_fa = 1;
+        //         break;
+        //     }
+        // }
+        if fang_fa == 0 {
+            let mut all_ji_zu_p = 0.0f64;
+            let mut all_fu_zai_p = 0.0f64;
+            for j in ji_zu_online_vec.to_vec() {
+                all_ji_zu_p += self.ji_zu_vec[j].common_ji.p;
+            }
+            for n in all_node_in_path_vec.to_vec() {
+                let option = self.get_fuzai_from_nodeid(n);
+                if option != None {
+                    all_fu_zai_p += option.unwrap().p;
+                }
+            }
+            let p_delta = (all_fu_zai_p - all_ji_zu_p)/(ji_zu_online_vec.to_vec().len()) as f64;
+            for j in ji_zu_online_vec.to_vec() {
+                self.ji_zu_vec[j].common_ji.p += p_delta;
+                self.ji_zu_vec[j].common_ji.q = self.ji_zu_vec[j].common_ji.p * jizu::JI_ZU_Q_P;
+                self.ji_zu_vec[j].common_ji.p_factor = jizu::JI_ZU_P_FACTOR;
+                let i : f64 = self.ji_zu_vec[j].common_ji.p * 1000.0 / (3.0f64.sqrt() * self.ji_zu_vec[j].common_ji.uab_ext * jizu::JI_ZU_P_FACTOR);
+                self.ji_zu_vec[j].common_ji.ia_ext = i;
+                self.ji_zu_vec[j].common_ji.ib_ext = i;
+                self.ji_zu_vec[j].common_ji.ic_ext = i;
+                self.ji_zu_vec[j].common_ji.ia_in = i;
+                self.ji_zu_vec[j].common_ji.ib_in = i;
+                self.ji_zu_vec[j].common_ji.ic_in = i;
+            }
+        }
+        //3. _chaoLiuFangFa==1，由负载确定机组值
+        else if fang_fa == 1 {
+            let mut all_fu_zai_p = 0.0;
+            //将负载值放入实时负载Map中
+            for n_f in self.node_fuzai_vec.to_vec() {
+                if all_node_in_path_vec.to_vec().contains(&(n_f.0)) {
+                    all_fu_zai_p += self.fu_zai_vec[n_f.1].p;
+                    pd_online_vec.push((n_f.1, self.fu_zai_vec[n_f.1].p));
+                }
+            }
+            //机组均分功率
+            let ji_zu_p_average = all_fu_zai_p/(ji_zu_online_vec.len()) as f64;
+            for j in ji_zu_online_vec.to_vec() {
+                let u : f64 = self.ji_zu_vec[j].common_ji.uab_ext;
+                let i : f64 = ji_zu_p_average * 1000.0 / (3.0f64.sqrt() * u * jizu::JI_ZU_P_FACTOR);
+                self.ji_zu_vec[j].common_ji.p = ji_zu_p_average;
+                self.ji_zu_vec[j].common_ji.q = ji_zu_p_average * jizu::JI_ZU_Q_P;
+                self.ji_zu_vec[j].common_ji.p_factor = jizu::JI_ZU_P_FACTOR;
+                self.ji_zu_vec[j].common_ji.ia_ext = i;
+                self.ji_zu_vec[j].common_ji.ib_ext = i;
+                self.ji_zu_vec[j].common_ji.ic_ext = i;
+                self.ji_zu_vec[j].common_ji.ia_in = i;
+                self.ji_zu_vec[j].common_ji.ib_in = i;
+                self.ji_zu_vec[j].common_ji.ic_in = i;
+            }
+        }
+        else {
+            return ;
+        }
+        for j in ji_zu_online_vec.to_vec() {
+            let u : f64 = self.ji_zu_vec[j].common_ji.uab_ext;
+            let i : f64 = self.ji_zu_vec[j].common_ji.ia_ext;
+            let f : f64 = self.ji_zu_vec[j].common_ji.f_ext;
+            let mut duanluqi = self.get_duanluqi_from_jizuid(j).unwrap();
+            duanluqi.uab = u;
+            duanluqi.ubc = u;
+            duanluqi.uca = u;
+            duanluqi.ia = i;
+            duanluqi.ib = i;
+            duanluqi.f = f;
+        }
+        for n in all_node_in_path_vec.to_vec() {
+            let vec : Vec<(usize, usize)> = node_ji_zu_online_vec.iter().filter(|n_j|n_j.0 == n).map(|&n_j|n_j).collect();
+            if !vec.is_empty() {
+                let mut pg : f64 = 0.0;
+                for n_j in vec {
+                    pg += self.ji_zu_vec[n_j.1].common_ji.p;
+                }
+                pg_node_vec.push((n, pg));
+            }
+            else {
+                pg_node_vec.push((n, 0.0));
+            }
+        }
+        //得到节点注入和流出功率Map
+        for n in all_node_in_path_vec.to_vec() {
+            let option = self.get_fuzaiid_from_nodeid(n);
+            if option != None {
+                let option_online = pd_online_vec.iter().find(|f_p|f_p.0 == option.unwrap());
+                if option_online != None {
+                    pd_node_vec.push((n, option_online.unwrap().1));
+                }
+                else {
+                    pd_node_vec.push((n, 0.0));
+                }
+            }
+        }
+        //4. 若nodeWeiJiSuan0ZhiLuList不为空，而其他均为空，则计算结束，返回1
+        if !node_not_computed_0_zhi_lu_vec.is_empty() && node_not_computed_1_zhi_lu_vec.is_empty() && node_not_computed_2_zhi_lu_vec.is_empty() && node_not_computed_duo_zhi_lu_vec.is_empty()
+        {
+            return ;
+        }
+        //4. 为简化计算，对当前节点而言，设已计算的支路潮流方向均为流入，待计算的为流出
+        //4. 若node_not_computed_vec不为空
+        while !node_not_computed_vec.is_empty() {
+            //5. node_not_computed_vec遍历，找出一个可计算节点
+            //5. 可计算节点判断条件：若为1支路节点，则可计算
+            //5. 若为2支路节点，则至少有一个支路已计算
+            //5. 若为n支路节点，则至少有（n-1）个支路已计算
+            for n in node_not_computed_vec.to_vec() {
+                if node_not_computed_1_zhi_lu_vec.contains(&n) {
+                    node_not_computed_vec.retain(|&n1|n1 != n);
+                    node_computed_vec.push(n);
+                    //5. 若有未计算支路，计算之
+                    let zhi_lu_id : usize = node_zhi_lu_online_vec.iter().find(|&n_z|n_z.0 == n).unwrap().1;
+                    if zhi_lu_not_computed_vec.contains(&zhi_lu_id) {
+                        //计算支路参数
+                        let u = self.node_vec[n].vm;
+                        let f = self.node_vec[n].f;
+                        let p = pg_node_vec.iter().find(|&n_p| n_p.0 == n).unwrap().1 - pd_node_vec.iter().find(|&n_p| n_p.0 == n).unwrap().1;
+                        let i = p * 1000.0f64 / (3.0f64.sqrt() * u * jizu::JI_ZU_P_FACTOR);
+                        self.zhi_lu_vec[zhi_lu_id].p = p;
+                        self.zhi_lu_vec[zhi_lu_id].q = p * jizu::JI_ZU_Q_P;
+                        self.zhi_lu_vec[zhi_lu_id].i = i;
+                        //计算断路器参数
+                        let duanluqi = self.get_duanluqi_from_zhiluid(zhi_lu_id).unwrap();
+                        duanluqi.uab = u;
+                        duanluqi.ubc = u;
+                        duanluqi.uca = u;
+                        duanluqi.ia = i;
+                        duanluqi.ib = i;
+                        duanluqi.f = f;
+                    }
+                    //将支路从未计算列表移至已计算列表
+                    zhi_lu_not_computed_vec.retain(|&z|z != zhi_lu_id);
+                    zhi_lu_computed_vec.push(zhi_lu_id);
+                }
+                else if node_not_computed_2_zhi_lu_vec.contains(&n) {
+                    let zhi_lu_related_vec = self.get_zhiluid_group_from_nodeid(n).unwrap();
+                    let mut i_zhi_lu = usize::max_value();
+                    let mut i_zhi_lu_g = usize::max_value();
+                    if zhi_lu_computed_vec.contains(&(zhi_lu_related_vec[0])) {
+                        i_zhi_lu = zhi_lu_related_vec[1];
+                        i_zhi_lu_g = zhi_lu_related_vec[0];
+                    }
+                    else if zhi_lu_computed_vec.contains(&(zhi_lu_related_vec[1])) {
+                        i_zhi_lu = zhi_lu_related_vec[0];
+                        i_zhi_lu_g = zhi_lu_related_vec[1];
+                    }
+                    if i_zhi_lu != usize::max_value() {
+                        node_not_computed_vec.retain(|&node|node != n);
+                        node_computed_vec.push(n);
+                        if !zhi_lu_computed_vec.contains(&i_zhi_lu) {
+                            //计算支路参数
+                            let u = self.node_vec[n].vm;
+                            let f = self.node_vec[n].f;
+                            let p = pg_node_vec.iter().find(|&n_pg|n_pg.0 == n).unwrap().1 + self.zhi_lu_vec[i_zhi_lu_g].p - pd_node_vec.iter().find(|&n_pd|n_pd.0 == n).unwrap().1;
+                            let i = p * 1000.0 / (3.0f64.sqrt() * u * jizu::JI_ZU_P_FACTOR);
+                            self.zhi_lu_vec[i_zhi_lu].p = p;
+                            self.zhi_lu_vec[i_zhi_lu].q = jizu::JI_ZU_Q_P * p;
+                            self.zhi_lu_vec[i_zhi_lu].i = i;
+                            //计算断路器参数
+                            let duanluqi = self.get_duanluqi_from_zhiluid(i_zhi_lu).unwrap();
+                            duanluqi.uab = u;
+                            duanluqi.ubc = u;
+                            duanluqi.uca = u;
+                            duanluqi.ia = i;
+                            duanluqi.ib = i;
+                            duanluqi.f = f;
+                            //将支路从未计算列表移至已计算列表
+                            zhi_lu_not_computed_vec.retain(|&zhi_lu|zhi_lu != i_zhi_lu);
+                            zhi_lu_computed_vec.push(i_zhi_lu);
+                        }
+                    }
+                }
+                else if node_not_computed_duo_zhi_lu_vec.contains(&n) {
+                    let zhi_lu_related_vec = self.get_zhiluid_group_from_nodeid(n).unwrap();
+                    let mut i_zhi_lu = usize::max_value();
+                    let mut zhi_lu_not_computed_num = 0;
+                    let mut all_zhi_lu_g_p = 0.0f64;
+                    for z in  zhi_lu_related_vec {
+                        if zhi_lu_not_computed_vec.contains(&z) {
+                            i_zhi_lu = z;
+                            zhi_lu_not_computed_num += 1;
+                        }
+                        else {
+                            all_zhi_lu_g_p += self.zhi_lu_vec[z].p;
+                        }
+                    }
+                    node_not_computed_vec.retain(|&node|node != n);
+                    node_computed_vec.push(n);
+                    if zhi_lu_not_computed_num == 1 {
+                        //计算支路参数
+                        let u = self.node_vec[n].vm;
+                        let f = self.node_vec[n].f;
+                        let p = pg_node_vec.iter().find(|&n_pg|n_pg.0 == n).unwrap().1 + all_zhi_lu_g_p - pd_node_vec.iter().find(|&n_pd|n_pd.0 == n).unwrap().1;
+                        let i = p * 1000.0 / (3.0f64.sqrt() * u * jizu::JI_ZU_P_FACTOR);
+                        self.zhi_lu_vec[i_zhi_lu].p = p;
+                        self.zhi_lu_vec[i_zhi_lu].q = jizu::JI_ZU_Q_P * p;
+                        self.zhi_lu_vec[i_zhi_lu].i = i;
+                        //计算断路器参数
+                        let duanluqi = self.get_duanluqi_from_zhiluid(i_zhi_lu).unwrap();
+                        duanluqi.uab = u;
+                        duanluqi.ubc = u;
+                        duanluqi.uca = u;
+                        duanluqi.ia = i;
+                        duanluqi.ib = i;
+                        duanluqi.f = f;
+                        //将支路从未计算列表移至已计算列表
+                        zhi_lu_not_computed_vec.retain(|&zhi_lu|zhi_lu != i_zhi_lu);
+                        zhi_lu_computed_vec.push(i_zhi_lu);
+                    }
+                }
+            }
+            //6. 根据已知条件计算可计算节点关联的唯一未知参数支路
+            //7. 将已计算的节点和支路放入已计算列表，并从未计算列表中去除
+            //8. 继续遍历，直到nodeWeiJiSuanList为空
+        }
+    }
+
+    //计算系统的潮流
+    pub fn compute_xi_tong_pf(&mut self) {
+        //更新系统拓扑
+        self.update_node_group_vec();
+        let mut pf_fang_fa_vec : Vec<(Vec<usize>, u32)> = Vec::new();
+        for n_g in self.node_group_vec.to_vec() {
+            let mut fang_fa = 1u32;
+            for n in n_g.to_vec() {
+                let ji_zu_id = self.get_jizuid_from_nodeid(n).unwrap();
+                let duan_lu_qi_id = self.get_duanluqiid_from_jizuid(ji_zu_id).unwrap();
+                let ji_zu = self.ji_zu_vec[ji_zu_id];
+                let duan_lu_qi = self.duan_lu_qi_vec[duan_lu_qi_id];
+                if duan_lu_qi.is_on() && !(ji_zu.common_ji.current_range == jizu::JiZuRangeLeiXing::TingJi || ji_zu.common_ji.current_range == jizu::JiZuRangeLeiXing::BeiCheZanTai || ji_zu.common_ji.current_range == jizu::JiZuRangeLeiXing::BeiCheWanBi || ji_zu.common_ji.current_range == jizu::JiZuRangeLeiXing::Wen) {
+                    fang_fa = 2;
+                    break;
+                }
+                if self.get_dianzhan_from_nodeid(n).unwrap().ctrl_mode == simctrl::CtrlMode::Manual {
+                    fang_fa = 2;
+                }
+            }
+            pf_fang_fa_vec.push((n_g,fang_fa));
+        }
+        for n_g_f in pf_fang_fa_vec {
+             self.compute_path_pf(n_g_f.0, n_g_f.1);
+        }
+        //计算完毕为各电站电网参数赋值,同时重新设置电站控制方式
+        for i in 0..simctrl::ZONG_SHU_DIAN_ZHAN {
+            let n_vec = self.get_node_vec_from_dian_zhan_id(i);
+            let mut u = 0.0f64;
+            let mut f = 0.0f64;
+            for n in n_vec {
+                if u < self.node_vec[n].vm {
+                    u = self.node_vec[n].vm;
+                    f = self.node_vec[n].f;
+                }
+            }
+            self.dian_zhan_vec[i].u = u;
+            self.dian_zhan_vec[i].f = f;
+            let jizuid_vec = self.get_jizuid_vec_from_dianzhanid(i);
+            self.dian_zhan_vec[i].p = 0.0;
+            for jizuid in jizuid_vec{
+                self.dian_zhan_vec[i].p += self.ji_zu_vec[jizuid].common_ji.p;
+            }
+            self.dian_zhan_vec[i].p_yu_du = 1.0f64 - self.dian_zhan_vec[i].p/(jizu::JI_ZU_E_DING_GONG_LV * simctrl::ZONG_SHU_JI_ZU_IN_ONE_DIAN_ZHAN as f64);
+        }
+    }
+
+    pub fn update(&mut self) {
+        self.compute_xi_tong_pf();
+        self.p_shou_ti_dui = 0.0;
+        self.u_shou_ti_dui = 0.0;
+        self.f_shou_ti_dui = 0.0;
+        self.pd_shou_ti_dui = 0.0;
+
+        self.p_wei_ti_dui = 0.0;
+        self.u_wei_ti_dui = 0.0;
+        self.f_wei_ti_dui = 0.0;
+        self.pd_wei_ti_dui = 0.0;
+
+        self.p_quan_jian = 0.0;
+        for jizuid in 0..simctrl::ZONG_SHU_JI_ZU {
+            self.p_quan_jian += self.ji_zu_vec[jizuid].common_ji.p;
+        }
+    }
+
+
+    pub fn is_an_dian(&mut self, jizu : &JiZu<JiJi>) -> bool {
+        match jizu.ji_can_shu_ji {
+            JiJi::AD(..) => return true,
+            _ => return false,
+        }
+    }
+
+    pub fn is_chai_you(&mut self, jizu : &JiZu<JiJi>) -> bool {
+        match jizu.ji_can_shu_ji {
+            JiJi::CY(..) => return true,
+            _ => return false,
+        }
+    }
+
+    pub fn is_qi_lun(&mut self, jizu : &JiZu<JiJi>) -> bool {
+        match jizu.ji_can_shu_ji {
+            JiJi::QL(..) => return true,
+            _ => return false,
+        }
+    }
+
+    pub fn is_an_dian_by_id(&mut self, jizuid : usize) -> bool {
+        match jizuid {
+            0...simctrl::ZONG_SHU_JI_ZU =>{
+                match self.ji_zu_vec[jizuid].ji_can_shu_ji {
+                    JiJi::AD(..) => return true,
+                    _ => return false,
+                }
+            }
+            _ => return false,
+        }
+    }
+
+    pub fn is_chai_you_by_id(&mut self, jizuid : usize) -> bool {
+        match jizuid {
+            0...simctrl::ZONG_SHU_JI_ZU =>{
+                match self.ji_zu_vec[jizuid].ji_can_shu_ji {
+                    JiJi::CY(..) => return true,
+                    _ => return false,
+                }
+            }
+            _ => return false,
+        }
+    }
+
+    pub fn is_qi_lun_by_id(&mut self, jizuid : usize) -> bool {
+        match jizuid {
+            0...simctrl::ZONG_SHU_JI_ZU =>{
+                match self.ji_zu_vec[jizuid].ji_can_shu_ji {
+                    JiJi::QL(..) => return true,
+                    _ => return false,
+                }
+            }
+            _ => return false,
+        }
+    }
+
+    pub fn is_dev_id_valid(&mut self, dev_id : usize, dev_type : simctrl::DevType) -> bool {
+        match dev_type {
+            simctrl::DevType::JiZu => {
+                match dev_id {
+                    0...simctrl::ZONG_SHU_JI_ZU => {
+                        if self.is_chai_you_by_id(dev_id) || self.is_qi_lun_by_id(dev_id) {
+                            return true;
+                        }
+                        else {
+                            return false;
+                        }
+                    }
+                    _ => return false,
+                }
+            }
+
+            simctrl::DevType::DuanLuQi => {
+                match dev_id {
+                    0...simctrl::ZONG_SHU_DUAN_LU_QI => return true,
+                    _ => return false,
+                }
+            }
+
+            simctrl::DevType::FuZai => {
+                match dev_id {
+                    0...simctrl::ZONG_SHU_FU_ZAI => return true,
+                    _ => return false,
+                }
+            }
+
+            simctrl::DevType::DianZhan => {
+                match dev_id {
+                    0...simctrl::ZONG_SHU_DIAN_ZHAN => return true,
+                    _ => return false,
+                }
+            }
+
+            simctrl::DevType::AnDian => {
+                match dev_id {
+                    0...simctrl::ZONG_SHU_JI_ZU => {
+                        if self.is_an_dian_by_id(dev_id) {
+                            return true;
+                        }
+                        else {
+                            return false;
+                        }
+                    }
+                    _ => return false,
+                }
+            }
+
+            simctrl::DevType::Node => {
+                match dev_id {
+                    0...simctrl::ZONG_SHU_NODE => return true,
+                    _ => return false,
+                }
+            }
+
+            simctrl::DevType::ZhiLu => {
+                match dev_id {
+                    0...simctrl::ZONG_SHU_ZHI_LU => return true,
+                    _ => return false,
+                }
+            }
+            simctrl::DevType::Wu => return false,
+        }
+    }
+
+    pub fn is_zhi_ling_valid(&mut self, zl : &ZhiLing) -> bool {
+        //let zhan_wei_type = zhiLing.zhan_wei_type;
+        if !self.is_dev_id_valid(zl.dev_id, zl.dev_type) {
+            self.handle_zhi_ling_result_msg(Err(zhiling::YingDaErr::IdNotMatch(*zl, zhiling::ID_NOT_MATCH_DESC, zhiling::CAUSE_ID_NOT_MATCH)));
+            return false;
+        }
+        match zl.zhan_wei_type {
+            simctrl::ZhanWeiType::Admin | simctrl::ZhanWeiType::JiaoLian => {
+                self.handle_zhi_ling_result_msg(Ok(zhiling::YingDaType::Valid(*zl)));
+                return true;
+            }
+            _ => {
+                match zl.dev_type {
+                    simctrl::DevType::JiZu => {
+                        if zl.zhan_wei_type == simctrl::ZhanWeiType::JiPang {
+                            self.handle_zhi_ling_result_msg(Ok(zhiling::YingDaType::Valid(*zl)));
+                            return true;
+                        }
+                        else if zl.zhan_wei_type == simctrl::ZhanWeiType::ZhuKongZhiPing && self.ji_zu_vec[zl.dev_id].common_ji.operating_station == simctrl::OperatingStation::Remote {
+                            self.handle_zhi_ling_result_msg(Ok(zhiling::YingDaType::Valid(*zl)));
+                            return true;
+                        }
+                        else if (zl.zhan_wei_type == simctrl::ZhanWeiType::DianZhanJianKongTai || zl.zhan_wei_type == simctrl::ZhanWeiType::JiZuKongZhiQi || zl.zhan_wei_type == simctrl::ZhanWeiType::DianZhanKongZhiQi) && self.ji_zu_vec[zl.dev_id].common_ji.operating_station == simctrl::OperatingStation::Remote && self.get_dianzhan_from_jizuid(zl.dev_id).unwrap().operating_station == simctrl::OperatingStation::Local && ( self.get_dianzhan_from_jizuid(zl.dev_id).unwrap().ctrl_mode == simctrl::CtrlMode::SemiAuto || self.get_dianzhan_from_jizuid(zl.dev_id).unwrap().ctrl_mode == simctrl::CtrlMode::Auto ) {
+                            self.handle_zhi_ling_result_msg(Ok(zhiling::YingDaType::Valid(*zl)));
+                            return true;
+                        }
+                        else if (zl.zhan_wei_type == simctrl::ZhanWeiType::JiKongTai || zl.zhan_wei_type == simctrl::ZhanWeiType::BeiYongJiKongTai) && self.ji_zu_vec[zl.dev_id].common_ji.operating_station == simctrl::OperatingStation::Remote && self.get_dianzhan_from_jizuid(zl.dev_id).unwrap().operating_station == simctrl::OperatingStation::JiKong && ( self.get_dianzhan_from_jizuid(zl.dev_id).unwrap().ctrl_mode == simctrl::CtrlMode::SemiAuto || self.get_dianzhan_from_jizuid(zl.dev_id).unwrap().ctrl_mode == simctrl::CtrlMode::Auto ) {
+                            self.handle_zhi_ling_result_msg(Ok(zhiling::YingDaType::Valid(*zl)));
+                            return true;
+                        }
+                        else {
+                            self.handle_zhi_ling_result_msg( Err(YingDaErr::CtrlModeAndOperatingStationFail(*zl, zhiling::CTRL_MODE_AND_OPERATING_STATION_FAIL_DESC, zhiling::CAUSE_CTRL_MODE_AND_OPERATING_STATION_INVALID)));
+                            return false;
+                        }
+                    }
+                    simctrl::DevType::DuanLuQi | simctrl::DevType::DianZhan => {
+                        let mut dian_zhan_id = usize::max_value();
+                        if zl.dev_type == simctrl::DevType::DuanLuQi {
+                            if self.is_an_dian_duan_lu_qi(zl.dev_id) {
+                                self.handle_zhi_ling_result_msg(Ok(zhiling::YingDaType::Valid(*zl)));
+                            }
+                            dian_zhan_id = self.get_dianzhanid_from_duanluqiid(zl.dev_id).unwrap();
+                        }
+                        else if zl.dev_type == simctrl::DevType::DianZhan {
+                            dian_zhan_id = zl.dev_id;
+                        }
+                        if zl.zhan_wei_type == simctrl::ZhanWeiType::JiPang || zl.zhan_wei_type == simctrl::ZhanWeiType::ZhuKongZhiPing {
+                            self.handle_zhi_ling_result_msg(Ok(zhiling::YingDaType::Valid(*zl)));
+                            return true;
+                        }
+                        else if (zl.zhan_wei_type == simctrl::ZhanWeiType::DianZhanJianKongTai || zl.zhan_wei_type == simctrl::ZhanWeiType::JiZuKongZhiQi || zl.zhan_wei_type == simctrl::ZhanWeiType::DianZhanKongZhiQi) && self.dian_zhan_vec[dian_zhan_id].operating_station == simctrl::OperatingStation::Local && ( self.dian_zhan_vec[dian_zhan_id].ctrl_mode == simctrl::CtrlMode::SemiAuto || self.dian_zhan_vec[dian_zhan_id].ctrl_mode == simctrl::CtrlMode::Auto ) {
+                            self.handle_zhi_ling_result_msg(Ok(zhiling::YingDaType::Valid(*zl)));
+                            return true;
+                        }
+                        else if (zl.zhan_wei_type == simctrl::ZhanWeiType::JiKongTai || zl.zhan_wei_type == simctrl::ZhanWeiType::BeiYongJiKongTai) &&  self.dian_zhan_vec[dian_zhan_id].operating_station == simctrl::OperatingStation::JiKong && ( self.dian_zhan_vec[dian_zhan_id].ctrl_mode == simctrl::CtrlMode::SemiAuto || self.dian_zhan_vec[dian_zhan_id].ctrl_mode == simctrl::CtrlMode::Auto ) {
+                            self.handle_zhi_ling_result_msg(Ok(zhiling::YingDaType::Valid(*zl)));
+                            return true;
+                        }
+                        else {
+                            self.handle_zhi_ling_result_msg( Err(YingDaErr::CtrlModeAndOperatingStationFail(*zl, zhiling::CTRL_MODE_AND_OPERATING_STATION_FAIL_DESC, zhiling::CAUSE_CTRL_MODE_AND_OPERATING_STATION_INVALID)));
+                            return false;
+                        }
+                    }
+                    simctrl::DevType::FuZai | simctrl::DevType::AnDian => {
+                        self.handle_zhi_ling_result_msg(Ok(zhiling::YingDaType::Valid(*zl)));
+                        return true;
+                    }
+                    _ => {
+                        self.handle_zhi_ling_result_msg(Err(YingDaErr::CtrlModeAndOperatingStationFail(*zl, zhiling::CTRL_MODE_AND_OPERATING_STATION_FAIL_DESC, zhiling::CAUSE_CTRL_MODE_AND_OPERATING_STATION_INVALID)));
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn handle_zhi_ling(&mut self, zl : &ZhiLing) {
+        self.handle_zhi_ling_result_msg(Ok(YingDaType::ACK(*zl)));
+        match zl.dev_type {
+            simctrl::DevType::JiZu => {
+                match zl.zhi_ling_type {
+                    ZhiLingType::BeiChe => self.handle_bei_che(zl),
+                    ZhiLingType::OperatingStation(simctrl::OperatingStation::JiPang) | ZhiLingType::OperatingStation(simctrl::OperatingStation::Remote) => self.handle_operating_station(zl),
+                    ZhiLingType::Prio => self.handle_prio(zl),
+                    ZhiLingType::GenerateYiBanGuZhang(..) => self.handle_ji_zu_yi_ban_gu_zhang(zl),
+                    ZhiLingType::EliminateYiBanGuZhang(..) => self.eliminate_ji_zu_yi_ban_gu_zhang(zl),
+
+                    ZhiLingType::GenerateYiJiGuZhang(..) => self.handle_ji_zu_yi_ji_gu_zhang(zl),
+                    ZhiLingType::EliminateYiJiGuZhang(..) => self.eliminate_ji_zu_yi_ji_gu_zhang(zl),
+
+                    ZhiLingType::GenerateErJiGuZhang(..) => self.handle_ji_zu_er_ji_gu_zhang(zl),
+                    ZhiLingType::EliminateErJiGuZhang(..) => self.eliminate_ji_zu_er_ji_gu_zhang(zl),
+
+                    ZhiLingType::GenerateQiTaGuZhang(..) => self.handle_ji_zu_qi_ta_gu_zhang(zl),
+                    ZhiLingType::EliminateQiTaGuZhang(..) => self.eliminate_ji_zu_qi_ta_gu_zhang(zl),
+
+                    ZhiLingType::JinJiTingJi => {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_jin_ji_ting_ji(zl);
+                        }
+                    }
+                    ZhiLingType::QiDong => {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_qi_dong(zl);
+                        }
+                    }
+                    ZhiLingType::TingJi =>  {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_ting_ji(zl);
+                        }
+                    }
+                    ZhiLingType::TouRu =>  {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_tou_ru(zl);
+                        }
+                    }
+                    ZhiLingType::TuiChu => {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_tui_chu(zl);
+                        }
+                    }
+                    ZhiLingType::HeZhaBingChe =>  {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_he_zha_bing_che(zl);
+                        }
+                    }
+                    ZhiLingType::FenZhaJieLie =>  {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_fen_zha_jie_lie(zl);
+                        }
+                    }
+                    ZhiLingType::JiaSu =>  {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_jia_su(zl);
+                        }
+                    }
+                    ZhiLingType::JianSu =>  {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_jian_su(zl);
+                        }
+                    }
+                    ZhiLingType::ShengYa =>  {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_sheng_ya(zl);
+                        }
+                    }
+                    ZhiLingType::JiangYa =>  {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_jiang_ya(zl);
+                        }
+                    }
+
+                    ZhiLingType::XiaoSheng =>  {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_xiao_sheng(zl);
+                        }
+                    }
+                    ZhiLingType::YingDa =>  {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_ying_da(zl);
+                        }
+                    }
+
+                    _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::Invalid(*zl, zhiling::COMMON_INVALID_DESC, zhiling::CAUSE_COMMON_INVALID))),
+                }
+            }
+            simctrl::DevType::DianZhan => {
+                match zl.zhi_ling_type {
+                    ZhiLingType::BeiChe => self.handle_bei_che(zl),
+                    ZhiLingType::OperatingStation(simctrl::OperatingStation::Local) | ZhiLingType::OperatingStation(simctrl::OperatingStation::JiKong) => self.handle_operating_station(zl),
+                    ZhiLingType::CtrlMode(..) => self.handle_ctrl_mode(zl),
+                    ZhiLingType::Prio => self.handle_prio(zl),
+
+                    ZhiLingType::XiaoSheng => {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_xiao_sheng(zl);
+                        }
+                    }
+                    ZhiLingType::YingDa =>  {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_ying_da(zl);
+                        }
+                    }
+
+                    _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::Invalid(*zl, zhiling::COMMON_INVALID_DESC, zhiling::CAUSE_COMMON_INVALID))),
+                }
+            }
+            simctrl::DevType::DuanLuQi => {
+                match zl.zhi_ling_type {
+                    ZhiLingType::BeiChe => self.handle_bei_che(zl),
+                    ZhiLingType::HeZhaBingChe => {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_he_zha_bing_che(zl);
+                        }
+                    }
+                    ZhiLingType::FenZhaJieLie => {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_fen_zha_jie_lie(zl);
+                        }
+                    }
+
+                    ZhiLingType::XiaoSheng => {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_xiao_sheng(zl);
+                        }
+                    }
+                    ZhiLingType::YingDa => {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_ying_da(zl);
+                        }
+                    }
+
+                    _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::Invalid(*zl, zhiling::COMMON_INVALID_DESC, zhiling::CAUSE_COMMON_INVALID))),
+                }
+            }
+            simctrl::DevType::AnDian => {
+                match zl.zhi_ling_type {
+                    ZhiLingType::AnDianOn => self.handle_an_dian_on(zl),
+                    ZhiLingType::AnDianOff => self.handle_an_dian_off(zl),
+                    ZhiLingType::HeZhaBingChe => {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_an_dian_he_zha(zl);
+                        }
+                    }
+                    ZhiLingType::FenZhaJieLie => {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_an_dian_fen_zha(zl);
+                        }
+                    }
+
+                    ZhiLingType::XiaoSheng => {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_xiao_sheng(zl);
+                        }
+                    }
+                    ZhiLingType::YingDa => {
+                        if self.is_zhi_ling_valid(zl) {
+                            self.handle_ying_da(zl);
+                        }
+                    }
+
+                    _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::Invalid(*zl, zhiling::COMMON_INVALID_DESC, zhiling::CAUSE_COMMON_INVALID))),
+                }
+            }
+            simctrl::DevType::FuZai => {
+                match zl.zhi_ling_type {
+                    ZhiLingType::BeiChe => self.handle_bei_che(zl),
+                    ZhiLingType::JiaZai(..) => self.handle_jia_zai(zl),
+                    ZhiLingType::JianZai(..) => self.handle_jian_zai(zl),
+                    ZhiLingType::ZhongZaiJiaZai(..) => self.handle_zhong_zai_jia_zai(zl),
+
+                    _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::Invalid(*zl, zhiling::COMMON_INVALID_DESC, zhiling::CAUSE_COMMON_INVALID))),
+                }
+            }
+
+            simctrl::DevType::Wu => {
+                match zl.zhi_ling_type {
+                    ZhiLingType::YueKong => self.handle_yue_kong(zl),
+
+                    _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::Invalid(*zl, zhiling::COMMON_INVALID_DESC, zhiling::CAUSE_COMMON_INVALID))),
+                }
+            }
+            _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::Invalid(*zl, zhiling::COMMON_INVALID_DESC, zhiling::CAUSE_COMMON_INVALID))),
+        }
+    }
+
+    pub fn handle_zhi_ling_result_msg(&mut self, _result : Result<YingDaType, YingDaErr>) {
+
+    }
+
+    pub fn handle_bei_che(&mut self, zl : &ZhiLing) {
+        match self.ji_zu_vec[zl.dev_id].common_ji.current_range {
+            jizu::JiZuRangeLeiXing::TingJi => self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::QiDong,
+            _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::BeiCheFail(*zl, zhiling::BEI_CHE_FAIL_DESC, zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_1))),
+        }
+    }
+    pub fn handle_qi_dong(&mut self, zl : &ZhiLing) {
+        if self.get_duanluqi_from_jizuid(zl.dev_id).unwrap().is_off() {
+            match self.ji_zu_vec[zl.dev_id].common_ji.current_range {
+                jizu::JiZuRangeLeiXing::BeiCheWanBi => {
+                    self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::QiDong;
+                }
+                _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::QiDongFail(*zl,  zhiling::QI_DONG_FAIL_DESC, zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_2))),
+            }
+        }
+        else {
+            self.handle_zhi_ling_result_msg( Err(YingDaErr::QiDongFail(*zl, zhiling::QI_DONG_FAIL_DESC, zhiling:: CAUSE_DUAN_LU_QI_STATUS_DISMATCH_1)));
+        }
+    }
+    pub fn handle_he_zha_bing_che(&mut self, zl : &ZhiLing) {
+        if self.get_duanluqi_from_jizuid(zl.dev_id).unwrap().is_off() {
+            let duanluqi_id = self.get_duanluqiid_from_jizuid(zl.dev_id).unwrap();
+            let mut xt_temp = self.clone();
+            xt_temp.duan_lu_qi_vec[duanluqi_id].status = DuanLuQiStatus::On{fault : self.duan_lu_qi_vec[duanluqi_id].is_fault(), ready_to_jie_lie : false};
+            xt_temp.update_node_group_vec();
+            let ji_zu_vec_bing_lian_temp : Vec<usize> = xt_temp.get_jizuid_vec_bing_lian_from_id(zl.dev_id).unwrap();
+            xt_temp.compute_xi_tong_pf();
+            self.compute_xi_tong_pf();
+            let mut p_q_yi_qian_vec : Vec<(f64, f64)> = Vec::new();
+            for j in ji_zu_vec_bing_lian_temp.to_vec() {
+                p_q_yi_qian_vec.push((self.ji_zu_vec[j].common_ji.p, self.ji_zu_vec[j].common_ji.q));
+            }
+            //对每台并联的机组变到变载过程
+            //let mut is_bing_lian_ji_zu_bu_wen_ding = false;
+            //如果jiZuListBingLian为空则为合闸
+            if ji_zu_vec_bing_lian_temp.is_empty() {
+
+            }
+
+        }
+        else {
+            self.handle_zhi_ling_result_msg( Err(YingDaErr::QiDongFail(*zl, zhiling::HE_ZHA_BING_CHE_FAIL_DESC, zhiling::CAUSE_DUAN_LU_QI_STATUS_DISMATCH_1)));
+        }
+    }
+    pub fn handle_ting_ji(&mut self, zl : &ZhiLing) {
+        if self.get_duanluqi_from_jizuid(zl.dev_id).unwrap().is_off() {
+            match self.ji_zu_vec[zl.dev_id].common_ji.current_range {
+                jizu::JiZuRangeLeiXing::Wen | jizu::JiZuRangeLeiXing::BianSu => {
+                    self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::TingJi;
+                }
+                _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::BeiCheFail(*zl,  zhiling::TING_JI_FAIL_DESC, zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_3))),
+            }
+        }
+        else {
+            self.handle_zhi_ling_result_msg( Err(YingDaErr::QiDongFail(*zl, zhiling::TING_JI_FAIL_DESC, zhiling:: CAUSE_DUAN_LU_QI_STATUS_DISMATCH_1)));
+        }
+    }
+
+    pub fn handle_yue_kong(&mut self, _zl : &ZhiLing) {
+        self.yue_kong = true;
+    }
+
+    pub fn handle_tou_ru(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn handle_tui_chu(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn handle_he_zha_bing_che_duan_lu_qi(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn handle_fen_zha_jie_lie(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn handle_fen_zha_jie_lie_duan_lu_qi(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn handle_ji_zu_yi_ban_gu_zhang(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn handle_ji_zu_yi_ji_gu_zhang(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn handle_ji_zu_er_ji_gu_zhang(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn handle_ji_zu_qi_ta_gu_zhang(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn eliminate_ji_zu_yi_ban_gu_zhang(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn eliminate_ji_zu_yi_ji_gu_zhang(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn eliminate_ji_zu_er_ji_gu_zhang(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn eliminate_ji_zu_qi_ta_gu_zhang(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn handle_jia_zai(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn handle_zhong_zai_jia_zai(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn handle_jian_zai(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn handle_operating_station(&mut self, zl : &ZhiLing) {
+        match zl.dev_type {
+            simctrl::DevType::JiZu => {
+                match zl.zhi_ling_type {
+                    ZhiLingType::OperatingStation(simctrl::OperatingStation::JiPang) => {
+                        self.ji_zu_vec[zl.dev_id].common_ji.operating_station_she_zhi = simctrl::OperatingStation::JiPang;
+                        self.ji_zu_vec[zl.dev_id].common_ji.operating_station = simctrl::OperatingStation::JiPang;
+                        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                    }
+                    ZhiLingType::OperatingStation(simctrl::OperatingStation::Remote) => {
+                        self.ji_zu_vec[zl.dev_id].common_ji.operating_station_she_zhi = simctrl::OperatingStation::Remote;
+                        self.ji_zu_vec[zl.dev_id].common_ji.operating_station = simctrl::OperatingStation::Remote;
+                        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                    }
+                    _ =>  self.handle_zhi_ling_result_msg( Err(YingDaErr::OperatingStationFail(*zl, zhiling::OPERATING_STATION_FAIL_DESC, zhiling::CAUSE_OPERATING_STATION_INVALID))),
+                }
+            }
+            simctrl::DevType::DianZhan => {
+                match zl.zhi_ling_type {
+                    ZhiLingType::OperatingStation(simctrl::OperatingStation::Local) => {
+                        self.dian_zhan_vec[zl.dev_id].operating_station_she_zhi = simctrl::OperatingStation::Local;
+                        self.dian_zhan_vec[zl.dev_id].operating_station = simctrl::OperatingStation::Local;
+                        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                    }
+                    ZhiLingType::OperatingStation(simctrl::OperatingStation::JiKong) => {
+                        self.dian_zhan_vec[zl.dev_id].operating_station_she_zhi = simctrl::OperatingStation::JiKong;
+                        self.dian_zhan_vec[zl.dev_id].operating_station = simctrl::OperatingStation::JiKong;
+                        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                    }
+                    _ =>  self.handle_zhi_ling_result_msg( Err(YingDaErr::OperatingStationFail(*zl, zhiling::OPERATING_STATION_FAIL_DESC, zhiling::CAUSE_OPERATING_STATION_INVALID))),
+                }
+            }
+            _ => {}
+        }
+    }
+    pub fn handle_ctrl_mode(&mut self, zl : &ZhiLing) {
+        match zl.dev_type {
+            simctrl::DevType::DianZhan => {
+                match zl.zhi_ling_type {
+                    ZhiLingType::CtrlMode(simctrl::CtrlMode::Manual) => {
+                        self.dian_zhan_vec[zl.dev_id].ctrl_mode = simctrl::CtrlMode::Manual;
+                        self.dian_zhan_vec[zl.dev_id].ctrl_mode_she_zhi = simctrl::CtrlMode::Manual;
+                        if self.dian_zhan_vec[zl.dev_id].operating_station == simctrl::OperatingStation::JiKong {
+                            self.dian_zhan_vec[zl.dev_id].operating_station = simctrl::OperatingStation::Local;
+                        }
+                        let jizuid_vec = self.get_jizuid_vec_from_dianzhanid(zl.dev_id);
+                        for j in jizuid_vec {
+                            self.ji_zu_vec[j].common_ji.ctrl_mode = simctrl::CtrlMode::Manual;
+                        }
+                        let dian_zhan_r_vec = self.get_dian_zhan_guan_lian_vec_from_dian_zhan_id(zl.dev_id);
+                        for d in dian_zhan_r_vec {
+                            self.dian_zhan_vec[d].ctrl_mode = simctrl::CtrlMode::Manual;
+                            if self.dian_zhan_vec[d].operating_station == simctrl::OperatingStation::JiKong {
+                                self.dian_zhan_vec[d].operating_station = simctrl::OperatingStation::Local;
+                            }
+                            let jizuid_vec = self.get_jizuid_vec_from_dianzhanid(d);
+                            for j in jizuid_vec {
+                                self.ji_zu_vec[j].common_ji.ctrl_mode = simctrl::CtrlMode::Manual;
+                            }
+                        }
+                        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                    }
+                    ZhiLingType::CtrlMode(simctrl::CtrlMode::SemiAuto) => {
+                        self.dian_zhan_vec[zl.dev_id].ctrl_mode_she_zhi = simctrl::CtrlMode::SemiAuto;
+                        let dian_zhan_r_vec = self.get_dian_zhan_guan_lian_vec_from_dian_zhan_id(zl.dev_id);
+                        let mut is_manual_exist = false;
+                        //let mut is_auto_exist = false;
+                        for d in dian_zhan_r_vec.to_vec() {
+                            if self.dian_zhan_vec[d].ctrl_mode_she_zhi == simctrl::CtrlMode::Manual {
+                                is_manual_exist = true;
+                            }
+                            // else if self.dian_zhan_vec[d].ctrl_mode_she_zhi == simctrl::CtrlMode::Auto {
+                            //     is_auto_exist = true;
+                            // }
+                        }
+                        if is_manual_exist || !self.is_mu_lian_lian_tong(zl.dev_id) {
+                            self.dian_zhan_vec[zl.dev_id].ctrl_mode = simctrl::CtrlMode::Manual;
+                            if self.dian_zhan_vec[zl.dev_id].operating_station == simctrl::OperatingStation::JiKong {
+                                self.dian_zhan_vec[zl.dev_id].operating_station = simctrl::OperatingStation::Local;
+                            }
+                            let jizuid_vec = self.get_jizuid_vec_from_dianzhanid(zl.dev_id);
+                            for j in jizuid_vec {
+                                self.ji_zu_vec[j].common_ji.ctrl_mode = simctrl::CtrlMode::Manual;
+                            }
+                            for d in dian_zhan_r_vec {
+                                self.dian_zhan_vec[d].ctrl_mode = simctrl::CtrlMode::Manual;
+                                if self.dian_zhan_vec[d].operating_station == simctrl::OperatingStation::JiKong {
+                                    self.dian_zhan_vec[d].operating_station = simctrl::OperatingStation::Local;
+                                }
+                                let jizuid_vec = self.get_jizuid_vec_from_dianzhanid(d);
+                                for j in jizuid_vec {
+                                    self.ji_zu_vec[j].common_ji.ctrl_mode = simctrl::CtrlMode::Manual;
+                                }
+                            }
+                        }
+                        else {
+                            self.dian_zhan_vec[zl.dev_id].ctrl_mode = simctrl::CtrlMode::SemiAuto;
+                            let jizuid_vec = self.get_jizuid_vec_from_dianzhanid(zl.dev_id);
+                            for j in jizuid_vec {
+                                self.ji_zu_vec[j].common_ji.ctrl_mode = simctrl::CtrlMode::SemiAuto;
+                            }
+                            for d in dian_zhan_r_vec {
+                                self.dian_zhan_vec[d].ctrl_mode = simctrl::CtrlMode::Manual;
+                                if self.dian_zhan_vec[d].operating_station == simctrl::OperatingStation::JiKong {
+                                    self.dian_zhan_vec[d].operating_station = simctrl::OperatingStation::Local;
+                                }
+                                let jizuid_vec = self.get_jizuid_vec_from_dianzhanid(d);
+                                for j in jizuid_vec {
+                                    self.ji_zu_vec[j].common_ji.ctrl_mode = simctrl::CtrlMode::Manual;
+                                }
+                            }
+                        }
+                        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                    }
+                    ZhiLingType::CtrlMode(simctrl::CtrlMode::Auto) => {
+                        self.dian_zhan_vec[zl.dev_id].ctrl_mode_she_zhi = simctrl::CtrlMode::Auto;
+                        let dian_zhan_r_vec = self.get_dian_zhan_guan_lian_vec_from_dian_zhan_id(zl.dev_id);
+                        let mut is_manual_exist = false;
+                        let mut is_semiauto_exist = false;
+                        for d in dian_zhan_r_vec.to_vec() {
+                            if self.dian_zhan_vec[d].ctrl_mode_she_zhi == simctrl::CtrlMode::Manual {
+                                is_manual_exist = true;
+                            }
+                            else if self.dian_zhan_vec[d].ctrl_mode_she_zhi == simctrl::CtrlMode::Auto {
+                                is_semiauto_exist = true;
+                            }
+                        }
+                        if is_manual_exist || !self.is_mu_lian_lian_tong(zl.dev_id) {
+                            self.dian_zhan_vec[zl.dev_id].ctrl_mode = simctrl::CtrlMode::Manual;
+                            if self.dian_zhan_vec[zl.dev_id].operating_station == simctrl::OperatingStation::JiKong {
+                                self.dian_zhan_vec[zl.dev_id].operating_station = simctrl::OperatingStation::Local;
+                            }
+                            let jizuid_vec = self.get_jizuid_vec_from_dianzhanid(zl.dev_id);
+                            for j in jizuid_vec {
+                                self.ji_zu_vec[j].common_ji.ctrl_mode = simctrl::CtrlMode::Manual;
+                            }
+                            for d in dian_zhan_r_vec {
+                                self.dian_zhan_vec[d].ctrl_mode = simctrl::CtrlMode::Manual;
+                                if self.dian_zhan_vec[d].operating_station == simctrl::OperatingStation::JiKong {
+                                    self.dian_zhan_vec[d].operating_station = simctrl::OperatingStation::Local;
+                                }
+                                let jizuid_vec = self.get_jizuid_vec_from_dianzhanid(d);
+                                for j in jizuid_vec {
+                                    self.ji_zu_vec[j].common_ji.ctrl_mode = simctrl::CtrlMode::Manual;
+                                }
+                            }
+                        }
+                        else if is_semiauto_exist {
+                            self.dian_zhan_vec[zl.dev_id].ctrl_mode = simctrl::CtrlMode::SemiAuto;
+                            let jizuid_vec = self.get_jizuid_vec_from_dianzhanid(zl.dev_id);
+                            for j in jizuid_vec {
+                                self.ji_zu_vec[j].common_ji.ctrl_mode = simctrl::CtrlMode::SemiAuto;
+                            }
+                            for d in dian_zhan_r_vec {
+                                self.dian_zhan_vec[d].ctrl_mode = simctrl::CtrlMode::SemiAuto;
+                                let jizuid_vec = self.get_jizuid_vec_from_dianzhanid(d);
+                                for j in jizuid_vec {
+                                    self.ji_zu_vec[j].common_ji.ctrl_mode = simctrl::CtrlMode::SemiAuto;
+                                }
+                            }
+                        }
+                        else {
+                            self.dian_zhan_vec[zl.dev_id].ctrl_mode = simctrl::CtrlMode::Auto;
+                            let jizuid_vec = self.get_jizuid_vec_from_dianzhanid(zl.dev_id);
+                            for j in jizuid_vec {
+                                self.ji_zu_vec[j].common_ji.ctrl_mode = simctrl::CtrlMode::Auto;
+                            }
+                            let dian_zhan_r_vec = self.get_dian_zhan_guan_lian_vec_from_dian_zhan_id(zl.dev_id);
+                            for d in dian_zhan_r_vec {
+                                self.dian_zhan_vec[d].ctrl_mode = simctrl::CtrlMode::Auto;
+                                let jizuid_vec = self.get_jizuid_vec_from_dianzhanid(d);
+                                for j in jizuid_vec {
+                                    self.ji_zu_vec[j].common_ji.ctrl_mode = simctrl::CtrlMode::Auto;
+                                }
+                            }
+                        }
+                        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                    }
+                    _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::CtrlModeFail(*zl, zhiling::CTRL_MODE_FAIL_DESC, zhiling::CAUSE_CTRL_MODE_INVALID))),
+                }
+            }
+            _ => {}
+        }
+    }
+
+    pub fn handle_prio(&mut self, zl : &ZhiLing) {
+        match zl.dev_type {
+            simctrl::DevType::DianZhan => {
+                for d in 0..simctrl::ZONG_SHU_DIAN_ZHAN {
+                    if d != zl.dev_id {
+                        self.dian_zhan_vec[d].prio = false;
+                    }
+                    else {
+                        self.dian_zhan_vec[d].prio = true;
+                    }
+                }
+                self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+            }
+            simctrl::DevType::JiZu => {
+                let jizuid_vec = self.get_jizuid_vec_from_dianzhanid(zl.dev_id);
+                for j in jizuid_vec {
+                    if j != zl.dev_id {
+                        self.ji_zu_vec[j].common_ji.prio = false;
+                    }
+                    else {
+                        self.ji_zu_vec[j].common_ji.prio = true;
+                    }
+                }
+                self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+            }
+            _ => {}
+        }
+    }
+
+    pub fn handle_an_dian_on(&mut self, zl : &ZhiLing) {
+        // if self.
+        self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::Wen;
+        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+    }
+
+    pub fn handle_an_dian_off(&mut self, zl : &ZhiLing) {
+        self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::TingJi;
+        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+    }
+
+    pub fn handle_an_dian_he_zha(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn handle_an_dian_fen_zha(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn handle_jia_su(&mut self, _zl : &ZhiLing) {
+
+    }
+
+    pub fn handle_jian_su(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn handle_sheng_ya(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn handle_jiang_ya(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn handle_jin_ji_ting_ji(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn handle_xiao_sheng(&mut self, _zl : &ZhiLing) {
+    }
+
+    pub fn handle_ying_da(&mut self, _zl : &ZhiLing) {
+    }
+
+}
+
+#[cfg(test)]
+mod tests {
+    use ::xitong::XiTong;
+    use ::simctrl;
+    use ::zhiling::{ZhiLing, YingDaErr};
+
+    #[test]
+    fn test_xi_tong() {
+        let xt = XiTong::new(0);
+
+        assert_eq!(xt.get_duanluqi_from_id(0).unwrap(), &(xt.duan_lu_qi_vec[0]));
+        assert_eq!(xt.get_duanluqi_from_id(simctrl::ZONG_SHU_DUAN_LU_QI - 1).unwrap(), Box::new(xt.duan_lu_qi_vec[simctrl::ZONG_SHU_DUAN_LU_QI - 1]));
+        assert_eq!(xt.get_duanluqi_from_id(simctrl::ZONG_SHU_DUAN_LU_QI).unwrap_err(), YingDaErr::DevNotExist(ZhiLing::new(), format!("不存在id为{}的断路器", simctrl::ZONG_SHU_DUAN_LU_QI), String::from("")));
+        assert_eq!(xt.get_duanluqi_from_id(simctrl::ZONG_SHU_DUAN_LU_QI + 1).unwrap_err(), YingDaErr::DevNotExist(ZhiLing::new(), format!("不存在id为{}的断路器", simctrl::ZONG_SHU_DUAN_LU_QI + 1), String::from("")));
+        let mut duanluqi1 = xt.get_duanluqi_from_id(0).unwrap();
+        let mut duanluqi2 = xt.get_duanluqi_from_id(simctrl::ZONG_SHU_DUAN_LU_QI - 1).unwrap();
+        duanluqi1.f = 50.0;
+        assert_eq!(duanluqi1.f, 50.0);
+        duanluqi2.uab = 380.0;
+        assert_eq!(duanluqi2.uab, 380.0);
+
+    }
+}

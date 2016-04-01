@@ -1,0 +1,29 @@
+[package]
+name = "simtraining"
+version = "0.1.0"
+authors = ["fuying"]
+[lib]
+name = "simtraining"
+path = "src/lib.rs"
+
+[dependencies]
+time = "0.1"
+rand = "0.3"
+libc = "0.2"
+
+[dependencies.libevent_sys]
+path = "libevent-sys"
+
+[dev-dependencies]
+rand = "0.3"
+time = "0.1"
+
+[target.x86_64-pc-windows-msvc.dependencies]
+winapi = "0.2"
+ws2_32-sys = "0.2"
+[target.x86_64-pc-windows-gnu.dependencies]
+winapi = "0.2"
+ws2_32-sys = "0.2"
+[target.i686-pc-windows-msvc.dependencies]
+winapi = "0.2"
+ws2_32-sys = "0.2"
