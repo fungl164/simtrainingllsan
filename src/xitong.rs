@@ -1576,27 +1576,16 @@ impl XiTong {
                             self.handle_fen_zha_jie_lie(zl);
                         }
                     }
-                    ZhiLingType::JiaSu =>  {
+                    ZhiLingType::BianSu(..) =>  {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_jia_su(zl);
+                            self.handle_bian_su(zl);
                         }
                     }
-                    ZhiLingType::JianSu =>  {
+                    ZhiLingType::BianYa(..) =>  {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_jian_su(zl);
+                            self.handle_bian_ya(zl);
                         }
                     }
-                    ZhiLingType::ShengYa =>  {
-                        if self.is_zhi_ling_valid(zl) {
-                            self.handle_sheng_ya(zl);
-                        }
-                    }
-                    ZhiLingType::JiangYa =>  {
-                        if self.is_zhi_ling_valid(zl) {
-                            self.handle_jiang_ya(zl);
-                        }
-                    }
-
                     ZhiLingType::XiaoSheng =>  {
                         if self.is_zhi_ling_valid(zl) {
                             self.handle_xiao_sheng(zl);
@@ -1692,8 +1681,7 @@ impl XiTong {
             simctrl::DevType::FuZai => {
                 match zl.zhi_ling_type {
                     ZhiLingType::BeiChe => self.handle_bei_che(zl),
-                    ZhiLingType::JiaZai(..) => self.handle_jia_zai(zl),
-                    ZhiLingType::JianZai(..) => self.handle_jian_zai(zl),
+                    ZhiLingType::BianZai(..) => self.handle_bian_zai(zl),
                     ZhiLingType::ZhongZaiJiaZai(..) => self.handle_zhong_zai_jia_zai(zl),
 
                     _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::Invalid(*zl, zhiling::COMMON_INVALID_DESC, zhiling::CAUSE_COMMON_INVALID))),
@@ -1816,13 +1804,10 @@ impl XiTong {
     pub fn eliminate_ji_zu_qi_ta_gu_zhang(&mut self, _zl : &ZhiLing) {
     }
 
-    pub fn handle_jia_zai(&mut self, _zl : &ZhiLing) {
+    pub fn handle_bian_zai(&mut self, _zl : &ZhiLing) {
     }
 
     pub fn handle_zhong_zai_jia_zai(&mut self, _zl : &ZhiLing) {
-    }
-
-    pub fn handle_jian_zai(&mut self, _zl : &ZhiLing) {
     }
 
     pub fn handle_operating_station(&mut self, zl : &ZhiLing) {
@@ -2056,17 +2041,38 @@ impl XiTong {
     pub fn handle_an_dian_fen_zha(&mut self, _zl : &ZhiLing) {
     }
 
-    pub fn handle_jia_su(&mut self, _zl : &ZhiLing) {
-
+    pub fn handle_bian_su(&mut self, _zl : &ZhiLing) {
+        let duanluqi_status = self.get_duanluqi_from_jizuid(_zl.dev_id).unwrap().is_on();
+        match _zl.zhi_ling_type {
+            ZhiLingType::BianSu(delta) => {
+                match self.ji_zu_vec[_zl.dev_id].common_ji.current_range {
+                    jizu::JiZuRangeLeiXing::Wen | jizu::JiZuRangeLeiXing::BianSu => {
+                        if !self.ji_zu_vec[_zl.dev_id].set_bian_su_params(delta, duanluqi_status) {
+                            self.handle_zhi_ling_result_msg( Err(YingDaErr::BianSuFail(*_zl, zhiling::BIAN_SU_FAIL_DESC, zhiling::CAUSE_BIAN_SU_FAIL_OUT_OF_LIMIT)));
+                        }
+                    }
+                    _ =>  self.handle_zhi_ling_result_msg( Err(YingDaErr::BianSuFail(*_zl, zhiling::BIAN_SU_FAIL_DESC, zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_4))),
+                }
+            }
+            _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::BianSuFail(*_zl, zhiling::BIAN_SU_FAIL_DESC, zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_4))),
+        }
     }
 
-    pub fn handle_jian_su(&mut self, _zl : &ZhiLing) {
-    }
-
-    pub fn handle_sheng_ya(&mut self, _zl : &ZhiLing) {
-    }
-
-    pub fn handle_jiang_ya(&mut self, _zl : &ZhiLing) {
+    pub fn handle_bian_ya(&mut self, _zl : &ZhiLing) {
+        match _zl.zhi_ling_type {
+            ZhiLingType::BianYa(delta) => {
+                match self.ji_zu_vec[_zl.dev_id].common_ji.current_range {
+                    jizu::JiZuRangeLeiXing::Wen | jizu::JiZuRangeLeiXing::BianYa => {
+                        self.ji_zu_vec[_zl.dev_id].set_bian_ya_params(delta);
+                        if !self.ji_zu_vec[_zl.dev_id].set_bian_ya_params(delta) {
+                            self.handle_zhi_ling_result_msg( Err(YingDaErr::BianYaFail(*_zl, zhiling::BIAN_YA_FAIL_DESC, zhiling::CAUSE_BIAN_YA_FAIL_OUT_OF_LIMIT)));
+                        }
+                    }
+                    _ =>  self.handle_zhi_ling_result_msg( Err(YingDaErr::BianYaFail(*_zl, zhiling::BIAN_YA_FAIL_DESC, zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_5))),
+                }
+            }
+            _ =>  self.handle_zhi_ling_result_msg( Err(YingDaErr::BianYaFail(*_zl, zhiling::BIAN_YA_FAIL_DESC, zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_5))),
+        }
     }
 
     pub fn handle_jin_ji_ting_ji(&mut self, _zl : &ZhiLing) {

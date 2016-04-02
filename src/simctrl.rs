@@ -1,22 +1,22 @@
-pub const FANG_ZHEN_BU_CHANG : u32 = 100u32; //ms
-pub const CHAO_LIU_JI_SUAN_BU_CHANG : u32 = 1000u32; //ms
-pub const SIM_MO_REN_BU_CHANG : u32 = FANG_ZHEN_BU_CHANG;
+pub const FANG_ZHEN_BU_CHANG : f64 = 100.0; //ms
+pub const CHAO_LIU_JI_SUAN_BU_CHANG : f64 = 1000.0; //ms
+pub const SIM_MO_REN_BU_CHANG : f64 = FANG_ZHEN_BU_CHANG;
 
 //自动或其他情况下控制序列更新周期
-pub const KONG_ZHI_XU_LIE_GENG_XIN_ZHOU_QI : u32 = 1000u32;
+pub const KONG_ZHI_XU_LIE_GENG_XIN_ZHOU_QI : f64 = 1000.0;
 
 //控制序列步骤最大数
 pub const KONG_ZHI_XU_LIE_ZUI_DA_BU_ZHOU_SHU : u32 = 25u32;
 //pub const DEBUG_ENABLE
 
 //数据更新周期
-pub const SHU_JU_GENG_XIN_T : u32 = FANG_ZHEN_BU_CHANG; //ms
+pub const SHU_JU_GENG_XIN_T : f64 = FANG_ZHEN_BU_CHANG; //ms
 
 pub const TONG_YONG_ZAO_SHENG_XIANG_DUI_FU_ZHI : f64 = 0.0001f64;
 pub const DIAN_WANG_E_DING_XIAN_DIAN_YA : f64 = 380.0f64;
 
-pub const GEN_START_SIM_INTERVAL : u32 = FANG_ZHEN_BU_CHANG;
-pub const GEN_WEN_SIM_INTERVAL : u32 = FANG_ZHEN_BU_CHANG;
+pub const GEN_START_SIM_INTERVAL : f64 = FANG_ZHEN_BU_CHANG;
+pub const GEN_WEN_SIM_INTERVAL : f64 = FANG_ZHEN_BU_CHANG;
 
 pub const ZONG_SHU_DIAN_ZHAN : usize = 2;
 pub const ZONG_SHU_JI_ZU : usize = 7;

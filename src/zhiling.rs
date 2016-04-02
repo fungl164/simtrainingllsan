@@ -21,8 +21,7 @@ pub enum ZhiLingType {
     GuZhangZiDongChuLi,
     WangLuoChongGou,
     BeiChe,
-    JiaZai(f64, f64),
-    JianZai(f64, f64),
+    BianZai(f64, f64),
     ZhongZaiJiaZai(f64, f64),
     AnDianOn,
     AnDianOff,
@@ -30,10 +29,8 @@ pub enum ZhiLingType {
     AnDianFenZha,
     TouRu,
     TuiChu,
-    JiaSu,
-    JianSu,
-    ShengYa,
-    JiangYa,
+    BianSu(f64),
+    BianYa(f64),
     JinJiTingJi,
     XiaoSheng,
     YingDa,
@@ -171,10 +168,8 @@ pub enum YingDaErr<'a> {
     AnDianFail(ZhiLing, &'a str, &'a str),
     AnDianHeZhaFail(ZhiLing, &'a str, &'a str),
     AnDianFenZhaFail(ZhiLing, &'a str, &'a str),
-    JiaSuFail(ZhiLing, &'a str, &'a str),
-    JianSuFail(ZhiLing, &'a str, &'a str),
-    ShengYaFail(ZhiLing, &'a str, &'a str),
-    JiangYaFail(ZhiLing, &'a str, &'a str),
+    BianSuFail(ZhiLing, &'a str, &'a str),
+    BianYaFail(ZhiLing, &'a str, &'a str),
     JinJiTingJiFail(ZhiLing, &'a str, &'a str),
     PrioFail(ZhiLing, &'a str, &'a str),
     TouRuFail(ZhiLing, &'a str, &'a str),
@@ -231,3 +226,11 @@ pub const CAUSE_AN_DIAN_FEN_ZHA_INVALID : &'static str = "岸电分闸指令不�
 
 pub const COMMON_INVALID_DESC : &'static str = "指令类型无效";
 pub const CAUSE_COMMON_INVALID : &'static str = "指令类型不合法或者指令类型与设备类型不匹配";
+
+pub const BIAN_SU_FAIL_DESC : &'static str = "变速指令执行失败";
+pub const CAUSE_JI_ZU_RANGE_DISMATCH_4 : &'static str = "机组不处于可变速状态，一般当且仅当机组处于稳态或者变速状态时才可以变速";
+pub const CAUSE_BIAN_SU_FAIL_OUT_OF_LIMIT : &'static str = "机组转速值已达到极限，不可再进行调速";
+
+pub const BIAN_YA_FAIL_DESC : &'static str = "变压指令执行失败";
+pub const CAUSE_JI_ZU_RANGE_DISMATCH_5 : &'static str = "机组不处于可变压状态，一般当且仅当机组处于稳态或者变压状态时才可以变压";
+pub const CAUSE_BIAN_YA_FAIL_OUT_OF_LIMIT : &'static str = "机组电压值已达到极限，不可再进行调压";
