@@ -202,6 +202,7 @@ pub const CAUSE_DUAN_LU_QI_STATUS_DISMATCH_1 : &'static str = "机组断路器�
 pub const CAUSE_JI_ZU_RANGE_DISMATCH_2 : &'static str = "机组未完成备车或者已经启动";
 
 pub const HE_ZHA_BING_CHE_FAIL_DESC : &'static str = "合闸/并车失败";
+pub const CAUSE_JI_ZU_RANGE_DISMATCH_6 : &'static str = "机组不处于稳态";
 
 pub const TING_JI_FAIL_DESC : &'static str = "停机失败";
 pub const CAUSE_JI_ZU_RANGE_DISMATCH_3 : &'static str = "机组不处于可停机状态";

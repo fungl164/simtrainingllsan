@@ -53,6 +53,8 @@ pub const DIAN_YA_BIAN_HUA_LV_XI_SHU:f64 = 0.05f64;
 
 //机组稳态时频率变化阈��?
 pub const JI_ZU_PIN_LV_BIAN_HUA_YU_ZHI_WEN_TAI:f64 = 0.25f64;
+//机组自动并车时待并机组与电网频率之差
+pub const JI_ZU_BING_CHE_PIN_LV_DELTA:f64 = 0.1;
 
 //机组稳态时转速变化阈��?
 pub const JI_ZU_ZHUAN_SU_BIAN_HUA_YU_ZHI_WEN_TAI:f64 = 7.5f64;
@@ -324,6 +326,7 @@ pub struct JiZuCommonJi {
     pub i_delta : f64,
     pub u_delta : f64,
     pub f_delta : f64,
+    pub p_delta : f64,
     pub zhuan_su_delta : f64,
     pub is_bian_zai : bool,
 
@@ -360,6 +363,7 @@ impl JiZuCommonJi {
             i_delta : 0.0f64,
             u_delta : 0.0f64,
             f_delta : 0.0f64,
+            p_delta : 0.0f64,
             zhuan_su_delta : 0.0f64,
             is_bian_zai : false,
             ctrl_mode : simctrl::CtrlMode::Manual,
@@ -475,6 +479,7 @@ impl AttrSetter for JiZuCommonJi {
         self.i_delta = 0.0f64;
         self.u_delta = 0.0f64;
         self.f_delta = 0.0f64;
+        self.p_delta = 0.0f64;
     }
     fn wen_setter(&mut self, _t:f64) {
         self.ia_ext = 0.0f64;
@@ -504,6 +509,7 @@ impl AttrSetter for JiZuCommonJi {
         self.i_delta = 0.0f64;
         self.u_delta = 0.0f64;
         self.f_delta = 0.0f64;
+        self.p_delta = 0.0f64;
     }
     fn bei_che_wan_bi_setter(&mut self, t:f64){
         self.ting_ji_setter(t);
@@ -523,7 +529,8 @@ impl AttrSetter for JiZuCommonJi {
                 self.ubc_in = u;
                 self.uca_in = u;
             }
-            let i = self.ia_ext + self.i_delta * FANG_ZHEN_BU_CHANG/self.bian_su_t;
+            let p = self.p + self.p_delta * FANG_ZHEN_BU_CHANG/self.bian_su_t;
+            let i = p * 1000f64 /(3f64.sqrt() * self.uab_ext * self.p_factor);
             if i >= 0.0 || i <= JI_ZU_GUO_DIAN_LIU {
                 self.ia_ext = i;
                 self.ia_in = i;
@@ -532,11 +539,11 @@ impl AttrSetter for JiZuCommonJi {
                 self.ic_ext = i;
                 self.ic_in = i;
             }
-            self.p = 3.0f64.sqrt()*self.uab_ext*self.ia_ext*self.p_factor/1000.0f64;
-            self.q = 3.0f64.sqrt()*self.uab_ext*self.ia_ext*self.q_factor/1000.0f64;
+            self.p = 3f64.sqrt()*self.uab_ext*self.ia_ext*self.p_factor/1000f64;
+            self.q = 3f64.sqrt()*self.uab_ext*self.ia_ext*self.q_factor/1000f64;
         }
         self.p_factor = JI_ZU_SHU_CHU_GONG_LV_YIN_SHU;
-        self.q_factor = (1.0f64-self.p_factor*self.p_factor).sqrt();
+        self.q_factor = (1f64-self.p_factor*self.p_factor).sqrt();
         let f = self.f_ext + self.f_delta * FANG_ZHEN_BU_CHANG/self.bian_su_t;
         if f >= JI_ZU_PIN_LV_YUE_XIA_XIAN || f <= JI_ZU_PIN_LV_YUE_SHANG_XIAN {
             self.f_ext = f;
@@ -928,8 +935,9 @@ impl<J> JiZu<J> {
     pub fn set_bian_su_params(&mut self, zhuan_su_delta : f64, is_bian_zai : bool) -> bool {
         self.common_ji.is_bian_zai = is_bian_zai;
         let zhuan_su_temp = self.common_ji.zhuan_su + self.common_ji.zhuan_su_delta + zhuan_su_delta;
-        let i_delta = zhuan_su_delta/JI_ZU_ZHUAN_SU_BIAN_HUA_YU_ZHI_WEN_TAI * JI_ZU_E_DING_DIAN_LIU;
-        let i_temp = self.common_ji.ia_ext + self.common_ji.i_delta + i_delta;
+        let p_delta = zhuan_su_delta/JI_ZU_ZHUAN_SU_BIAN_HUA_YU_ZHI_WEN_TAI * JI_ZU_E_DING_GONG_LV;
+        let p_temp = self.common_ji.p + p_delta;
+        let i_temp = p_temp * 1000f64 / (3f64.sqrt() * self.common_ji.uab_ext * self.common_ji.p_factor);
         if (zhuan_su_temp <= 0.0 || zhuan_su_temp >= CHAO_SU_TING_JI) && (i_temp <= 0.0 || i_temp >= JI_ZU_GUO_DIAN_LIU) {
             return false;
         }
@@ -937,9 +945,8 @@ impl<J> JiZu<J> {
             JiZuRangeLeiXing::Wen => {
                 self.common_ji.zhuan_su_delta = zhuan_su_delta;
                 self.common_ji.bian_su_t = zhuan_su_delta.abs() *1000.0 / JI_ZU_ZHUAN_SU_BIAN_HUA_LV;
-                let i_delta = zhuan_su_delta/JI_ZU_ZHUAN_SU_BIAN_HUA_YU_ZHI_WEN_TAI * JI_ZU_E_DING_DIAN_LIU;
-                self.common_ji.i_delta = i_delta;
-                self.common_ji.u_delta = i_delta / JI_ZU_E_DING_DIAN_LIU * (-(JI_ZU_DIAN_YA_WEN_TAI_YA_BIAN_ZHI));
+                self.common_ji.p_delta = p_delta;
+                self.common_ji.u_delta = zhuan_su_delta / JI_ZU_ZHUAN_SU_BIAN_HUA_YU_ZHI_WEN_TAI * (-(JI_ZU_DIAN_YA_WEN_TAI_YA_BIAN_ZHI));
                 self.common_ji.f_delta = zhuan_su_delta / ZHUAN_SU_CHAI_YOU_ZHENG_CHANG * JI_ZU_E_DING_PIN_LV;
                 self.common_ji.current_range = JiZuRangeLeiXing::BianSu;
                 return true;
@@ -947,9 +954,8 @@ impl<J> JiZu<J> {
             JiZuRangeLeiXing::BianSu => {
                 self.common_ji.zhuan_su_delta += zhuan_su_delta;
                 self.common_ji.bian_su_t = self.common_ji.zhuan_su_delta.abs() *1000.0 / JI_ZU_ZHUAN_SU_BIAN_HUA_LV;
-                let i_delta = self.common_ji.zhuan_su_delta/JI_ZU_ZHUAN_SU_BIAN_HUA_YU_ZHI_WEN_TAI * JI_ZU_E_DING_DIAN_LIU;
-                self.common_ji.i_delta = i_delta;
-                self.common_ji.u_delta = i_delta / JI_ZU_E_DING_DIAN_LIU * (-(JI_ZU_DIAN_YA_WEN_TAI_YA_BIAN_ZHI));
+                self.common_ji.p_delta = self.common_ji.zhuan_su_delta/JI_ZU_ZHUAN_SU_BIAN_HUA_YU_ZHI_WEN_TAI * JI_ZU_E_DING_GONG_LV;
+                self.common_ji.u_delta = self.common_ji.zhuan_su_delta / JI_ZU_ZHUAN_SU_BIAN_HUA_YU_ZHI_WEN_TAI * (-(JI_ZU_DIAN_YA_WEN_TAI_YA_BIAN_ZHI));
                 self.common_ji.f_delta = self.common_ji.zhuan_su_delta / ZHUAN_SU_CHAI_YOU_ZHENG_CHANG * JI_ZU_E_DING_PIN_LV;
                 return true;
             }
@@ -957,6 +963,14 @@ impl<J> JiZu<J> {
         }
     }
 
+    pub fn set_bian_zai_params(&mut self, p_delta : f64) -> bool {
+        let zhuan_su_delta = p_delta/JI_ZU_E_DING_GONG_LV * JI_ZU_ZHUAN_SU_BIAN_HUA_YU_ZHI_WEN_TAI;
+        return self.set_bian_su_params(zhuan_su_delta, true);
+    }
+    pub fn set_bian_pin_params(&mut self, f_delta : f64, is_bian_zai : bool) -> bool {
+        let zhuan_su_delta = f_delta/JI_ZU_E_DING_PIN_LV * JI_ZU_E_DING_ZHUAN_SU;
+        return self.set_bian_su_params(zhuan_su_delta, is_bian_zai);
+    }
     pub fn set_bian_ya_params(&mut self, u_delta : f64) -> bool {
         let u_temp = self.common_ji.uab_ext + self.common_ji.u_delta + u_delta;
         if u_temp <= JI_ZU_DIAN_YA_YUE_XIA_XIAN || u_temp >= JI_ZU_DIAN_YA_YUE_SHANG_XIAN {

@@ -54,6 +54,7 @@ pub enum ZhanWeiType{
     BeiYongJiKongTai,
     JiaoLian,
     Admin,
+    Internal,
     Wu,
 }
 
@@ -62,7 +63,6 @@ pub enum CtrlMode {
     Manual,
     SemiAuto,
     Auto,
-    Wu,
 }
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub enum OperatingStation {
@@ -70,7 +70,6 @@ pub enum OperatingStation {
     Remote,
     Local,
     JiKong,
-    Wu,
 }
 
 pub trait SimCtrl {

@@ -1377,6 +1377,19 @@ impl XiTong {
         }
     }
 
+    pub fn set_ji_zu_vec_bian_zai_params(&mut self, v : Vec<usize>, p : f64) -> bool {
+        let mut r = true;
+        for j in v {
+            let p_delta = p - self.ji_zu_vec[j].common_ji.p;
+            self.ji_zu_vec[j].set_bian_zai_params(p_delta);
+            match self.ji_zu_vec[j].common_ji.current_range {
+                jizu::JiZuRangeLeiXing::Wen | jizu::JiZuRangeLeiXing::BianSu => r = self.ji_zu_vec[j].set_bian_zai_params(p_delta),
+                _ =>  r = false,
+            }
+        }
+        return r;
+    }
+
     pub fn is_dev_id_valid(&mut self, dev_id : usize, dev_type : simctrl::DevType) -> bool {
         match dev_type {
             simctrl::DevType::JiZu => {
@@ -1452,7 +1465,7 @@ impl XiTong {
             return false;
         }
         match zl.zhan_wei_type {
-            simctrl::ZhanWeiType::Admin | simctrl::ZhanWeiType::JiaoLian => {
+            simctrl::ZhanWeiType::Admin | simctrl::ZhanWeiType::JiaoLian | simctrl::ZhanWeiType::Internal => {
                 self.handle_zhi_ling_result_msg(Ok(zhiling::YingDaType::Valid(*zl)));
                 return true;
             }
@@ -1705,7 +1718,7 @@ impl XiTong {
 
     pub fn handle_bei_che(&mut self, zl : &ZhiLing) {
         match self.ji_zu_vec[zl.dev_id].common_ji.current_range {
-            jizu::JiZuRangeLeiXing::TingJi => self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::QiDong,
+            jizu::JiZuRangeLeiXing::TingJi => self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::BeiCheZanTai,
             _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::BeiCheFail(*zl, zhiling::BEI_CHE_FAIL_DESC, zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_1))),
         }
     }
@@ -1736,15 +1749,69 @@ impl XiTong {
                 p_q_yi_qian_vec.push((self.ji_zu_vec[j].common_ji.p, self.ji_zu_vec[j].common_ji.q));
             }
             //对每台并联的机组变到变载过程
-            //let mut is_bing_lian_ji_zu_bu_wen_ding = false;
+            let mut is_bing_lian_ji_zu_bu_wen_ding = false;
             //如果jiZuListBingLian为空则为合闸
             if ji_zu_vec_bing_lian_temp.is_empty() {
-
+                match self.ji_zu_vec[zl.dev_id].common_ji.current_range {
+                    jizu::JiZuRangeLeiXing::Wen => {
+                        let mut v = Vec::new();
+                        v.push(zl.dev_id);
+                        self.set_ji_zu_vec_bian_zai_params(v, xt_temp.ji_zu_vec[zl.dev_id].common_ji.p);
+                    }
+                    _ => is_bing_lian_ji_zu_bu_wen_ding = true,
+                }
+                match is_bing_lian_ji_zu_bu_wen_ding {
+                    true => {
+                        match self.duan_lu_qi_vec[duanluqi_id].status {
+                           duanluqi::DuanLuQiStatus::Off{fault : f, ..} => self.duan_lu_qi_vec[duanluqi_id].status = duanluqi::DuanLuQiStatus::On{fault : f, ready_to_jie_lie : false},
+                           duanluqi::DuanLuQiStatus::On{..} => {},
+                       }
+                       self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                    }
+                    false => {
+                        self.handle_zhi_ling_result_msg( Err(YingDaErr::HeZhaBingCheFail(*zl, zhiling::HE_ZHA_BING_CHE_FAIL_DESC, zhiling:: CAUSE_JI_ZU_RANGE_DISMATCH_6)));
+                    }
+                }
             }
+            //若不为空则为并车
+            else {
+                //判断所有并联机组是否处于稳态，如果处于则并车，如果不处于则不并车
+                // is_bing_lian_ji_zu_bu_wen_ding = false;
+                let mut ji_zu_vec_bing_lian = ji_zu_vec_bing_lian_temp.to_vec();
+                ji_zu_vec_bing_lian.push(zl.dev_id);
+                if ji_zu_vec_bing_lian.iter().all(|&j|self.ji_zu_vec[j].common_ji.current_range == jizu::JiZuRangeLeiXing::Wen) {
+                    //如果为手动合闸，则判断是否经过手动并车
+                    if self.ji_zu_vec[zl.dev_id].common_ji.ctrl_mode == simctrl::CtrlMode::Manual {
+                        if self.ji_zu_vec[zl.dev_id].common_ji.f_ext > self.ji_zu_vec[ji_zu_vec_bing_lian_temp[0]].common_ji.f_ext && self.ji_zu_vec[zl.dev_id].common_ji.f_ext - self.ji_zu_vec[ji_zu_vec_bing_lian_temp[0]].common_ji.f_ext <= jizu::JI_ZU_PIN_LV_BIAN_HUA_YU_ZHI_WEN_TAI && self.ji_zu_vec[zl.dev_id].common_ji.uab_ext <= jizu::JI_ZU_DIAN_YA_WEN_TAI_ZUI_DA_YU_ZHI && self.ji_zu_vec[zl.dev_id].common_ji.uab_ext >= jizu::JI_ZU_DIAN_YA_WEN_TAI_ZUI_XIAO_YU_ZHI {
+                            match self.duan_lu_qi_vec[duanluqi_id].status {
+                               duanluqi::DuanLuQiStatus::Off{fault : f, ..} => self.duan_lu_qi_vec[duanluqi_id].status = duanluqi::DuanLuQiStatus::On{fault : f, ready_to_jie_lie : false},
+                               duanluqi::DuanLuQiStatus::On{..} => {},
+                           }
+                           self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                        }
+                    }
+                    //否则自动合闸
+                    else if self.ji_zu_vec[zl.dev_id].common_ji.ctrl_mode == simctrl::CtrlMode::Auto || self.ji_zu_vec[zl.dev_id].common_ji.ctrl_mode == simctrl::CtrlMode::SemiAuto{
+                        match self.duan_lu_qi_vec[duanluqi_id].status {
+                           duanluqi::DuanLuQiStatus::Off{fault : f, ready_to_bing_che : false} => self.duan_lu_qi_vec[duanluqi_id].status = duanluqi::DuanLuQiStatus::Off{fault : f, ready_to_bing_che : true},
+                           _ => {},
+                       }
+                       //设定待并机组频率为电网频率+JI_ZU_BING_CHE_PIN_LV_DELTA
+                       let f_delta = self.ji_zu_vec[ji_zu_vec_bing_lian_temp[0]].common_ji.f_ext + jizu::JI_ZU_BING_CHE_PIN_LV_DELTA - self.ji_zu_vec[zl.dev_id].common_ji.f_ext;
+                       self.ji_zu_vec[zl.dev_id].set_bian_pin_params(f_delta, false);
+                       self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                    }
+                }
+                else {
+                    //如果有机组不处于稳态，则报错
+                    self.handle_zhi_ling_result_msg( Err(YingDaErr::HeZhaBingCheFail(*zl, zhiling::HE_ZHA_BING_CHE_FAIL_DESC, zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_6)));
+                }
+            }
+
 
         }
         else {
-            self.handle_zhi_ling_result_msg( Err(YingDaErr::QiDongFail(*zl, zhiling::HE_ZHA_BING_CHE_FAIL_DESC, zhiling::CAUSE_DUAN_LU_QI_STATUS_DISMATCH_1)));
+            self.handle_zhi_ling_result_msg( Err(YingDaErr::HeZhaBingCheFail(*zl, zhiling::HE_ZHA_BING_CHE_FAIL_DESC, zhiling::CAUSE_DUAN_LU_QI_STATUS_DISMATCH_1)));
         }
     }
     pub fn handle_ting_ji(&mut self, zl : &ZhiLing) {
