@@ -10,13 +10,13 @@ path = "src/lib.rs"
 time = "0.1"
 rand = "0.3"
 libc = "0.2"
+mio = "0.5"
 
-[dependencies.libevent_sys]
-path = "libevent-sys"
+# [dependencies.libevent_sys]
+# path = "libevent-sys"
 
 [dev-dependencies]
 rand = "0.3"
-time = "0.1"
 
 [target.x86_64-pc-windows-msvc.dependencies]
 winapi = "0.2"

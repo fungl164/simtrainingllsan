@@ -180,35 +180,35 @@ pub const DIAN_DONG_YOU_BANG_CHU_KOU_HUA_YOU_YA_LI_QI_LUN_ZHENG_CHANG:f64 = 1.5f
 pub const ZHU_YOU_BANG_JIN_KOU_HUA_YOU_YA_LI_QI_LUN_ZHENG_CHANG:f64 = 1.5f64;
 
 pub trait JiZuCtrl {
-    fn update_bei_che_wan_bi_range<'a>(&'a mut self, t:f64) -> &'a mut Self;
-    fn update_bei_che_zan_tai_range<'a>(&'a mut self, t:f64) -> &'a mut Self;
-    fn update_bian_su_range<'a>(&'a mut self, t:f64) -> &'a mut Self;
-    fn update_bian_ya_range<'a>(&'a mut self, t:f64) -> &'a mut Self;
-    fn update_qi_dong_range<'a>(&'a mut self, t:f64) -> &'a mut Self;
-    fn update_ting_ji_range<'a>(&'a mut self, t:f64) -> &'a mut Self;
-    fn update_ting_ji_zan_tai_range<'a>(&'a mut self, t:f64) -> &'a mut Self;
-    fn update_wen_range<'a>(&'a mut self, t:f64) -> &'a mut Self;
-    fn transit_range<'a>(&'a mut self, t:f64) -> &'a mut Self;
-    fn update_gu_zhang<'a>(&'a mut self, t:f64) -> &'a mut Self;
-    fn gu_zhang_yi_ban_chan_sheng<'a>(&'a mut self, t:f64) -> &'a mut Self;
-    fn gu_zhang_yi_ban_xiao_chu<'a>(&'a mut self, t:f64) -> &'a mut Self;
-    fn gu_zhang_yi_ji_chan_sheng<'a>(&'a mut self, t:f64) -> &'a mut Self;
-    fn gu_zhang_yi_ji_xiao_chu<'a>(&'a mut self, t:f64) -> &'a mut Self;
-    fn gu_zhang_er_ji_chan_sheng<'a>(&'a mut self, t:f64) -> &'a mut Self;
-    fn gu_zhang_er_ji_xiao_chu<'a>(&'a mut self, t:f64) -> &'a mut Self;
-    fn gu_zhang_qi_ta_chan_sheng<'a>(&'a mut self, t:f64) -> &'a mut Self;
-    fn gu_zhang_qi_ta_xiao_chu<'a>(&'a mut self, t:f64) -> &'a mut Self;
-    fn update<'a>(&'a mut self, t:f64) -> &'a mut Self;
+    fn update_bei_che_wan_bi_range<'a>(&'a mut self) -> &'a mut Self;
+    fn update_bei_che_zan_tai_range<'a>(&'a mut self) -> &'a mut Self;
+    fn update_bian_su_range<'a>(&'a mut self) -> &'a mut Self;
+    fn update_bian_ya_range<'a>(&'a mut self) -> &'a mut Self;
+    fn update_qi_dong_range<'a>(&'a mut self) -> &'a mut Self;
+    fn update_ting_ji_range<'a>(&'a mut self) -> &'a mut Self;
+    fn update_ting_ji_zan_tai_range<'a>(&'a mut self) -> &'a mut Self;
+    fn update_wen_range<'a>(&'a mut self) -> &'a mut Self;
+    fn transit_range<'a>(&'a mut self) -> &'a mut Self;
+    fn update_gu_zhang<'a>(&'a mut self) -> &'a mut Self;
+    fn gu_zhang_yi_ban_chan_sheng<'a>(&'a mut self) -> &'a mut Self;
+    fn gu_zhang_yi_ban_xiao_chu<'a>(&'a mut self) -> &'a mut Self;
+    fn gu_zhang_yi_ji_chan_sheng<'a>(&'a mut self) -> &'a mut Self;
+    fn gu_zhang_yi_ji_xiao_chu<'a>(&'a mut self) -> &'a mut Self;
+    fn gu_zhang_er_ji_chan_sheng<'a>(&'a mut self) -> &'a mut Self;
+    fn gu_zhang_er_ji_xiao_chu<'a>(&'a mut self) -> &'a mut Self;
+    fn gu_zhang_qi_ta_chan_sheng<'a>(&'a mut self) -> &'a mut Self;
+    fn gu_zhang_qi_ta_xiao_chu<'a>(&'a mut self) -> &'a mut Self;
+    fn update<'a>(&'a mut self) -> &'a mut Self;
 }
 pub trait AttrSetter {
-    fn ting_ji_setter(&mut self, t:f64);
-    fn wen_setter(&mut self, t:f64);
-    fn bei_che_wan_bi_setter(&mut self, t:f64);
-    fn bei_che_zan_tai_setter(&mut self, t:f64);
-    fn bian_su_setter(&mut self, t:f64);
-    fn bian_ya_setter(&mut self, t:f64);
-    fn qi_dong_setter(&mut self, t:f64);
-    fn ting_ji_zan_tai_setter(&mut self, t:f64);
+    fn ting_ji_setter(&mut self);
+    fn wen_setter(&mut self);
+    fn bei_che_wan_bi_setter(&mut self);
+    fn bei_che_zan_tai_setter(&mut self);
+    fn bian_su_setter(&mut self);
+    fn bian_ya_setter(&mut self);
+    fn qi_dong_setter(&mut self);
+    fn ting_ji_zan_tai_setter(&mut self);
 }
 
 #[derive(PartialEq, Copy, Clone, Debug)]
@@ -323,6 +323,8 @@ pub struct JiZuCommonJi {
     pub bian_ya_t : f64,
     pub bian_zai_t : f64,
     pub t_current_range : f64,
+    pub bei_che_t : f64,
+    pub qi_dong_t : f64,
     pub i_delta : f64,
     pub u_delta : f64,
     pub f_delta : f64,
@@ -360,6 +362,8 @@ impl JiZuCommonJi {
             bian_ya_t : std::f64::MAX,
             bian_zai_t : std::f64::MAX,
             t_current_range : 0.0,
+            bei_che_t : std::f64::MAX,
+            qi_dong_t : std::f64::MAX,
             i_delta : 0.0f64,
             u_delta : 0.0f64,
             f_delta : 0.0f64,
@@ -452,7 +456,7 @@ impl JiZuCommonJi {
     }
 }
 impl AttrSetter for JiZuCommonJi {
-    fn ting_ji_setter(&mut self, _t:f64) {
+    fn ting_ji_setter(&mut self) {
         self.ia_ext = 0.0f64;
         self.ib_ext = 0.0f64;
         self.ic_ext = 0.0f64;
@@ -481,7 +485,7 @@ impl AttrSetter for JiZuCommonJi {
         self.f_delta = 0.0f64;
         self.p_delta = 0.0f64;
     }
-    fn wen_setter(&mut self, _t:f64) {
+    fn wen_setter(&mut self) {
         self.ia_ext = 0.0f64;
         self.ib_ext = 0.0f64;
         self.ic_ext = 0.0f64;
@@ -511,13 +515,16 @@ impl AttrSetter for JiZuCommonJi {
         self.f_delta = 0.0f64;
         self.p_delta = 0.0f64;
     }
-    fn bei_che_wan_bi_setter(&mut self, t:f64){
-        self.ting_ji_setter(t);
+    fn bei_che_wan_bi_setter(&mut self){
+        self.ting_ji_setter();
     }
-    fn bei_che_zan_tai_setter(&mut self, t:f64){
-        self.ting_ji_setter(t);
+    fn bei_che_zan_tai_setter(&mut self){
+        self.ting_ji_setter();
     }
-    fn bian_su_setter(&mut self, _t:f64){
+    fn bian_su_setter(&mut self){
+        if self.bian_su_t == 0.0 {
+            return ;
+        }
         if self.is_bian_zai {
             //电压变化与负载相反，负载增加时电压会有一个短时跌落，反之亦然
             let u = self.uab_ext + self.u_delta * FANG_ZHEN_BU_CHANG/self.bian_su_t;
@@ -554,7 +561,10 @@ impl AttrSetter for JiZuCommonJi {
             self.zhuan_su = zhuan_su;
         }
     }
-    fn bian_ya_setter(&mut self, _t:f64){
+    fn bian_ya_setter(&mut self){
+        if self.bian_ya_t == 0.0 {
+            return ;
+        }
         let u = self.uab_ext + self.u_delta * FANG_ZHEN_BU_CHANG/self.bian_ya_t;
         if u >= JI_ZU_DIAN_YA_YUE_XIA_XIAN || u<= JI_ZU_DIAN_YA_YUE_SHANG_XIAN {
             self.uab_ext = u;
@@ -565,47 +575,35 @@ impl AttrSetter for JiZuCommonJi {
             self.uca_in = u;
         }
     }
-    fn qi_dong_setter(&mut self, t:f64){
+    fn qi_dong_setter(&mut self){
         //启动时电流功率均为零
         self.p_factor = JI_ZU_SHU_CHU_GONG_LV_YIN_SHU;
-        if t  <= JI_ZU_QI_DONG_TA {
+        if self.t_current_range  <= JI_ZU_QI_DONG_TA {
             self.uab_ext = GEN_V_START_REMAINDER;
             self.ubc_ext = GEN_V_START_REMAINDER;
             self.uca_ext = GEN_V_START_REMAINDER;
             self.uab_in = GEN_V_START_REMAINDER;
             self.ubc_in = GEN_V_START_REMAINDER;
             self.uca_in = GEN_V_START_REMAINDER;
-            self.f_ext = zan_tai_linear(t , 0.0,
+            self.f_ext = zan_tai_linear(self.t_current_range , 0.0,
                 JI_ZU_E_DING_PIN_LV-JI_ZU_PIN_LV_BIAN_HUA_YU_ZHI_WEN_TAI,
                 0.0, JI_ZU_QI_DONG_TA);
-            self.f_in = zan_tai_linear(t , 0.0,
-                JI_ZU_E_DING_PIN_LV-JI_ZU_PIN_LV_BIAN_HUA_YU_ZHI_WEN_TAI,
-                0.0, JI_ZU_QI_DONG_TA);
+            self.f_in = self.f_ext;
         }
-        else if t > JI_ZU_QI_DONG_TA && t < JI_ZU_QI_DONG_TB {
-            self.uab_ext = zan_tai_linear(t ,
+        else if self.t_current_range > JI_ZU_QI_DONG_TA && self.t_current_range < JI_ZU_QI_DONG_TB {
+            self.uab_ext = zan_tai_linear(self.t_current_range ,
                 GEN_V_START_REMAINDER, GEN_V_E_DING,
                 JI_ZU_QI_DONG_TA, JI_ZU_QI_DONG_TB);
-            self.ubc_ext = zan_tai_linear(t ,
-                GEN_V_START_REMAINDER, GEN_V_E_DING,
-                JI_ZU_QI_DONG_TA, JI_ZU_QI_DONG_TB);
-            self.uca_ext = zan_tai_linear(t ,
-                GEN_V_START_REMAINDER, GEN_V_E_DING,
-                JI_ZU_QI_DONG_TA, JI_ZU_QI_DONG_TB);
-            self.uab_in = zan_tai_linear(t ,
-                GEN_V_START_REMAINDER, GEN_V_E_DING,
-                JI_ZU_QI_DONG_TA, JI_ZU_QI_DONG_TB);
-            self.ubc_in = zan_tai_linear(t ,
-                GEN_V_START_REMAINDER, GEN_V_E_DING,
-                JI_ZU_QI_DONG_TA, JI_ZU_QI_DONG_TB);
-            self.uca_in = zan_tai_linear(t ,
-                GEN_V_START_REMAINDER, GEN_V_E_DING,
-                JI_ZU_QI_DONG_TA, JI_ZU_QI_DONG_TB);
+            self.ubc_ext = self.uab_ext;
+            self.uca_ext = self.uab_ext;
+            self.uab_in = self.uab_ext;
+            self.ubc_in = self.uab_ext;
+            self.uca_in = self.uab_ext;
             self.f_ext = JI_ZU_E_DING_PIN_LV-JI_ZU_PIN_LV_BIAN_HUA_YU_ZHI_WEN_TAI;
-            self.f_in = JI_ZU_E_DING_PIN_LV-JI_ZU_PIN_LV_BIAN_HUA_YU_ZHI_WEN_TAI;
+            self.f_in = self.f_ext;
         }
     }
-    fn ting_ji_zan_tai_setter(&mut self, t:f64){
+    fn ting_ji_zan_tai_setter(&mut self){
         self.sheng_ya = false;
         self.jiang_ya = true;
         self.jian_su = true;
@@ -615,7 +613,7 @@ impl AttrSetter for JiZuCommonJi {
         self.fen_duan = true;
         self.he_zha = false;
         self.p_factor = JI_ZU_SHU_CHU_GONG_LV_YIN_SHU;
-        self.uab_ext = zan_tai_linear(t ,
+        self.uab_ext = zan_tai_linear(self.t_current_range ,
             GEN_V_E_DING, 0.0, 0.0, JI_ZU_TING_JI_T);
         self.ubc_ext = self.uab_ext;
         self.uca_ext = self.uab_ext;
@@ -623,7 +621,7 @@ impl AttrSetter for JiZuCommonJi {
         self.ubc_in = self.uab_ext;
         self.uca_in = self.uab_ext;
 
-        self.f_ext = zan_tai_linear(t ,
+        self.f_ext = zan_tai_linear(self.t_current_range ,
             JI_ZU_E_DING_PIN_LV, 0.0, 0.0, JI_ZU_TING_JI_T);
         self.f_in = self.f_ext;
         self.zhuan_su = ZHUAN_SU_CHAI_YOU_ZHENG_CHANG /
@@ -713,28 +711,28 @@ impl ChaiYouJiJi {
     }
 }
 impl AttrSetter for ChaiYouJiJi {
-    fn ting_ji_setter(&mut self, _t:f64) {
+    fn ting_ji_setter(&mut self) {
     }
-    fn wen_setter(&mut self, _t:f64) {
+    fn wen_setter(&mut self) {
     }
-    fn bei_che_wan_bi_setter(&mut self, _t:f64){
-        self.ting_ji_setter(_t);
+    fn bei_che_wan_bi_setter(&mut self){
+        self.ting_ji_setter();
         self.ran_you_ya_li = RAN_YOU_YA_LI_CHAI_YOU_ZHENG_CHANG;
         self.qi_dong_kong_qi_ya_li = QI_DONG_KONG_QI_YA_LI_CHAI_YOU_ZHENG_CHANG;
     }
-    fn bei_che_zan_tai_setter(&mut self, _t:f64){
+    fn bei_che_zan_tai_setter(&mut self){
 
     }
-    fn bian_su_setter(&mut self, _t:f64){
+    fn bian_su_setter(&mut self){
 
     }
-    fn bian_ya_setter(&mut self, _t:f64){
+    fn bian_ya_setter(&mut self){
 
     }
-    fn qi_dong_setter(&mut self, _t:f64){
+    fn qi_dong_setter(&mut self){
 
     }
-    fn ting_ji_zan_tai_setter(&mut self, _t:f64){
+    fn ting_ji_zan_tai_setter(&mut self){
 
     }
 }
@@ -813,47 +811,47 @@ impl QiLunJiJi {
     }
 }
 impl AttrSetter for QiLunJiJi {
-    fn ting_ji_setter(&mut self, _t:f64) {
+    fn ting_ji_setter(&mut self) {
     }
-    fn wen_setter(&mut self, _t:f64) {
+    fn wen_setter(&mut self) {
     }
-    fn bei_che_wan_bi_setter(&mut self, t:f64){
-        self.ting_ji_setter(t);
+    fn bei_che_wan_bi_setter(&mut self){
+        self.ting_ji_setter();
     }
-    fn bei_che_zan_tai_setter(&mut self, _t:f64){
+    fn bei_che_zan_tai_setter(&mut self){
 
     }
-    fn bian_su_setter(&mut self, _t:f64){
+    fn bian_su_setter(&mut self){
 
     }
-    fn bian_ya_setter(&mut self, _t:f64){
+    fn bian_ya_setter(&mut self){
 
     }
-    fn qi_dong_setter(&mut self, _t:f64){
+    fn qi_dong_setter(&mut self){
 
     }
-    fn ting_ji_zan_tai_setter(&mut self, _t:f64){
+    fn ting_ji_zan_tai_setter(&mut self){
 
     }
 }
 #[derive(PartialEq, Copy, Clone, Debug)]
 pub struct AnDianJiJi;
 impl AttrSetter for AnDianJiJi {
-    fn ting_ji_setter(&mut self, _t:f64) {
+    fn ting_ji_setter(&mut self) {
     }
-    fn wen_setter(&mut self, _t:f64) {
+    fn wen_setter(&mut self) {
     }
-    fn bei_che_wan_bi_setter(&mut self, _t:f64){
+    fn bei_che_wan_bi_setter(&mut self){
     }
-    fn bei_che_zan_tai_setter(&mut self, _t:f64){
+    fn bei_che_zan_tai_setter(&mut self){
     }
-    fn bian_su_setter(&mut self, _t:f64){
+    fn bian_su_setter(&mut self){
     }
-    fn bian_ya_setter(&mut self, _t:f64){
+    fn bian_ya_setter(&mut self){
     }
-    fn qi_dong_setter(&mut self, _t:f64){
+    fn qi_dong_setter(&mut self){
     }
-    fn ting_ji_zan_tai_setter(&mut self, _t:f64){
+    fn ting_ji_zan_tai_setter(&mut self){
     }
 }
 #[derive(PartialEq, Copy, Clone, Debug)]
@@ -885,34 +883,34 @@ pub enum JiJi{
     AD(AnDianJiJi),
 }
 impl AttrSetter for JiJi {
-    fn ting_ji_setter(&mut self, _t:f64) {
+    fn ting_ji_setter(&mut self) {
     }
-    fn wen_setter(&mut self, _t:f64) {
+    fn wen_setter(&mut self) {
     }
-    fn bei_che_wan_bi_setter(&mut self, _t:f64){
+    fn bei_che_wan_bi_setter(&mut self){
         match self{
             &mut JiJi::CY(ref mut j) => {
-                j.ting_ji_setter(_t);
+                j.ting_ji_setter();
                 j.ran_you_ya_li = RAN_YOU_YA_LI_CHAI_YOU_ZHENG_CHANG;
                 j.qi_dong_kong_qi_ya_li = QI_DONG_KONG_QI_YA_LI_CHAI_YOU_ZHENG_CHANG;
             }
-            &mut JiJi::QL(ref mut j) => j.ting_ji_setter(_t),
+            &mut JiJi::QL(ref mut j) => j.ting_ji_setter(),
             _ => {}
         }
     }
-    fn bei_che_zan_tai_setter(&mut self, _t:f64){
+    fn bei_che_zan_tai_setter(&mut self){
 
     }
-    fn bian_su_setter(&mut self, _t:f64){
+    fn bian_su_setter(&mut self){
 
     }
-    fn bian_ya_setter(&mut self, _t:f64){
+    fn bian_ya_setter(&mut self){
 
     }
-    fn qi_dong_setter(&mut self, _t:f64){
+    fn qi_dong_setter(&mut self){
 
     }
-    fn ting_ji_zan_tai_setter(&mut self, _t:f64){
+    fn ting_ji_zan_tai_setter(&mut self){
 
     }
 }
@@ -930,6 +928,7 @@ impl<J> JiZu<J> {
             common_ji : JiZuCommonJi::new(),
             ji_can_shu_ji : ji,
         }
+
     }
 
     pub fn set_bian_su_params(&mut self, zhuan_su_delta : f64, is_bian_zai : bool) -> bool {
@@ -993,14 +992,14 @@ impl<J> JiZu<J> {
     }
 
 }
-fn ji_zu_ting_ji_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>, t:f64){
-    ji_zu.common_ji.ting_ji_setter(t);
-    ji_zu.ji_can_shu_ji.ting_ji_setter(t);
+fn ji_zu_ting_ji_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>){
+    ji_zu.common_ji.ting_ji_setter();
+    ji_zu.ji_can_shu_ji.ting_ji_setter();
 }
-fn ji_zu_bei_che_wan_bi_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>, t:f64){
-    if t < JI_ZU_BEI_CHE_WAN_BI_FREE_T{
-        ji_zu.common_ji.bei_che_wan_bi_setter(t);
-        ji_zu.ji_can_shu_ji.bei_che_wan_bi_setter(t);
+fn ji_zu_bei_che_wan_bi_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>){
+    if ji_zu.common_ji.t_current_range < JI_ZU_BEI_CHE_WAN_BI_FREE_T{
+        ji_zu.common_ji.bei_che_wan_bi_setter();
+        ji_zu.ji_can_shu_ji.bei_che_wan_bi_setter();
     }
     else {
         ji_zu.common_ji.current_range = JiZuRangeLeiXing::TingJi;
@@ -1008,14 +1007,14 @@ fn ji_zu_bei_che_wan_bi_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>, t:f64){
         ji_zu.common_ji.t_current_range = 0.0;
     }
 }
-fn ji_zu_wen_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>, t:f64){
-    ji_zu.common_ji.wen_setter(t);
-    ji_zu.ji_can_shu_ji.wen_setter(t);
+fn ji_zu_wen_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>){
+    ji_zu.common_ji.wen_setter();
+    ji_zu.ji_can_shu_ji.wen_setter();
 }
-fn ji_zu_bei_che_zan_tai_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>, t:f64){
-    if t < JI_ZU_CHAI_YOU_BEI_CHE_T {
-        ji_zu.common_ji.bei_che_zan_tai_setter(t);
-        ji_zu.ji_can_shu_ji.bei_che_zan_tai_setter(t);
+fn ji_zu_bei_che_zan_tai_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>){
+    if ji_zu.common_ji.t_current_range < ji_zu.common_ji.bei_che_t {
+        ji_zu.common_ji.bei_che_zan_tai_setter();
+        ji_zu.ji_can_shu_ji.bei_che_zan_tai_setter();
     }
     else{
         ji_zu.common_ji.current_range = JiZuRangeLeiXing::BeiCheWanBi;
@@ -1023,10 +1022,10 @@ fn ji_zu_bei_che_zan_tai_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>, t:f64){
         ji_zu.common_ji.t_current_range = 0.0;
     }
 }
-fn ji_zu_bian_su_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>, t:f64){
-    if t < ji_zu.common_ji.bian_su_t {
-        ji_zu.common_ji.bian_su_setter(t);
-        ji_zu.ji_can_shu_ji.bian_su_setter(t);
+fn ji_zu_bian_su_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>){
+    if ji_zu.common_ji.t_current_range < ji_zu.common_ji.bian_su_t {
+        ji_zu.common_ji.bian_su_setter();
+        ji_zu.ji_can_shu_ji.bian_su_setter();
     }
     else {
         ji_zu.common_ji.current_range = JiZuRangeLeiXing::Wen;
@@ -1034,10 +1033,10 @@ fn ji_zu_bian_su_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>, t:f64){
         ji_zu.common_ji.t_current_range = 0.0;
     }
 }
-fn ji_zu_bian_ya_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>, t:f64){
-    if t < ji_zu.common_ji.bian_ya_t {
-        ji_zu.common_ji.bian_ya_setter(t);
-        ji_zu.ji_can_shu_ji.bian_ya_setter(t);
+fn ji_zu_bian_ya_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>){
+    if ji_zu.common_ji.t_current_range < ji_zu.common_ji.bian_ya_t {
+        ji_zu.common_ji.bian_ya_setter();
+        ji_zu.ji_can_shu_ji.bian_ya_setter();
     }
     else {
         ji_zu.common_ji.current_range = JiZuRangeLeiXing::Wen;
@@ -1045,10 +1044,10 @@ fn ji_zu_bian_ya_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>, t:f64){
         ji_zu.common_ji.t_current_range = 0.0;
     }
 }
-fn ji_zu_qi_dong_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>, t:f64){
-    if t < JI_ZU_QI_DONG_TB {
-        ji_zu.common_ji.qi_dong_setter(t);
-        ji_zu.ji_can_shu_ji.qi_dong_setter(t);
+fn ji_zu_qi_dong_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>){
+    if ji_zu.common_ji.t_current_range < JI_ZU_QI_DONG_TB {
+        ji_zu.common_ji.qi_dong_setter();
+        ji_zu.ji_can_shu_ji.qi_dong_setter();
     }
     else {
         ji_zu.common_ji.current_range = JiZuRangeLeiXing::Wen;
@@ -1056,10 +1055,10 @@ fn ji_zu_qi_dong_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>, t:f64){
         ji_zu.common_ji.t_current_range = 0.0;
     }
 }
-fn ji_zu_ting_ji_zan_tai_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>, t:f64){
-    if t < JI_ZU_TING_JI_T {
-        ji_zu.common_ji.ting_ji_zan_tai_setter(t);
-        ji_zu.ji_can_shu_ji.ting_ji_zan_tai_setter(t);
+fn ji_zu_ting_ji_zan_tai_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>){
+    if ji_zu.common_ji.t_current_range < JI_ZU_TING_JI_T {
+        ji_zu.common_ji.ting_ji_zan_tai_setter();
+        ji_zu.ji_can_shu_ji.ting_ji_zan_tai_setter();
     }
     else {
         ji_zu.common_ji.current_range = JiZuRangeLeiXing::BeiCheWanBi;
@@ -1069,238 +1068,247 @@ fn ji_zu_ting_ji_zan_tai_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>, t:f64){
 }
 
 impl<J:AttrSetter> JiZuCtrl for JiZu<J> {
-    fn update<'a>(&'a mut self, t:f64) -> &'a mut Self{
+    fn update<'a>(&'a mut self) -> &'a mut Self{
         match self.common_ji.current_range {
-            JiZuRangeLeiXing::TingJi | JiZuRangeLeiXing::JinJiGuZhang => JiZuCtrl::update_ting_ji_range(self, t),
-            JiZuRangeLeiXing::BeiCheZanTai => self.update_bei_che_zan_tai_range(t),
+            JiZuRangeLeiXing::TingJi | JiZuRangeLeiXing::JinJiGuZhang => self.update_ting_ji_range(),
+            JiZuRangeLeiXing::BeiCheZanTai => self.update_bei_che_zan_tai_range(),
             JiZuRangeLeiXing::BeiCheWanBi =>
-                self.update_bei_che_wan_bi_range(t),
+                self.update_bei_che_wan_bi_range(),
             JiZuRangeLeiXing::QiDong =>
-                self.update_qi_dong_range(t),
+                self.update_qi_dong_range(),
             JiZuRangeLeiXing::Wen =>
-                self.update_wen_range(t),
+                self.update_wen_range(),
             JiZuRangeLeiXing::TingJiZanTai |
                 JiZuRangeLeiXing::JinJiTingJiZanTai =>
-                self.update_ting_ji_zan_tai_range(t),
+                self.update_ting_ji_zan_tai_range(),
             JiZuRangeLeiXing::BianSu =>
-                self.update_bian_su_range(t),
+                self.update_bian_su_range(),
             JiZuRangeLeiXing::BianYa =>
-                self.update_bian_ya_range(t),
-        }
-    }
-    fn update_bei_che_wan_bi_range<'a>(&'a mut self, t:f64) -> &'a mut Self{
-        ji_zu_bei_che_wan_bi_setter(self, t);
-        self.update_gu_zhang(t);
+                self.update_bian_ya_range(),
+        }.common_ji.t_current_range += simctrl::FANG_ZHEN_BU_CHANG;
         self
     }
-    fn update_bei_che_zan_tai_range<'a>(&'a mut self, t:f64) -> &'a mut Self{
-        ji_zu_bei_che_zan_tai_setter(self, t);
-        self.update_gu_zhang(t);
+    fn update_bei_che_wan_bi_range<'a>(&'a mut self) -> &'a mut Self{
+        ji_zu_bei_che_wan_bi_setter(self);
+        self.update_gu_zhang();
         self
     }
-    fn update_bian_su_range<'a>(&'a mut self, t:f64) -> &'a mut Self{
-        ji_zu_bian_su_setter(self, t);
-        self.update_gu_zhang(t);
+    fn update_bei_che_zan_tai_range<'a>(&'a mut self) -> &'a mut Self{
+        ji_zu_bei_che_zan_tai_setter(self);
+        self.update_gu_zhang();
         self
     }
-    fn update_bian_ya_range<'a>(&'a mut self, t:f64) -> &'a mut Self{
-        ji_zu_bian_ya_setter(self, t);
-        self.update_gu_zhang(t);
+    fn update_bian_su_range<'a>(&'a mut self) -> &'a mut Self{
+        ji_zu_bian_su_setter(self);
+        self.update_gu_zhang();
         self
     }
-    fn update_qi_dong_range<'a>(&'a mut self, t:f64) -> &'a mut Self{
-        ji_zu_qi_dong_setter(self, t);
-        self.update_gu_zhang(t);
+    fn update_bian_ya_range<'a>(&'a mut self) -> &'a mut Self{
+        ji_zu_bian_ya_setter(self);
+        self.update_gu_zhang();
         self
     }
-    fn update_ting_ji_range<'a>(&'a mut self, t:f64) -> &'a mut Self{
-        ji_zu_ting_ji_setter(self, t);
-        self.update_gu_zhang(t);
+    fn update_qi_dong_range<'a>(&'a mut self) -> &'a mut Self{
+        ji_zu_qi_dong_setter(self);
+        self.update_gu_zhang();
         self
     }
-    fn update_ting_ji_zan_tai_range<'a>(&'a mut self, t:f64) -> &'a mut Self{
-        ji_zu_ting_ji_zan_tai_setter(self, t);
-        self.update_gu_zhang(t);
+    fn update_ting_ji_range<'a>(&'a mut self) -> &'a mut Self{
+        ji_zu_ting_ji_setter(self);
+        self.update_gu_zhang();
         self
     }
-    fn update_wen_range<'a>(&'a mut self, t:f64) -> &'a mut Self{
-        ji_zu_wen_setter(self, t);
-        self.update_gu_zhang(t);
+    fn update_ting_ji_zan_tai_range<'a>(&'a mut self) -> &'a mut Self{
+        ji_zu_ting_ji_zan_tai_setter(self);
+        self.update_gu_zhang();
         self
     }
-    fn transit_range<'a>(&'a mut self, _t:f64) -> &'a mut Self{
+    fn update_wen_range<'a>(&'a mut self) -> &'a mut Self{
+        ji_zu_wen_setter(self);
+        self.update_gu_zhang();
         self
     }
-    fn update_gu_zhang<'a>(&'a mut self, _t:f64) -> &'a mut Self{
+    fn transit_range<'a>(&'a mut self) -> &'a mut Self{
+        // match self.common_ji.current_range {
+        //     JiZuRangeLeiXing::BeiCheZanTai if self.common_ji.t_current_range >= self.common_ji.bei_che_t => self.common_ji.current_range = JiZuRangeLeiXing::BeiCheWanBi,
+        //     JiZuRangeLeiXing::QiDong if self.common_ji.t_current_range >= JI_ZU_QI_DONG_TA + JI_ZU_QI_DONG_TB => self.common_ji.current_range = JiZuRangeLeiXing::Wen,
+        //     JiZuRangeLeiXing::TingJiZanTai if self.common_ji.t_current_range >= JI_ZU_TING_JI_T => self.common_ji.current_range = JiZuRangeLeiXing::TingJi,
+        //     JiZuRangeLeiXing::BianSu if self.common_ji.t_current_range >= self.common_ji.bian_su_t => self.common_ji.current_range = JiZuRangeLeiXing::Wen,
+        //     JiZuRangeLeiXing::BianYa if self.common_ji.t_current_range >= self.common_ji.bian_ya_t => self.common_ji.current_range = JiZuRangeLeiXing::Wen,
+        //     JiZuRangeLeiXing::JinJiTingJiZanTai if self.common_ji.t_current_range >= JI_ZU_TING_JI_T => self.common_ji.current_range = JiZuRangeLeiXing::TingJi,
+        //     _ => {}
+        // }
         self
     }
-    fn gu_zhang_yi_ban_chan_sheng<'a>(&'a mut self, _t:f64) -> &'a mut Self{
+    fn update_gu_zhang<'a>(&'a mut self) -> &'a mut Self{
         self
     }
-    fn gu_zhang_yi_ban_xiao_chu<'a>(&'a mut self, _t:f64) -> &'a mut Self{
+    fn gu_zhang_yi_ban_chan_sheng<'a>(&'a mut self) -> &'a mut Self{
         self
     }
-    fn gu_zhang_yi_ji_chan_sheng<'a>(&'a mut self, _t:f64) -> &'a mut Self{
+    fn gu_zhang_yi_ban_xiao_chu<'a>(&'a mut self) -> &'a mut Self{
         self
     }
-    fn gu_zhang_yi_ji_xiao_chu<'a>(&'a mut self, _t:f64) -> &'a mut Self{
+    fn gu_zhang_yi_ji_chan_sheng<'a>(&'a mut self) -> &'a mut Self{
         self
     }
-    fn gu_zhang_er_ji_chan_sheng<'a>(&'a mut self, _t:f64) -> &'a mut Self{
+    fn gu_zhang_yi_ji_xiao_chu<'a>(&'a mut self) -> &'a mut Self{
         self
     }
-    fn gu_zhang_er_ji_xiao_chu<'a>(&'a mut self, _t:f64) -> &'a mut Self{
+    fn gu_zhang_er_ji_chan_sheng<'a>(&'a mut self) -> &'a mut Self{
         self
     }
-    fn gu_zhang_qi_ta_chan_sheng<'a>(&'a mut self, _t:f64) -> &'a mut Self{
+    fn gu_zhang_er_ji_xiao_chu<'a>(&'a mut self) -> &'a mut Self{
         self
     }
-    fn gu_zhang_qi_ta_xiao_chu<'a>(&'a mut self, _t:f64) -> &'a mut Self{
+    fn gu_zhang_qi_ta_chan_sheng<'a>(&'a mut self) -> &'a mut Self{
+        self
+    }
+    fn gu_zhang_qi_ta_xiao_chu<'a>(&'a mut self) -> &'a mut Self{
         self
     }
 }
 
-use ::libevent_sys::evutil_socket_t;
+// use ::libevent_sys::evutil_socket_t;
+//
+// pub extern fn timeout_cb_ji_zu_chai_you(_fd : evutil_socket_t, _what : ::libc::c_short, arg : * mut ::libc::c_void)
+// {
+// 	unsafe{
+// 		let mut ji_zu = arg as * mut JiZu<ChaiYouJiJi>;
+//         (*ji_zu).update();
+//         (*ji_zu).common_ji.t_current_range += ::simctrl::FANG_ZHEN_BU_CHANG;
+// 	}
+// }
 
-pub extern fn timeout_cb_ji_zu_chai_you(_fd : evutil_socket_t, _what : ::libc::c_short, arg : * mut ::libc::c_void)
-{
-	unsafe{
-		let mut ji_zu = arg as * mut JiZu<ChaiYouJiJi>;
-        (*ji_zu).update((*ji_zu).common_ji.t_current_range);
-        (*ji_zu).common_ji.t_current_range += ::simctrl::FANG_ZHEN_BU_CHANG;
-	}
-}
-
-
-#[cfg(test)]
-mod tests {
-    use ::libc;
-    use ::util;
-    #[cfg(windows)]
-    use ::winapi::winsock2::timeval;
-    #[cfg(unix)]
-    use ::libc::timeval;
-    use ::libevent_sys;
-    use ::libevent_sys::evutil_socket_t;
-    use ::simctrl::FANG_ZHEN_BU_CHANG;
-    use super::ChaiYouJiJi;
-    use super::JiZu;
-    use ::util::zan_tai_linear;
-    use super::JiZuRangeLeiXing;
-    use super::GEN_V_START_REMAINDER;
-    use super::JI_ZU_E_DING_PIN_LV;
-    use super::JI_ZU_PIN_LV_BIAN_HUA_YU_ZHI_WEN_TAI;
-    use super::JI_ZU_QI_DONG_TA;
-    use super::JI_ZU_E_DING_DIAN_YA;
-    use super::GEN_V_E_DING;
-    use super::JI_ZU_TING_JI_T;
-    use jizu::JiZuCtrl;
-
-    extern fn timeout_cb_ji_zu_chai_you(_fd : evutil_socket_t, _what : ::libc::c_short, arg : * mut ::libc::c_void)
-    {
-    	unsafe{
-    		let mut ji_zu = arg as * mut JiZu<ChaiYouJiJi>;
-            (*ji_zu).common_ji.u_delta = 10.0;
-            (*ji_zu).common_ji.f_delta = 0.2;
-            (*ji_zu).common_ji.bian_su_t = 2000;
-            (*ji_zu).common_ji.bian_ya_t = 3000;
-
-            (*ji_zu).update( (*ji_zu).common_ji.t_current_range);
-            // cargo test -- --nocapture
-            match (*ji_zu).common_ji.current_range {
-                JiZuRangeLeiXing::TingJi => {
-                    assert_eq!((*ji_zu).common_ji.uab_ext, 0.0f64);
-                    println!("停机阶段: {:#?}", (*ji_zu));
-                },
-                JiZuRangeLeiXing::BeiCheZanTai => {
-                    assert_eq!((*ji_zu).common_ji.uab_ext, 0.0f64);
-                    assert_eq!((*ji_zu).common_ji.bei_che_wan_bi, false);
-                    println!("暂态备车阶段: {:#?}", (*ji_zu));
-                },
-                JiZuRangeLeiXing::BeiCheWanBi => {
-                    println!("备车完毕阶段: {:#?}", (*ji_zu));
-                    assert_eq!((*ji_zu).common_ji.uab_ext, 0.0f64);
-                    assert_eq!((*ji_zu).common_ji.current_range, JiZuRangeLeiXing::BeiCheWanBi);
-                },
-                JiZuRangeLeiXing::QiDong => {
-                    assert_eq!( (*ji_zu).common_ji.uab_ext, GEN_V_START_REMAINDER);
-                    assert_eq!( (*ji_zu).common_ji.f_ext, zan_tai_linear( (*ji_zu).common_ji.t_current_range, 0.0, JI_ZU_E_DING_PIN_LV-JI_ZU_PIN_LV_BIAN_HUA_YU_ZHI_WEN_TAI, 0.0, JI_ZU_QI_DONG_TA) );
-                    println!("启动阶段: {:#?}", (*ji_zu));
-                },
-                JiZuRangeLeiXing::Wen => {
-                    assert_eq!((*ji_zu).common_ji.uab_ext, JI_ZU_E_DING_DIAN_YA);
-                    println!("稳态阶段: {:#?}", (*ji_zu));
-                },
-                JiZuRangeLeiXing::BianSu => {
-                    assert_eq!((*ji_zu).common_ji.uab_ext, (*ji_zu).common_ji.u_delta * FANG_ZHEN_BU_CHANG/(*ji_zu).common_ji.bian_su_t);
-                    assert_eq!((*ji_zu).common_ji.f_ext, (*ji_zu).common_ji.f_delta * FANG_ZHEN_BU_CHANG/(*ji_zu).common_ji.bian_su_t);
-                    println!("变速阶段: {:#?}", (*ji_zu));
-                },
-                JiZuRangeLeiXing::BianYa => {
-                    assert_eq!((*ji_zu).common_ji.uab_ext, (*ji_zu).common_ji.u_delta * FANG_ZHEN_BU_CHANG/(*ji_zu).common_ji.bian_ya_t);
-                    println!("变压阶段: {:#?}", (*ji_zu));
-                },
-                JiZuRangeLeiXing::TingJiZanTai | JiZuRangeLeiXing::JinJiTingJiZanTai => {
-                    assert_eq!((*ji_zu).common_ji.uab_ext, zan_tai_linear( (*ji_zu).common_ji.t_current_range, GEN_V_E_DING, 0.0, 0.0, JI_ZU_TING_JI_T));
-                    assert_eq!((*ji_zu).common_ji.f_ext, zan_tai_linear( (*ji_zu).common_ji.t_current_range, JI_ZU_E_DING_PIN_LV, 0.0, 0.0, JI_ZU_TING_JI_T));
-                    println!("{:?}: {:#?}", (*ji_zu).common_ji.current_range, (*ji_zu));
-                },
-                _ => assert!(false),
-            }
-    	}
-    }
-
-    #[test]
-    fn test_ji_zu_chai_you() {
-        util::ws_init();
-        //let flags = libevent_sys::EV_PERSIST;
-        let flags = 0;
-        let mut tv = [timeval{
-            tv_sec : 0,
-            tv_usec : 0,
-        }; 9];
-        let mut ji_zu = [JiZu::new(0, ChaiYouJiJi::new()); 9];
-    	unsafe{
-    		let base = libevent_sys::event_base_new();
-            for i in 0..9 {
-                tv[i].tv_usec = 100 + i as i64 * 10;
-                ji_zu[i].id = i as u32;
-                ji_zu[i].common_ji.t_current_range = tv[i].tv_usec as u32;
-                match i {
-                    0 => {
-                        ji_zu[i].common_ji.current_range = JiZuRangeLeiXing::TingJi;
-                    },
-                    1 => {
-                        ji_zu[i].common_ji.current_range = JiZuRangeLeiXing::BeiCheZanTai;
-                    },
-                    2 => {
-                        ji_zu[i].common_ji.current_range = JiZuRangeLeiXing::BeiCheWanBi;
-                    },
-                    3 => {
-                        ji_zu[i].common_ji.current_range = JiZuRangeLeiXing::QiDong;
-                    },
-                    4 => {
-                        ji_zu[i].common_ji.current_range = JiZuRangeLeiXing::Wen;
-                    },
-                    5 => {
-                        ji_zu[i].common_ji.current_range = JiZuRangeLeiXing::BianSu;
-                    },
-                    6 => {
-                        ji_zu[i].common_ji.current_range = JiZuRangeLeiXing::BianYa;
-                    },
-                    7 => {
-                        ji_zu[i].common_ji.current_range = JiZuRangeLeiXing::TingJiZanTai;
-                    },
-                    8 => {
-                        ji_zu[i].common_ji.current_range = JiZuRangeLeiXing::JinJiTingJiZanTai;
-                    },
-                    _ => assert!(false),
-                }
-                let timeout = libevent_sys::event_new(base, -1, flags, timeout_cb_ji_zu_chai_you, &mut (ji_zu[i]) as *mut JiZu<ChaiYouJiJi> as *mut libc::c_void);
-        		libevent_sys::event_add(timeout, &(tv[i]));
-            }
-    		libevent_sys::event_base_dispatch(base);
-    		libevent_sys::event_base_free(base);
-    	}
-    }
-}
+// #[cfg(test)]
+// mod tests {
+//     use ::libc;
+//     use ::util;
+//     #[cfg(windows)]
+//     use ::winapi::winsock2::timeval;
+//     #[cfg(unix)]
+//     use ::libc::timeval;
+//     use ::libevent_sys;
+//     use ::libevent_sys::evutil_socket_t;
+//     use ::simctrl::FANG_ZHEN_BU_CHANG;
+//     use super::ChaiYouJiJi;
+//     use super::JiZu;
+//     use ::util::zan_tai_linear;
+//     use super::JiZuRangeLeiXing;
+//     use super::GEN_V_START_REMAINDER;
+//     use super::JI_ZU_E_DING_PIN_LV;
+//     use super::JI_ZU_PIN_LV_BIAN_HUA_YU_ZHI_WEN_TAI;
+//     use super::JI_ZU_QI_DONG_TA;
+//     use super::JI_ZU_E_DING_DIAN_YA;
+//     use super::GEN_V_E_DING;
+//     use super::JI_ZU_TING_JI_T;
+//     use jizu::JiZuCtrl;
+//
+//     extern fn timeout_cb_ji_zu_chai_you(_fd : evutil_socket_t, _what : ::libc::c_short, arg : * mut ::libc::c_void)
+//     {
+//     	unsafe{
+//     		let mut ji_zu = arg as * mut JiZu<ChaiYouJiJi>;
+//             (*ji_zu).common_ji.u_delta = 10.0;
+//             (*ji_zu).common_ji.f_delta = 0.2;
+//             (*ji_zu).common_ji.bian_su_t = 2000.0;
+//             (*ji_zu).common_ji.bian_ya_t = 3000.0;
+//
+//             (*ji_zu).update();
+//             // cargo test -- --nocapture
+//             match (*ji_zu).common_ji.current_range {
+//                 JiZuRangeLeiXing::TingJi => {
+//                     assert_eq!((*ji_zu).common_ji.uab_ext, 0.0f64);
+//                     println!("停机阶段: {:#?}", (*ji_zu));
+//                 },
+//                 JiZuRangeLeiXing::BeiCheZanTai => {
+//                     assert_eq!((*ji_zu).common_ji.uab_ext, 0.0f64);
+//                     assert_eq!((*ji_zu).common_ji.bei_che_wan_bi, false);
+//                     println!("暂态备车阶段: {:#?}", (*ji_zu));
+//                 },
+//                 JiZuRangeLeiXing::BeiCheWanBi => {
+//                     println!("备车完毕阶段: {:#?}", (*ji_zu));
+//                     assert_eq!((*ji_zu).common_ji.uab_ext, 0.0f64);
+//                     assert_eq!((*ji_zu).common_ji.current_range, JiZuRangeLeiXing::BeiCheWanBi);
+//                 },
+//                 JiZuRangeLeiXing::QiDong => {
+//                     assert_eq!( (*ji_zu).common_ji.uab_ext, GEN_V_START_REMAINDER);
+//                     assert_eq!( (*ji_zu).common_ji.f_ext, zan_tai_linear( (*ji_zu).common_ji.t_current_range, 0.0, JI_ZU_E_DING_PIN_LV-JI_ZU_PIN_LV_BIAN_HUA_YU_ZHI_WEN_TAI, 0.0, JI_ZU_QI_DONG_TA) );
+//                     println!("启动阶段: {:#?}", (*ji_zu));
+//                 },
+//                 JiZuRangeLeiXing::Wen => {
+//                     assert_eq!((*ji_zu).common_ji.uab_ext, JI_ZU_E_DING_DIAN_YA);
+//                     println!("稳态阶段: {:#?}", (*ji_zu));
+//                 },
+//                 JiZuRangeLeiXing::BianSu => {
+//                     assert_eq!((*ji_zu).common_ji.uab_ext, (*ji_zu).common_ji.u_delta * FANG_ZHEN_BU_CHANG/(*ji_zu).common_ji.bian_su_t);
+//                     assert_eq!((*ji_zu).common_ji.f_ext, (*ji_zu).common_ji.f_delta * FANG_ZHEN_BU_CHANG/(*ji_zu).common_ji.bian_su_t);
+//                     println!("变速阶段: {:#?}", (*ji_zu));
+//                 },
+//                 JiZuRangeLeiXing::BianYa => {
+//                     assert_eq!((*ji_zu).common_ji.uab_ext, (*ji_zu).common_ji.u_delta * FANG_ZHEN_BU_CHANG/(*ji_zu).common_ji.bian_ya_t);
+//                     println!("变压阶段: {:#?}", (*ji_zu));
+//                 },
+//                 JiZuRangeLeiXing::TingJiZanTai | JiZuRangeLeiXing::JinJiTingJiZanTai => {
+//                     assert_eq!((*ji_zu).common_ji.uab_ext, zan_tai_linear( (*ji_zu).common_ji.t_current_range, GEN_V_E_DING, 0.0, 0.0, JI_ZU_TING_JI_T));
+//                     assert_eq!((*ji_zu).common_ji.f_ext, zan_tai_linear( (*ji_zu).common_ji.t_current_range, JI_ZU_E_DING_PIN_LV, 0.0, 0.0, JI_ZU_TING_JI_T));
+//                     println!("{:?}: {:#?}", (*ji_zu).common_ji.current_range, (*ji_zu));
+//                 },
+//                 _ => assert!(false),
+//             }
+//     	}
+//     }
+//
+//     #[test]
+//     fn test_ji_zu_chai_you() {
+//         util::ws_init();
+//         //let flags = libevent_sys::EV_PERSIST;
+//         let flags = 0;
+//         let mut tv = [timeval{
+//             tv_sec : 0,
+//             tv_usec : 0,
+//         }; 9];
+//         let mut ji_zu = [JiZu::new(0, ChaiYouJiJi::new()); 9];
+//     	unsafe{
+//     		let base = libevent_sys::event_base_new();
+//             for i in 0..9 {
+//                 tv[i].tv_usec = 100 + i as i64 * 10;
+//                 ji_zu[i].id = i;
+//                 ji_zu[i].common_ji.t_current_range = tv[i].tv_usec as f64;
+//                 match i {
+//                     0 => {
+//                         ji_zu[i].common_ji.current_range = JiZuRangeLeiXing::TingJi;
+//                     },
+//                     1 => {
+//                         ji_zu[i].common_ji.current_range = JiZuRangeLeiXing::BeiCheZanTai;
+//                     },
+//                     2 => {
+//                         ji_zu[i].common_ji.current_range = JiZuRangeLeiXing::BeiCheWanBi;
+//                     },
+//                     3 => {
+//                         ji_zu[i].common_ji.current_range = JiZuRangeLeiXing::QiDong;
+//                     },
+//                     4 => {
+//                         ji_zu[i].common_ji.current_range = JiZuRangeLeiXing::Wen;
+//                     },
+//                     5 => {
+//                         ji_zu[i].common_ji.current_range = JiZuRangeLeiXing::BianSu;
+//                     },
+//                     6 => {
+//                         ji_zu[i].common_ji.current_range = JiZuRangeLeiXing::BianYa;
+//                     },
+//                     7 => {
+//                         ji_zu[i].common_ji.current_range = JiZuRangeLeiXing::TingJiZanTai;
+//                     },
+//                     8 => {
+//                         ji_zu[i].common_ji.current_range = JiZuRangeLeiXing::JinJiTingJiZanTai;
+//                     },
+//                     _ => assert!(false),
+//                 }
+//                 let timeout = libevent_sys::event_new(base, -1, flags, timeout_cb_ji_zu_chai_you, &mut (ji_zu[i]) as *mut JiZu<ChaiYouJiJi> as *mut libc::c_void);
+//         		libevent_sys::event_add(timeout, &(tv[i]));
+//             }
+//     		libevent_sys::event_base_dispatch(base);
+//     		libevent_sys::event_base_free(base);
+//     	}
+//     }
+// }

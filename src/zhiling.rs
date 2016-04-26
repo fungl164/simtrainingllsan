@@ -235,3 +235,15 @@ pub const CAUSE_BIAN_SU_FAIL_OUT_OF_LIMIT : &'static str = "机组转速值已�
 pub const BIAN_YA_FAIL_DESC : &'static str = "变压指令执行失败";
 pub const CAUSE_JI_ZU_RANGE_DISMATCH_5 : &'static str = "机组不处于可变压状态，一般当且仅当机组处于稳态或者变压状态时才可以变压";
 pub const CAUSE_BIAN_YA_FAIL_OUT_OF_LIMIT : &'static str = "机组电压值已达到极限，不可再进行调压";
+
+pub const ZHONG_ZAI_ASK_FAIL_DESC : &'static str = "重载询问指令执行失败";
+pub const CAUSE_ZHONG_ZAI_ASK_FAIL : &'static str = "加载过大，超出剩余功率裕量";
+
+pub const JIN_JI_TING_JI_FAIL_DESC : &'static str = "紧急停机指令执行失败";
+pub const CAUSE_JIN_JI_TING_JI_FAIL : &'static str = "机组已停机或者正在停机";
+
+pub const XIAO_SHENG_FAIL_DESC : &'static str = "消声失败";
+pub const CAUSE_XIAO_SHENG_FAIL : &'static str = "未产生报警或者报警声已消除";
+
+pub const YING_DA_FAIL_DESC : &'static str = "应答失败";
+pub const CAUSE_YING_DA_FAIL : &'static str = "未产生报警或者已应答";

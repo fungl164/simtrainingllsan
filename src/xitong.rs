@@ -1,6 +1,6 @@
 use std::vec::Vec;
 use time;
-use jizu::{JiZu, JiJi};
+use jizu::{JiZu, JiJi, JiZuCtrl, JiZuRangeLeiXing};
 use dianzhan::DianZhan;
 use duanluqi::{DuanLuQi, DuanLuQiStatus};
 use fuzai::FuZai;
@@ -8,6 +8,7 @@ use node::Node;
 use zhilu::ZhiLu;
 use zhilu::ZhiLuStatus;
 use zhiling::{ZhiLing, ZhiLingType, YingDaType, YingDaErr};
+use simctrl::{ Update };
 
 use jizu;
 use dianzhan;
@@ -28,7 +29,7 @@ pub enum PowerFlowErr {
 #[derive(PartialEq, Clone, Debug)]
 pub struct XiTong {
   pub time_tag : time::Timespec,
-  pub id : u32,
+  pub id : usize,
   pub yue_kong : bool,
   pub p_shou_ti_dui : f64,
   pub u_shou_ti_dui : f64,
@@ -39,6 +40,10 @@ pub struct XiTong {
   pub f_wei_ti_dui : f64,
   pub pd_wei_ti_dui : f64,
   pub p_quan_jian : f64,
+
+  pub is_xiao_sheng : bool,
+  pub is_ying_da : bool,
+
   pub ji_zu_vec : Vec<JiZu<JiJi> >,
   pub dian_zhan_vec : Vec<DianZhan>,
   pub duan_lu_qi_vec : Vec<DuanLuQi>,
@@ -204,7 +209,7 @@ impl XiTong {
         self.node_dianzhan_vec.push((4, 1));
         self.node_dianzhan_vec.push((5, 1));
     }
-    pub fn new(_id : u32) -> XiTong {
+    pub fn new(_id : usize) -> XiTong {
         let mut x = XiTong{
             time_tag : time::get_time(),
             id : _id,
@@ -218,6 +223,8 @@ impl XiTong {
             f_wei_ti_dui : 0.0f64,
             pd_wei_ti_dui : 0.0f64,
             p_quan_jian : 0.0f64,
+            is_xiao_sheng : true,
+            is_ying_da : true,
             ji_zu_vec : vec![JiZu::new(0, JiJi::CY(jizu::ChaiYouJiJi::new())); simctrl::ZONG_SHU_JI_ZU_CHAI_YOU],
             dian_zhan_vec : vec![DianZhan::new(0); simctrl::ZONG_SHU_DIAN_ZHAN],
             duan_lu_qi_vec : vec![DuanLuQi::new(0); simctrl::ZONG_SHU_DUAN_LU_QI],
@@ -243,6 +250,11 @@ impl XiTong {
         };
         for i in 0..simctrl::ZONG_SHU_JI_ZU_CHAI_YOU {
             x.ji_zu_vec[i].id = i;
+            match x.ji_zu_vec[i].ji_can_shu_ji {
+                JiJi::CY(_) => x.ji_zu_vec[i].common_ji.bei_che_t = jizu::JI_ZU_CHAI_YOU_BEI_CHE_T,
+                JiJi::QL(_) => x.ji_zu_vec[i].common_ji.bei_che_t = jizu::JI_ZU_QI_LUN_BEI_CHE_T,
+                _ => x.ji_zu_vec[i].common_ji.bei_che_t = 0.0,
+            }
         }
         x.ji_zu_vec.push(JiZu::new(simctrl::ZONG_SHU_JI_ZU_CHAI_YOU, JiJi::AD(jizu::AnDianJiJi)));
         for i in 0..simctrl::ZONG_SHU_DIAN_ZHAN {
@@ -752,7 +764,7 @@ impl XiTong {
     }
 
     //由某一负载获取与此负载相关联的所有并联机组
-    pub fn get_ji_zu_group_from_fu_zai_id(&mut self, fu_zai_id : usize) -> Option<Vec<usize>> {
+    pub fn get_ji_zu_group_from_fu_zai_id(&mut self, fu_zai_id : usize) -> Vec<usize> {
         let node_id = self.get_nodeid_from_jizuid(fu_zai_id).unwrap();
         let node_group = self.get_node_group_from_node_id(node_id).unwrap();
         let mut ji_zu_id_group = Vec::new();
@@ -762,10 +774,7 @@ impl XiTong {
                 ji_zu_id_group.push(ji_zu_id);
             }
         }
-        if ji_zu_id_group.is_empty() {
-            return None;
-        }
-        return Some(ji_zu_id_group);
+        return ji_zu_id_group;
     }
 
     /// 更新node_group_vec
@@ -1301,25 +1310,6 @@ impl XiTong {
         }
     }
 
-    pub fn update(&mut self) {
-        self.compute_xi_tong_pf();
-        self.p_shou_ti_dui = 0.0;
-        self.u_shou_ti_dui = 0.0;
-        self.f_shou_ti_dui = 0.0;
-        self.pd_shou_ti_dui = 0.0;
-
-        self.p_wei_ti_dui = 0.0;
-        self.u_wei_ti_dui = 0.0;
-        self.f_wei_ti_dui = 0.0;
-        self.pd_wei_ti_dui = 0.0;
-
-        self.p_quan_jian = 0.0;
-        for jizuid in 0..simctrl::ZONG_SHU_JI_ZU {
-            self.p_quan_jian += self.ji_zu_vec[jizuid].common_ji.p;
-        }
-    }
-
-
     pub fn is_an_dian(&mut self, jizu : &JiZu<JiJi>) -> bool {
         match jizu.ji_can_shu_ji {
             JiJi::AD(..) => return true,
@@ -1817,19 +1807,20 @@ impl XiTong {
     pub fn handle_ting_ji(&mut self, zl : &ZhiLing) {
         if self.get_duanluqi_from_jizuid(zl.dev_id).unwrap().is_off() {
             match self.ji_zu_vec[zl.dev_id].common_ji.current_range {
-                jizu::JiZuRangeLeiXing::Wen | jizu::JiZuRangeLeiXing::BianSu => {
-                    self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::TingJi;
+                jizu::JiZuRangeLeiXing::Wen | jizu::JiZuRangeLeiXing::BianSu | jizu::JiZuRangeLeiXing::BianYa => {
+                    self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::TingJiZanTai;
                 }
                 _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::BeiCheFail(*zl,  zhiling::TING_JI_FAIL_DESC, zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_3))),
             }
         }
         else {
-            self.handle_zhi_ling_result_msg( Err(YingDaErr::QiDongFail(*zl, zhiling::TING_JI_FAIL_DESC, zhiling:: CAUSE_DUAN_LU_QI_STATUS_DISMATCH_1)));
+            self.handle_zhi_ling_result_msg( Err(YingDaErr::TingJiFail(*zl, zhiling::TING_JI_FAIL_DESC, zhiling:: CAUSE_DUAN_LU_QI_STATUS_DISMATCH_1)));
         }
     }
 
-    pub fn handle_yue_kong(&mut self, _zl : &ZhiLing) {
+    pub fn handle_yue_kong(&mut self, zl : &ZhiLing) {
         self.yue_kong = true;
+        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
     }
 
     pub fn handle_tou_ru(&mut self, _zl : &ZhiLing) {
@@ -1871,10 +1862,68 @@ impl XiTong {
     pub fn eliminate_ji_zu_qi_ta_gu_zhang(&mut self, _zl : &ZhiLing) {
     }
 
-    pub fn handle_bian_zai(&mut self, _zl : &ZhiLing) {
+    pub fn handle_bian_zai(&mut self, zl : &ZhiLing) {
+        let mut xt_temp = self.clone();
+        match zl.zhi_ling_type {
+            zhiling::ZhiLingType::BianZai(p, q) => {
+                xt_temp.fu_zai_vec[zl.dev_id].p += p;
+                if xt_temp.fu_zai_vec[zl.dev_id].p > xt_temp.fu_zai_vec[zl.dev_id].p_max {
+                    xt_temp.fu_zai_vec[zl.dev_id].p = xt_temp.fu_zai_vec[zl.dev_id].p_max;
+                }
+                else if xt_temp.fu_zai_vec[zl.dev_id].p < 0.0 {
+                    xt_temp.fu_zai_vec[zl.dev_id].p = 0.0;
+                }
+                xt_temp.fu_zai_vec[zl.dev_id].q += q;
+                if xt_temp.fu_zai_vec[zl.dev_id].q > xt_temp.fu_zai_vec[zl.dev_id].q_max {
+                    xt_temp.fu_zai_vec[zl.dev_id].q = xt_temp.fu_zai_vec[zl.dev_id].q_max;
+                }
+                else if xt_temp.fu_zai_vec[zl.dev_id].q < 0.0 {
+                    xt_temp.fu_zai_vec[zl.dev_id].q = 0.0;
+                }
+            }
+            _ => {}
+        }
+        xt_temp.compute_xi_tong_pf();
+        self.fu_zai_vec[zl.dev_id].p = xt_temp.fu_zai_vec[zl.dev_id].p;
+        self.fu_zai_vec[zl.dev_id].q = xt_temp.fu_zai_vec[zl.dev_id].q;
+        let ji_zu_group = self.get_ji_zu_group_from_fu_zai_id(zl.dev_id);
+        for j in ji_zu_group {
+            if self.ji_zu_vec[j].common_ji.current_range == jizu::JiZuRangeLeiXing::BianSu {
+                self.ji_zu_vec[j].common_ji.current_range = jizu::JiZuRangeLeiXing::Wen;
+            }
+            self.ji_zu_vec[j].set_bian_zai_params(xt_temp.ji_zu_vec[j].common_ji.p);
+        }
+        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
     }
 
-    pub fn handle_zhong_zai_jia_zai(&mut self, _zl : &ZhiLing) {
+    pub fn handle_zhong_zai_jia_zai(&mut self, zl : &ZhiLing) {
+        let ji_zu_group = self.get_ji_zu_group_from_fu_zai_id(zl.dev_id);
+        let group_len = ji_zu_group.len();
+        let mut xt_temp = self.clone();
+        xt_temp.compute_xi_tong_pf();
+        match zl.zhi_ling_type {
+            zhiling::ZhiLingType::ZhongZaiJiaZai(p, q) => {
+                let mut p_sum = 0.0f64;
+                let mut q_sum = 0.0f64;
+                for j in ji_zu_group {
+                    p_sum += self.ji_zu_vec[j].common_ji.p;
+                    q_sum += self.ji_zu_vec[j].common_ji.q;
+                }
+                if jizu::JI_ZU_E_DING_GONG_LV * group_len as f64 >= p_sum + p && jizu::JI_ZU_E_DING_WU_GONG_GONG_LV * group_len as f64 >= q_sum + q {
+                    let mut zl_temp = zl.clone();
+                    zl_temp.zhi_ling_type = zhiling::ZhiLingType::BianZai(p, q);
+                    zl_temp.actor_id = usize::max_value();
+                    zl_temp.zhan_wei_id = usize::max_value();
+                    zl_temp.zhan_wei_type = simctrl::ZhanWeiType::Internal;
+                    self.handle_bian_zai(&zl_temp);
+                    self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                }
+                else {
+                    self.handle_zhi_ling_result_msg( Err(YingDaErr::ZhongZaiAskFail(*zl, zhiling::ZHONG_ZAI_ASK_FAIL_DESC, zhiling::CAUSE_ZHONG_ZAI_ASK_FAIL)));
+                }
+            }
+            _ => {}
+        }
     }
 
     pub fn handle_operating_station(&mut self, zl : &ZhiLing) {
@@ -2108,71 +2157,147 @@ impl XiTong {
     pub fn handle_an_dian_fen_zha(&mut self, _zl : &ZhiLing) {
     }
 
-    pub fn handle_bian_su(&mut self, _zl : &ZhiLing) {
-        let duanluqi_status = self.get_duanluqi_from_jizuid(_zl.dev_id).unwrap().is_on();
-        match _zl.zhi_ling_type {
+    pub fn handle_bian_su(&mut self, zl : &ZhiLing) {
+        let duanluqi_status = self.get_duanluqi_from_jizuid(zl.dev_id).unwrap().is_on();
+        match zl.zhi_ling_type {
             ZhiLingType::BianSu(delta) => {
-                match self.ji_zu_vec[_zl.dev_id].common_ji.current_range {
+                match self.ji_zu_vec[zl.dev_id].common_ji.current_range {
                     jizu::JiZuRangeLeiXing::Wen | jizu::JiZuRangeLeiXing::BianSu => {
-                        if !self.ji_zu_vec[_zl.dev_id].set_bian_su_params(delta, duanluqi_status) {
-                            self.handle_zhi_ling_result_msg( Err(YingDaErr::BianSuFail(*_zl, zhiling::BIAN_SU_FAIL_DESC, zhiling::CAUSE_BIAN_SU_FAIL_OUT_OF_LIMIT)));
+                        if !self.ji_zu_vec[zl.dev_id].set_bian_su_params(delta, duanluqi_status) {
+                            self.handle_zhi_ling_result_msg( Err(YingDaErr::BianSuFail(*zl, zhiling::BIAN_SU_FAIL_DESC, zhiling::CAUSE_BIAN_SU_FAIL_OUT_OF_LIMIT)));
+                        }
+                        else {
+                            self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
                         }
                     }
-                    _ =>  self.handle_zhi_ling_result_msg( Err(YingDaErr::BianSuFail(*_zl, zhiling::BIAN_SU_FAIL_DESC, zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_4))),
+                    _ =>  self.handle_zhi_ling_result_msg( Err(YingDaErr::BianSuFail(*zl, zhiling::BIAN_SU_FAIL_DESC, zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_4))),
                 }
             }
-            _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::BianSuFail(*_zl, zhiling::BIAN_SU_FAIL_DESC, zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_4))),
+            _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::BianSuFail(*zl, zhiling::BIAN_SU_FAIL_DESC, zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_4))),
         }
     }
 
-    pub fn handle_bian_ya(&mut self, _zl : &ZhiLing) {
-        match _zl.zhi_ling_type {
+    pub fn handle_bian_ya(&mut self, zl : &ZhiLing) {
+        match zl.zhi_ling_type {
             ZhiLingType::BianYa(delta) => {
-                match self.ji_zu_vec[_zl.dev_id].common_ji.current_range {
+                match self.ji_zu_vec[zl.dev_id].common_ji.current_range {
                     jizu::JiZuRangeLeiXing::Wen | jizu::JiZuRangeLeiXing::BianYa => {
-                        self.ji_zu_vec[_zl.dev_id].set_bian_ya_params(delta);
-                        if !self.ji_zu_vec[_zl.dev_id].set_bian_ya_params(delta) {
-                            self.handle_zhi_ling_result_msg( Err(YingDaErr::BianYaFail(*_zl, zhiling::BIAN_YA_FAIL_DESC, zhiling::CAUSE_BIAN_YA_FAIL_OUT_OF_LIMIT)));
+                        if !self.ji_zu_vec[zl.dev_id].set_bian_ya_params(delta) {
+                            self.handle_zhi_ling_result_msg( Err(YingDaErr::BianYaFail(*zl, zhiling::BIAN_YA_FAIL_DESC, zhiling::CAUSE_BIAN_YA_FAIL_OUT_OF_LIMIT)));
+                        }
+                        else {
+                            self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
                         }
                     }
-                    _ =>  self.handle_zhi_ling_result_msg( Err(YingDaErr::BianYaFail(*_zl, zhiling::BIAN_YA_FAIL_DESC, zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_5))),
+                    _ =>  self.handle_zhi_ling_result_msg( Err(YingDaErr::BianYaFail(*zl, zhiling::BIAN_YA_FAIL_DESC, zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_5))),
                 }
             }
-            _ =>  self.handle_zhi_ling_result_msg( Err(YingDaErr::BianYaFail(*_zl, zhiling::BIAN_YA_FAIL_DESC, zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_5))),
+            _ =>  self.handle_zhi_ling_result_msg( Err(YingDaErr::BianYaFail(*zl, zhiling::BIAN_YA_FAIL_DESC, zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_5))),
         }
     }
 
-    pub fn handle_jin_ji_ting_ji(&mut self, _zl : &ZhiLing) {
+    pub fn handle_jin_ji_ting_ji(&mut self, zl : &ZhiLing) {
+        match self.ji_zu_vec[zl.dev_id].common_ji.current_range {
+            jizu::JiZuRangeLeiXing::TingJi | jizu::JiZuRangeLeiXing::BeiCheZanTai | jizu::JiZuRangeLeiXing::BeiCheWanBi | jizu::JiZuRangeLeiXing::TingJiZanTai | jizu::JiZuRangeLeiXing::JinJiTingJiZanTai => {
+                self.handle_zhi_ling_result_msg( Err(YingDaErr::JinJiTingJiFail(*zl, zhiling::JIN_JI_TING_JI_FAIL_DESC, zhiling:: CAUSE_JIN_JI_TING_JI_FAIL)));
+                return ;
+            }
+            _ => {}
+        }
+        let duanluqiid = self.get_duanluqiid_from_jizuid(zl.dev_id).unwrap();
+        if self.duan_lu_qi_vec[duanluqiid].is_on() {
+            match self.duan_lu_qi_vec[duanluqiid].status {
+                duanluqi::DuanLuQiStatus::On {fault : f, ..} => self.duan_lu_qi_vec[duanluqiid].status = duanluqi::DuanLuQiStatus::Off{fault : f, ready_to_bing_che : false},
+                _ => {}
+            }
+        }
+        self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::TingJiZanTai;
     }
 
-    pub fn handle_xiao_sheng(&mut self, _zl : &ZhiLing) {
+    pub fn handle_xiao_sheng(&mut self, zl : &ZhiLing) {
+        if self.is_xiao_sheng {
+            self.handle_zhi_ling_result_msg( Err(YingDaErr::XiaoShengFail(*zl, zhiling::XIAO_SHENG_FAIL_DESC, zhiling:: CAUSE_XIAO_SHENG_FAIL)));
+        }
+        else{
+            self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+        }
     }
 
-    pub fn handle_ying_da(&mut self, _zl : &ZhiLing) {
+    pub fn handle_ying_da(&mut self, zl : &ZhiLing) {
+        if self.is_ying_da {
+            self.handle_zhi_ling_result_msg( Err(YingDaErr::YingDaFail(*zl, zhiling::XIAO_SHENG_FAIL_DESC, zhiling:: CAUSE_XIAO_SHENG_FAIL)));
+        }
+        else{
+            self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+        }
     }
 
+}
+
+impl Update for XiTong {
+    fn update(&mut self) {
+        for i in 0..simctrl::ZONG_SHU_JI_ZU {
+            self.ji_zu_vec[i].update();
+        }
+        self.compute_xi_tong_pf();
+        self.p_shou_ti_dui = 0.0;
+        self.u_shou_ti_dui = 0.0;
+        self.f_shou_ti_dui = 0.0;
+        self.pd_shou_ti_dui = 0.0;
+
+        self.p_wei_ti_dui = 0.0;
+        self.u_wei_ti_dui = 0.0;
+        self.f_wei_ti_dui = 0.0;
+        self.pd_wei_ti_dui = 0.0;
+
+        self.p_quan_jian = 0.0;
+        for jizuid in 0..simctrl::ZONG_SHU_JI_ZU {
+            self.p_quan_jian += self.ji_zu_vec[jizuid].common_ji.p;
+        }
+        self.time_tag = time::get_time();
+
+        //以下为测试内容，实际运行时请注释
+        println!("{:?}", self.time_tag);
+        for i in 0..2 {
+            match self.ji_zu_vec[i].common_ji.current_range {
+                JiZuRangeLeiXing::TingJi | JiZuRangeLeiXing::JinJiGuZhang => self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::BeiCheZanTai,
+                JiZuRangeLeiXing::BeiCheWanBi => self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::QiDong,
+                JiZuRangeLeiXing::Wen => {
+                    self.ji_zu_vec[i].set_bian_su_params(7.0, false);
+                    self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::BianSu;
+                }
+                JiZuRangeLeiXing::BianSu => {
+                    self.ji_zu_vec[i].set_bian_ya_params(3.0);
+                    self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::BianYa;
+                }
+                JiZuRangeLeiXing::BianYa => self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::TingJi,
+                _ => {}
+            }
+            // println!("id:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}, bei_che_t:{:?}, bian_su_t:{:?}, bian_ya_t:{:?}", i, self.ji_zu_vec[i].common_ji.current_range, self.ji_zu_vec[i].common_ji.uab_ext, self.ji_zu_vec[i].common_ji.zhuan_su, self.ji_zu_vec[i].common_ji.f_ext, self.ji_zu_vec[i].common_ji.t_current_range,  self.ji_zu_vec[i].common_ji.bei_che_t,  self.ji_zu_vec[i].common_ji.bian_su_t,  self.ji_zu_vec[i].common_ji.bian_ya_t);
+            // println!("id:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}", i, self.ji_zu_vec[i].common_ji.current_range, self.ji_zu_vec[i].common_ji.uab_ext, self.ji_zu_vec[i].common_ji.zhuan_su, self.ji_zu_vec[i].common_ji.f_ext, self.ji_zu_vec[i].common_ji.t_current_range);
+        }
+
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use ::xitong::XiTong;
     use ::simctrl;
-    use ::zhiling::{ZhiLing, YingDaErr};
+    // use ::zhiling::{ZhiLing, YingDaErr};
+    use ::simctrl::{ Timer, TimerHandler};
+    use std::thread;
 
     #[test]
     fn test_xi_tong() {
-        let xt = XiTong::new(0);
+        let _xt = XiTong::new(0);
+    }
 
-        assert_eq!(xt.get_duanluqi_from_id(0).unwrap(), &(xt.duan_lu_qi_vec[0]));
-        assert_eq!(xt.get_duanluqi_from_id(simctrl::ZONG_SHU_DUAN_LU_QI - 1).unwrap(), Box::new(xt.duan_lu_qi_vec[simctrl::ZONG_SHU_DUAN_LU_QI - 1]));
-        assert_eq!(xt.get_duanluqi_from_id(simctrl::ZONG_SHU_DUAN_LU_QI).unwrap_err(), YingDaErr::DevNotExist(ZhiLing::new(), format!("不存在id为{}的断路器", simctrl::ZONG_SHU_DUAN_LU_QI), String::from("")));
-        assert_eq!(xt.get_duanluqi_from_id(simctrl::ZONG_SHU_DUAN_LU_QI + 1).unwrap_err(), YingDaErr::DevNotExist(ZhiLing::new(), format!("不存在id为{}的断路器", simctrl::ZONG_SHU_DUAN_LU_QI + 1), String::from("")));
-        let mut duanluqi1 = xt.get_duanluqi_from_id(0).unwrap();
-        let mut duanluqi2 = xt.get_duanluqi_from_id(simctrl::ZONG_SHU_DUAN_LU_QI - 1).unwrap();
-        duanluqi1.f = 50.0;
-        assert_eq!(duanluqi1.f, 50.0);
-        duanluqi2.uab = 380.0;
-        assert_eq!(duanluqi2.uab, 380.0);
-
+    #[test]
+    fn test_xi_tong_update() {
+        let e_thread = thread::spawn(move || {
+            Timer::new().start(&mut TimerHandler::new(XiTong::new(0)), simctrl::FANG_ZHEN_BU_CHANG as u64, simctrl::FANG_ZHEN_BU_CHANG as u64)
+        });
+         e_thread.join().unwrap();
     }
 }

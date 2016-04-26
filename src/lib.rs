@@ -1,7 +1,8 @@
 extern crate time;
 extern crate rand;
 extern crate libc;
-extern crate libevent_sys;
+// extern crate libevent_sys;
+extern crate mio;
 #[cfg(windows)]
 extern crate winapi;
 #[cfg(windows)]

@@ -1,3 +1,51 @@
+use mio::{ Handler, EventLoop, EventLoopConfig };
+pub trait Update {
+    fn update(&mut self);
+}
+pub struct TimerHandler<E : Update> {
+    pub entity : E,
+}
+impl<E : Update> TimerHandler<E> {
+    pub fn new(e : E) -> TimerHandler<E> {
+        let mut ev_cfg = EventLoopConfig::new();
+        ev_cfg.timer_tick_ms(1);
+        TimerHandler {
+            entity : e,
+        }
+    }
+}
+
+impl<T : Update> Handler for TimerHandler<T> {
+    type Timeout = u64;
+    type Message = ();
+    fn timeout(&mut self, _event_loop: &mut EventLoop<Self>, _timeout: Self::Timeout) {
+        self.entity.update();
+        let _ = _event_loop.timeout_ms(_timeout, _timeout).unwrap();
+    }
+}
+pub struct Timer<H : Handler> {
+    pub ev_loop : Box<EventLoop<H>>,
+}
+
+impl<H : Handler> Timer<H> {
+    pub fn new() -> Timer<H> {
+        let mut ev_cfg = ::mio::EventLoopConfig::new();
+        ev_cfg.timer_tick_ms(1);
+        Timer {
+            ev_loop : Box::new(::mio::EventLoop::configured(ev_cfg).unwrap()),
+        }
+    }
+    pub fn start(&mut self, h : &mut H, timeout : H::Timeout, delay : u64) {
+        let _ = self.ev_loop.timeout_ms(timeout, delay).unwrap();
+        self.ev_loop.run(h).unwrap();
+    }
+    pub fn stop(&mut self){
+        if !self.ev_loop.is_running() {
+            self.ev_loop.shutdown();
+        }
+    }
+}
+
 pub const FANG_ZHEN_BU_CHANG : f64 = 100.0; //ms
 pub const CHAO_LIU_JI_SUAN_BU_CHANG : f64 = 1000.0; //ms
 pub const SIM_MO_REN_BU_CHANG : f64 = FANG_ZHEN_BU_CHANG;
