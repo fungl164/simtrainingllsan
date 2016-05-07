@@ -1,0 +1,25 @@
+extern crate iron;
+
+use iron::prelude::*;
+use iron::mime::Mime;
+use iron::status;
+
+use simtraining::xitong::XiTong;
+
+fn hello_world(_: &mut Request) -> IronResult<Response> {
+    let x = XiTong::new(0);
+    let x_ser = serde_json::to_string(&x).unwrap();
+    // println!("x_ser:\n{}", x_ser);
+
+    // let x_ser_pretty = serde_json::to_string_pretty(&x).unwrap();
+    // println!("x_ser_pretty:\n{}", x_ser_pretty);
+
+    let content_type = "application/json".parse::<Mime>().unwrap();
+    Ok(Response::with((content_type, status::Ok, x_ser)))
+}
+
+fn main() {
+    let chain = Chain::new(hello_world);
+    Iron::new(chain).http("localhost:3000").unwrap();
+
+}

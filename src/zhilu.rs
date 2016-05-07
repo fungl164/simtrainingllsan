@@ -1,9 +1,9 @@
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum ZhiLuStatus {
     On,
     Off,
 }
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct ZhiLu {
   pub id : usize,
   pub p : f64,

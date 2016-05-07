@@ -1,5 +1,6 @@
 use simctrl;
-#[derive(PartialEq, Copy, Clone, Debug)]
+use std::string::String;
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum ZhiLingType {
     Tick,
     ZhongZaiAsk,
@@ -51,7 +52,7 @@ pub enum ZhiLingType {
     EliminateQiTaGuZhang(FaultType),
 
 }
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum FaultType {
     RanYouXieLou,
     QuZhouXiangYaLiGao,
@@ -125,7 +126,7 @@ pub enum FaultType {
     HeZhaShiBai,
     JieLieShiBai,
 }
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct ZhiLing {
   pub zhi_ling_type : ZhiLingType,
   pub dev_type : simctrl::DevType,
@@ -148,41 +149,41 @@ impl ZhiLing {
     }
 }
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum YingDaType {
     ACK(ZhiLing),
     Success(ZhiLing),
     Valid(ZhiLing),
 }
-#[derive(PartialEq, Clone, Debug)]
-pub enum YingDaErr<'a> {
-    ZhongZaiAskFail(ZhiLing, &'a str, &'a str),
-    BeiCheFail(ZhiLing, &'a str, &'a str),
-    QiDongFail(ZhiLing, &'a str, &'a str),
-    HeZhaBingCheFail(ZhiLing, &'a str, &'a str),
-    FenZhaJieLieFail(ZhiLing, &'a str, &'a str),
-    TingJiFail(ZhiLing, &'a str, &'a str),
-    CtrlModeFail(ZhiLing, &'a str, &'a str),
-    OperatingStationFail(ZhiLing, &'a str, &'a str),
-    CtrlModeAndOperatingStationFail(ZhiLing, &'a str, &'a str),
-    AnDianFail(ZhiLing, &'a str, &'a str),
-    AnDianHeZhaFail(ZhiLing, &'a str, &'a str),
-    AnDianFenZhaFail(ZhiLing, &'a str, &'a str),
-    BianSuFail(ZhiLing, &'a str, &'a str),
-    BianYaFail(ZhiLing, &'a str, &'a str),
-    JinJiTingJiFail(ZhiLing, &'a str, &'a str),
-    PrioFail(ZhiLing, &'a str, &'a str),
-    TouRuFail(ZhiLing, &'a str, &'a str),
-    TuiChuFail(ZhiLing, &'a str, &'a str),
-    XiaoShengFail(ZhiLing, &'a str, &'a str),
-    YingDaFail(ZhiLing, &'a str, &'a str),
-    GuZhangHuanJiFail(ZhiLing, &'a str, &'a str),
-    DevNotExist(ZhiLing, &'a str, &'a str),
+#[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
+pub enum YingDaErr {
+    ZhongZaiAskFail(ZhiLing, String, String),
+    BeiCheFail(ZhiLing, String, String),
+    QiDongFail(ZhiLing, String, String),
+    HeZhaBingCheFail(ZhiLing, String, String),
+    FenZhaJieLieFail(ZhiLing, String, String),
+    TingJiFail(ZhiLing, String, String),
+    CtrlModeFail(ZhiLing, String, String),
+    OperatingStationFail(ZhiLing, String, String),
+    CtrlModeAndOperatingStationFail(ZhiLing, String, String),
+    AnDianFail(ZhiLing, String, String),
+    AnDianHeZhaFail(ZhiLing, String, String),
+    AnDianFenZhaFail(ZhiLing, String, String),
+    BianSuFail(ZhiLing, String, String),
+    BianYaFail(ZhiLing, String, String),
+    JinJiTingJiFail(ZhiLing, String, String),
+    PrioFail(ZhiLing, String, String),
+    TouRuFail(ZhiLing, String, String),
+    TuiChuFail(ZhiLing, String, String),
+    XiaoShengFail(ZhiLing, String, String),
+    YingDaFail(ZhiLing, String, String),
+    GuZhangHuanJiFail(ZhiLing, String, String),
+    DevNotExist(ZhiLing, String, String),
     /// #####DevTypeNotMatch
     /// 表征指令内容与设备类型不匹配,这通常是由于指令发送方的错误造成的
-    DevTypeNotMatch(ZhiLing, &'a str, &'a str),
-    Invalid(ZhiLing, &'a str, &'a str),
-    IdNotMatch(ZhiLing, &'a str, &'a str),
+    DevTypeNotMatch(ZhiLing, String, String),
+    Invalid(ZhiLing, String, String),
+    IdNotMatch(ZhiLing, String, String),
 }
 
 pub const CTRL_MODE_AND_OPERATING_STATION_FAIL_DESC : &'static str = "相应战位的操作人员发送的指令无效";

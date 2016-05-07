@@ -1,5 +1,5 @@
 use simctrl;
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct DianZhan {
   pub id : usize,
   pub ctrl_mode : simctrl::CtrlMode,

@@ -211,7 +211,7 @@ pub trait AttrSetter {
     fn ting_ji_zan_tai_setter(&mut self);
 }
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Copy, Clone, Debug)]
 pub struct JiZuCommonJi {
     pub ia_ext : f64,
     pub ib_ext : f64,
@@ -629,7 +629,7 @@ impl AttrSetter for JiZuCommonJi {
     }
 }
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum JiZuYunXingZhuangTai{
     TingJi,
     YunXing,
@@ -637,7 +637,7 @@ pub enum JiZuYunXingZhuangTai{
     GuZhang,
 }
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum GuZhangLeiXing {
     YiBan,
     YiJi,
@@ -645,7 +645,7 @@ pub enum GuZhangLeiXing {
     QiTa,
     Wu,
 }
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct ChaiYouJiJi{
     pub leng_que_shui_wen_du_a_lie : f64,
     pub leng_que_shui_wen_du_b_lie : f64,
@@ -736,7 +736,7 @@ impl AttrSetter for ChaiYouJiJi {
 
     }
 }
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct QiLunJiJi{
     pub jin_feng_wen_du : f64,
     pub chu_feng_wen_du : f64,
@@ -834,7 +834,7 @@ impl AttrSetter for QiLunJiJi {
 
     }
 }
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct AnDianJiJi;
 impl AttrSetter for AnDianJiJi {
     fn ting_ji_setter(&mut self) {
@@ -854,7 +854,7 @@ impl AttrSetter for AnDianJiJi {
     fn ting_ji_zan_tai_setter(&mut self){
     }
 }
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum JiZuRangeLeiXing {
     TingJi,
     BeiCheZanTai,
@@ -867,7 +867,7 @@ pub enum JiZuRangeLeiXing {
     JinJiTingJiZanTai,
     JinJiGuZhang,
 }
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum JiZuBianZaiLeiXing{
     HeZha,
     FenZha,
@@ -876,7 +876,7 @@ pub enum JiZuBianZaiLeiXing{
     PuTong,
     Wu,
 }
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum JiJi{
     CY(ChaiYouJiJi),
     QL(QiLunJiJi),
@@ -915,7 +915,7 @@ impl AttrSetter for JiJi {
     }
 }
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct JiZu<J> {
     pub id : usize,
     pub common_ji : JiZuCommonJi,

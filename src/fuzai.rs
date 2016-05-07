@@ -6,7 +6,7 @@ pub const FU_ZAI_Q_P : f64 = 0.75;
 pub const ZHONG_ZAI_YU_ZHI_P : f64 = 480.0;
 pub const ZHONG_ZAI_YU_ZHI_Q : f64 = 384.0;
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct FuZai {
   pub id : usize,
   pub p : f64,

@@ -1,10 +1,10 @@
-#[derive(PartialEq, Copy, Clone, Debug)]
 //节点状态，当节点电压幅值不为0，则为On，否则为Off
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum NodeStatus {
     On,
     Off,
 }
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct Node {
   pub id : usize,
   pub vm : f64,

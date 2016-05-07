@@ -1,9 +1,9 @@
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum DuanLuQiStatus {
     Off {fault : bool, ready_to_bing_che : bool},
     On {fault : bool, ready_to_jie_lie : bool},
 }
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct DuanLuQi {
   pub id : usize,
   pub status : DuanLuQiStatus,

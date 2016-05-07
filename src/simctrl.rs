@@ -79,7 +79,7 @@ pub const ZONG_SHU_SHOU_TI_DUI_JI_ZU : usize = 0;
 pub const ZONG_SHU_WEI_TI_DUI_JI_ZU : usize = 0;
 pub const ZONG_SHU_JI_ZU_IN_ONE_DIAN_ZHAN : usize = 3;
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum DevType{
     JiZu,
     DuanLuQi,
@@ -91,7 +91,7 @@ pub enum DevType{
     Wu,
 }
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum ZhanWeiType{
     JiPang,
     ZhuKongZhiPing,
@@ -106,13 +106,13 @@ pub enum ZhanWeiType{
     Wu,
 }
 
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum CtrlMode {
     Manual,
     SemiAuto,
     Auto,
 }
-#[derive(PartialEq, Copy, Clone, Debug)]
+#[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum OperatingStation {
     JiPang,
     Remote,

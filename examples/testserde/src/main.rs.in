@@ -1,0 +1,63 @@
+use simtraining::jizu::JiZuCommonJi;
+use simtraining::xitong::XiTong;
+use simtraining::zhiling::ZhiLing;
+use serde_json::error::Result;
+fn main() {
+    let j = JiZuCommonJi::new();
+    let j_ser = serde_json::to_string(&j).unwrap();
+    println!("j_ser:\n{}", j_ser);
+
+    let j_ser_pretty = serde_json::to_string_pretty(&j).unwrap();
+    println!("j_ser_pretty:\n{}", j_ser_pretty);
+
+    let j_de : Result<JiZuCommonJi> = serde_json::from_str(&j_ser);
+    match j_de {
+        Ok(j) => println!("j_de:\n{:?}", j),
+        Err(e) => println!("error of j_de:\n{:?}", e),
+    }
+
+    let j_de_pretty : Result<JiZuCommonJi> = serde_json::from_str(&j_ser_pretty);
+    match j_de_pretty {
+        Ok(j) => println!("j_de_pretty:\n{:?}", j),
+        Err(e) => println!("error of j_de_pretty:\n{:?}", e),
+    }
+
+    let x = XiTong::new(0);
+    let x_ser = serde_json::to_string(&x).unwrap();
+    println!("x_ser:\n{}", x_ser);
+
+    let x_ser_pretty = serde_json::to_string_pretty(&x).unwrap();
+    println!("x_ser_pretty:\n{}", x_ser_pretty);
+
+    let x_de : Result<XiTong> = serde_json::from_str(&x_ser);
+    match x_de {
+        Ok(x) => println!("x_de:\n{:?}", x),
+        Err(e) => println!("error of x_de:\n{:?}", e),
+    }
+
+    let x_de_pretty : Result<XiTong> = serde_json::from_str(&x_ser_pretty);
+    match x_de_pretty {
+        Ok(x) => println!("x_de_pretty:\n{:?}", x),
+        Err(e) => println!("error of x_de_pretty:\n{:?}", e),
+    }
+
+    let z = ZhiLing::new();
+    let z_ser = serde_json::to_string(&z).unwrap();
+    println!("z_ser:\n{}", z_ser);
+
+    let z_ser_pretty = serde_json::to_string_pretty(&z).unwrap();
+    println!("z_ser_pretty:\n{}", z_ser_pretty);
+
+    let z_de : Result<ZhiLing> = serde_json::from_str(&z_ser);
+    match z_de {
+        Ok(z) => println!("z_de:\n{:?}", z),
+        Err(e) => println!("error of z_de:\n{:?}", e),
+    }
+
+    let z_de_pretty : Result<ZhiLing> = serde_json::from_str(&z_ser_pretty);
+    match z_de_pretty {
+        Ok(z) => println!("z_de_pretty:\n{:?}", z),
+        Err(e) => println!("error of z_de_pretty:\n{:?}", e),
+    }
+
+}
