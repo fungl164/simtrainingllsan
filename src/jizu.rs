@@ -917,14 +917,14 @@ impl AttrSetter for JiJi {
 
 #[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct JiZu<J> {
-    pub id : usize,
+    pub uid : usize,
     pub common_ji : JiZuCommonJi,
     pub ji_can_shu_ji: J,
 }
 impl<J> JiZu<J> {
     pub fn new(_id:usize, ji:J) -> JiZu<J> {
         JiZu {
-            id : _id,
+            uid : _id,
             common_ji : JiZuCommonJi::new(),
             ji_can_shu_ji : ji,
         }

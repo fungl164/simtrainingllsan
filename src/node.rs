@@ -6,7 +6,7 @@ pub enum NodeStatus {
 }
 #[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct Node {
-  pub id : usize,
+  pub uid : usize,
   pub vm : f64,
   pub f : f64,
   pub status : NodeStatus,
@@ -15,7 +15,7 @@ pub struct Node {
 impl Node {
     pub fn new(_id : usize) -> Node {
         Node{
-            id : _id,
+            uid : _id,
             vm : 0.0,
             f : 0.0,
             status : NodeStatus::Off,

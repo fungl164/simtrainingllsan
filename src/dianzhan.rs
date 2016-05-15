@@ -1,7 +1,7 @@
 use simctrl;
 #[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct DianZhan {
-  pub id : usize,
+  pub uid : usize,
   pub ctrl_mode : simctrl::CtrlMode,
   pub operating_station : simctrl::OperatingStation,
   pub ctrl_mode_she_zhi : simctrl::CtrlMode,
@@ -16,7 +16,7 @@ pub struct DianZhan {
 impl DianZhan {
     pub fn new(_id : usize) -> DianZhan {
         DianZhan{
-            id : _id,
+            uid : _id,
             ctrl_mode : simctrl::CtrlMode::Manual,
             operating_station : simctrl::OperatingStation::Local,
             ctrl_mode_she_zhi : simctrl::CtrlMode::Manual,

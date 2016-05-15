@@ -8,7 +8,7 @@ pub const ZHONG_ZAI_YU_ZHI_Q : f64 = 384.0;
 
 #[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct FuZai {
-  pub id : usize,
+  pub uid : usize,
   pub p : f64,
   pub q : f64,
   pub p_max : f64,
@@ -18,7 +18,7 @@ pub struct FuZai {
 impl FuZai {
     pub fn new(_id : usize) -> FuZai {
         FuZai{
-            id : _id,
+            uid : _id,
             p : 0.0,
             q : 0.0,
             p_max : FU_ZAI_P_MAX,

@@ -1,0 +1,6 @@
+CREATE TABLE USERS (
+    uid VARCHAR PRIMARY KEY,
+    realname VARCHAR NOT NULL,
+    age INTEGER,
+    sex VARCHAR
+);

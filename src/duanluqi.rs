@@ -5,7 +5,7 @@ pub enum DuanLuQiStatus {
 }
 #[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct DuanLuQi {
-  pub id : usize,
+  pub uid : usize,
   pub status : DuanLuQiStatus,
   pub uab : f64,
   pub ubc : f64,
@@ -26,7 +26,7 @@ pub struct DuanLuQi {
 impl DuanLuQi {
     pub fn new(_id : usize) -> DuanLuQi {
         DuanLuQi{
-            id : _id,
+            uid : _id,
             status : DuanLuQiStatus::Off {fault : false, ready_to_bing_che : false},
             uab : 0.0,
             ubc : 0.0,

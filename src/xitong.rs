@@ -31,7 +31,7 @@ pub enum PowerFlowErr {
 pub struct XiTong {
   pub sec : i64,
   pub nsec : i32,
-  pub id : usize,
+  pub uid : usize,
   pub yue_kong : bool,
   pub p_shou_ti_dui : f64,
   pub u_shou_ti_dui : f64,
@@ -76,7 +76,7 @@ pub struct XiTong {
   pub temp_node_vec : Vec<usize>,
   /*所有相关节点放在一个group中，所有group链表放在_NodeGroupList中*/
   pub node_group_vec : Vec<Vec<usize>>,
-  //获取所有与机组相关节点的id集合
+  //获取所有与机组相关节点的uid集合
   pub jizunode_vec : Vec<usize>,
   pub jizuduanluqi_vec : Vec<usize>,
 }
@@ -106,7 +106,7 @@ impl XiTong {
         self.zhilu_node_vec.push((7,7));
     }
     pub fn build_zhilu_duanluqi_vec(&mut self){
-        /*构建支路与支路断路器之间的映射，key为支路id，value为支路断路器id*/
+        /*构建支路与支路断路器之间的映射，key为支路uid，value为支路断路器uid*/
         self.zhilu_duanluqi_vec.push((0,6));
         self.zhilu_duanluqi_vec.push((1,7));
         self.zhilu_duanluqi_vec.push((2,8));
@@ -215,7 +215,7 @@ impl XiTong {
         let mut x = XiTong{
             sec : time::get_time().sec,
             nsec : time::get_time().nsec,
-            id : _id,
+            uid : _id,
             yue_kong : false,
             p_shou_ti_dui : 0.0f64,
             u_shou_ti_dui : 0.0f64,
@@ -252,7 +252,7 @@ impl XiTong {
             jizuduanluqi_vec : Vec::new(),
         };
         for i in 0..simctrl::ZONG_SHU_JI_ZU_CHAI_YOU {
-            x.ji_zu_vec[i].id = i;
+            x.ji_zu_vec[i].uid = i;
             match x.ji_zu_vec[i].ji_can_shu_ji {
                 JiJi::CY(_) => x.ji_zu_vec[i].common_ji.bei_che_t = jizu::JI_ZU_CHAI_YOU_BEI_CHE_T,
                 JiJi::QL(_) => x.ji_zu_vec[i].common_ji.bei_che_t = jizu::JI_ZU_QI_LUN_BEI_CHE_T,
@@ -261,19 +261,19 @@ impl XiTong {
         }
         x.ji_zu_vec.push(JiZu::new(simctrl::ZONG_SHU_JI_ZU_CHAI_YOU, JiJi::AD(jizu::AnDianJiJi)));
         for i in 0..simctrl::ZONG_SHU_DIAN_ZHAN {
-            x.dian_zhan_vec[i].id = i;
+            x.dian_zhan_vec[i].uid = i;
         }
         for i in 0..simctrl::ZONG_SHU_DUAN_LU_QI {
-            x.duan_lu_qi_vec[i].id = i;
+            x.duan_lu_qi_vec[i].uid = i;
         }
         for i in 0..simctrl::ZONG_SHU_FU_ZAI {
-            x.fu_zai_vec[i].id = i;
+            x.fu_zai_vec[i].uid = i;
         }
         for i in 0..simctrl::ZONG_SHU_NODE {
-            x.node_vec[i].id = i;
+            x.node_vec[i].uid = i;
         }
         for i in 0..simctrl::ZONG_SHU_ZHI_LU {
-            x.zhi_lu_vec[i].id = i;
+            x.zhi_lu_vec[i].uid = i;
         }
         x.build_zhilu_node_vec();
         x.build_zhilu_duanluqi_vec();
@@ -367,7 +367,7 @@ impl XiTong {
     pub fn get_jizu_from_node(&mut self, _node : &node::Node)->Option<&mut jizu::JiZu<jizu::JiJi>>{
         match self.node_jizu_vec.iter()
         .cloned()
-        .find(|node_jizu|node_jizu.0 == _node.id) {
+        .find(|node_jizu|node_jizu.0 == _node.uid) {
             Some(node_jizu) => return Some(&mut self.ji_zu_vec[node_jizu.1]),
             None => return None,
         }
@@ -394,7 +394,7 @@ impl XiTong {
     pub fn get_node_from_jizu(&mut self, ji_zu : &JiZu<JiJi>)->Option<&mut node::Node>{
         match self.node_jizu_vec.iter()
         .cloned()
-        .find(|node_jizu|node_jizu.1 == ji_zu.id) {
+        .find(|node_jizu|node_jizu.1 == ji_zu.uid) {
             Some(node_jizu) => return Some(&mut self.node_vec[node_jizu.0]),
             None => return None,
         }
@@ -412,7 +412,7 @@ impl XiTong {
     pub fn get_fuzai_from_node(&mut self, _node : &node::Node)->Option<&mut fuzai::FuZai>{
         match self.node_fuzai_vec.iter()
         .cloned()
-        .find(|node_fuzai|node_fuzai.0 == _node.id) {
+        .find(|node_fuzai|node_fuzai.0 == _node.uid) {
             Some(node_fuzai) => return Some(&mut self.fu_zai_vec[node_fuzai.1]),
             None => return None,
         }
@@ -440,14 +440,14 @@ impl XiTong {
     pub fn get_jizuduanluqi_status(&self, ji_zu : &JiZu<JiJi>) -> Option<duanluqi::DuanLuQiStatus> {
         self.jizu_duanluqi_vec.iter()
         .cloned()
-        .find(|jizu_duanluqi|jizu_duanluqi.0 == ji_zu.id)
+        .find(|jizu_duanluqi|jizu_duanluqi.0 == ji_zu.uid)
         .map(|jizu_duanluqi|self.duan_lu_qi_vec[jizu_duanluqi.1].status)
     }
     //根据支路断路器状态判断支路通断情况
     pub fn update_zhilu_status(&mut self) {
         for zhi_lu in self.zhi_lu_vec.iter_mut() {
             match self.zhilu_duanluqi_vec.iter()
-            .find(|zhilu_duanluqi|zhilu_duanluqi.0 == zhi_lu.id) {
+            .find(|zhilu_duanluqi|zhilu_duanluqi.0 == zhi_lu.uid) {
                 Some(zhilu_duanluqi) => {
                     match self.duan_lu_qi_vec[zhilu_duanluqi.1].status {
                         duanluqi::DuanLuQiStatus::On{..} => zhi_lu.status = zhilu::ZhiLuStatus::On,
@@ -462,7 +462,7 @@ impl XiTong {
     pub fn get_dianzhan_from_jizu(&mut self, ji_zu : &JiZu<JiJi>) -> Option<&mut dianzhan::DianZhan> {
         match self.jizu_dianzhan_vec.iter()
         .cloned()
-        .find(|jizu_dianzhan|jizu_dianzhan.0 == ji_zu.id) {
+        .find(|jizu_dianzhan|jizu_dianzhan.0 == ji_zu.uid) {
             Some(jizu_dianzhan) => return Some(&mut self.dian_zhan_vec[jizu_dianzhan.1]),
             None => return None,
         }
@@ -481,7 +481,7 @@ impl XiTong {
     pub fn get_dianzhan_from_fuzai(&mut self, fu_zai : &fuzai::FuZai) -> Option<&mut dianzhan::DianZhan> {
         match self.fuzai_dianzhan_vec.iter()
         .cloned()
-        .find(|fuzai_dianzhan|fuzai_dianzhan.0 == fu_zai.id) {
+        .find(|fuzai_dianzhan|fuzai_dianzhan.0 == fu_zai.uid) {
             Some(fuzai_dianzhan) => return Some(&mut self.dian_zhan_vec[fuzai_dianzhan.1]),
             None => return None,
         }
@@ -489,7 +489,7 @@ impl XiTong {
     pub fn get_dianzhan_from_duanluqi(&mut self, duan_lu_qi : &duanluqi::DuanLuQi) -> Option<&mut dianzhan::DianZhan> {
         match self.duanluqi_dianzhan_vec.iter()
         .cloned()
-        .find(|duanluqi_dianzhan|duanluqi_dianzhan.0 == duan_lu_qi.id) {
+        .find(|duanluqi_dianzhan|duanluqi_dianzhan.0 == duan_lu_qi.uid) {
             Some(duanluqi_dianzhan) => return Some(&mut self.dian_zhan_vec[duanluqi_dianzhan.1]),
             None => return None,
         }
@@ -505,7 +505,7 @@ impl XiTong {
     pub fn get_dianzhan_from_node(&mut self, _node : &node::Node) -> Option<&mut dianzhan::DianZhan> {
         match self.node_dianzhan_vec.iter()
         .cloned()
-        .find(|node_dianzhan|node_dianzhan.0 == _node.id) {
+        .find(|node_dianzhan|node_dianzhan.0 == _node.uid) {
             Some(node_dianzhan) => return Some(&mut self.dian_zhan_vec[node_dianzhan.1]),
             None => return None,
         }
@@ -532,7 +532,7 @@ impl XiTong {
     pub fn get_jizu_from_duanluqi(&mut self, duan_lu_qi : &duanluqi::DuanLuQi) -> Option<&mut JiZu<JiJi>> {
         match self.jizu_duanluqi_vec.iter()
         .cloned()
-        .find(|jizu_duanluqi|jizu_duanluqi.1 == duan_lu_qi.id) {
+        .find(|jizu_duanluqi|jizu_duanluqi.1 == duan_lu_qi.uid) {
             Some(jizu_duanluqi) => return Some(&mut self.ji_zu_vec[jizu_duanluqi.0]),
             None => return None,
 
@@ -542,7 +542,7 @@ impl XiTong {
     pub fn get_duanluqi_from_jizu(&mut self, ji_zu : &JiZu<JiJi>) -> Option<&mut duanluqi::DuanLuQi> {
         match self.jizu_duanluqi_vec.iter()
         .cloned()
-        .find(|jizu_duanluqi|jizu_duanluqi.0 == ji_zu.id) {
+        .find(|jizu_duanluqi|jizu_duanluqi.0 == ji_zu.uid) {
             Some(jizu_duanluqi) => return Some(&mut self.duan_lu_qi_vec[jizu_duanluqi.1]),
             None => return None,
         }
@@ -568,7 +568,7 @@ impl XiTong {
 
     pub fn get_duanluqi_from_zhilu(&mut self, zhi_lu : &zhilu::ZhiLu) -> Option<&mut duanluqi::DuanLuQi> {
         match self.zhilu_duanluqi_vec.iter().cloned()
-        .find(|zhilu_duanluqi|zhilu_duanluqi.0 == zhi_lu.id) {
+        .find(|zhilu_duanluqi|zhilu_duanluqi.0 == zhi_lu.uid) {
             Some(zhilu_duanluqi) => return Some(&mut self.duan_lu_qi_vec[zhilu_duanluqi.1]),
             None => return None,
         }
@@ -588,7 +588,7 @@ impl XiTong {
     //判断两个节点是否连通
     pub fn is_nodes_connected(&mut self, n1 : &node::Node, n2 : &node::Node) -> bool {
         for group in self.node_group_vec.iter(){
-            if group.contains(&(n1.id)) && group.contains(&(n2.id)) {
+            if group.contains(&(n1.uid)) && group.contains(&(n2.uid)) {
                 return true;
             }
         }
@@ -608,7 +608,7 @@ impl XiTong {
         let status = self.get_duanluqi_from_jizu(ji_zu).unwrap().status;
         match status {
             duanluqi::DuanLuQiStatus::On{..} => {
-                let n1_id = self.get_node_from_jizu(ji_zu).unwrap().id;
+                let n1_id = self.get_node_from_jizu(ji_zu).unwrap().uid;
                 for n2_id in self.jizunode_vec.to_vec(){
                     if n1_id != n2_id && self.is_nodes_id_connected(n1_id, n2_id) {
                         return true;
@@ -625,7 +625,7 @@ impl XiTong {
         let mut jizuid_vec = Vec::new();
         match status {
             duanluqi::DuanLuQiStatus::On{..} => {
-                let n1_id = self.get_node_from_jizu(ji_zu).unwrap().id;
+                let n1_id = self.get_node_from_jizu(ji_zu).unwrap().uid;
                 for n2_id in 0..simctrl::ZONG_SHU_NODE{
                     if n1_id != n2_id && self.is_nodes_id_connected(n1_id, n2_id) {
                         let jizuid_option = self.get_jizuid_from_nodeid(n2_id);
@@ -676,7 +676,7 @@ impl XiTong {
     ///获取与机组相关的节点组对应的所有非机组断路器
     pub fn get_duanluqiid_vec_related_to_jizu(&mut self, ji_zu : &JiZu<JiJi>) -> Option<Vec<usize>> {
         let mut duanluqiid_vec = Vec::new();
-        let n1_id = self.get_node_from_jizu(ji_zu).unwrap().id;
+        let n1_id = self.get_node_from_jizu(ji_zu).unwrap().uid;
         let mut zhiluid_group = Vec::new();
         for group in self.node_group_vec.to_vec(){
             if group.contains(&n1_id) {
@@ -781,7 +781,7 @@ impl XiTong {
     }
 
     /// 更新node_group_vec
-    /// 1、利用节点Id列表集合node_id_vec
+    /// 1、利用节点uid列表集合node_id_vec
     /// 2、如果node_id_vec中存在元素，取出一个节点，构造一个新列表group
     /// 3、查找此节点的所有支路，判断支路是否闭合，若闭合则将支路另一端节点加入group
     /// 4、group循环元素递增1后，继续3、否则跳出，将其加入node_group_vec
@@ -809,7 +809,7 @@ impl XiTong {
                         let mut nodes : Vec<usize> = self.get_nodeid_group_from_zhiluid(zhilu_id).unwrap();
                         nodes.retain(|&node_id| node_id != cur_node_id);
                         for node_id in nodes {
-                            node_id_vec.retain(|&id| id != node_id);
+                            node_id_vec.retain(|&uid| uid != node_id);
                             group.push(node_id);
                         }
                     }
@@ -858,16 +858,16 @@ impl XiTong {
         return false;
     }
 
-    /// 根据电站Id得到电站中的所有节点
+    /// 根据电站uid得到电站中的所有节点
     pub fn get_node_vec_from_dian_zhan_id(&mut self, dianzhan_id : usize) -> Vec<usize> {
         self.node_dianzhan_vec.to_vec().iter().filter(|&t|t.1 == dianzhan_id).map(|&t|t.0).collect()
     }
 
-    /// 根据电站Id得到与电站相关联的其他所有电站
-    /// 1. 根据电站找到电站中的所有节点id
-    /// 2. 根据节点id在node_group_vec中找到所有的相关节点id
-    /// 2. 根据所有相关节点id找到对应电站id
-    /// 3. 电站id排序去重，并去掉给定的电站
+    /// 根据电站uid得到与电站相关联的其他所有电站
+    /// 1. 根据电站找到电站中的所有节点uid
+    /// 2. 根据节点uid在node_group_vec中找到所有的相关节点uid
+    /// 2. 根据所有相关节点uid找到对应电站uid
+    /// 3. 电站uid排序去重，并去掉给定的电站
     pub fn get_dian_zhan_guan_lian_vec_from_dian_zhan_id(&mut self, dianzhan_id : usize) -> Vec<usize> {
         let n_vec : Vec<usize> = self.get_node_vec_from_dian_zhan_id(dianzhan_id);
         let node_group_vec = self.node_group_vec.to_vec();
@@ -886,7 +886,7 @@ impl XiTong {
         d_vec_r.iter().filter(|d|**d != dianzhan_id).map(|&x|x).collect()
     }
     /// 电站母联断路器是否全部连通
-    /// 由电站id获取节点id组
+    /// 由电站uid获取节点uid组
     /// 去和node_group_vec中的元素一一对比，如果有相同的则返回true，否则返回false
     pub fn is_mu_lian_lian_tong(&mut self, dianzhan_id : usize) -> bool {
         let n_group : Vec<usize> = self.node_dianzhan_vec.to_vec().iter().filter(|n_d|n_d.1 == dianzhan_id).map(|n_d|n_d.0).collect();
@@ -902,11 +902,11 @@ impl XiTong {
     ///返回值为1，说明潮流计算成功，返回值为0，说明有回路存在
     pub fn compute_path_pf(&mut self, i_group_list : Vec<usize>, pf_fang_fa : u32) {
         //当前负载在网有功,无功按(FU_ZAI_Q_P * 有功)计算，
-        //key为负载id，value为负载在网值
+        //key为负载uid，value为负载在网值
         let mut pd_online_vec : Vec<(usize, f64)> = Vec::new();
-        //当前电源注入节点有功，key为节点id, value为注入值，当无电源时，为0
+        //当前电源注入节点有功，key为节点uid, value为注入值，当无电源时，为0
         let mut pg_node_vec : Vec<(usize, f64)>  = Vec::new();
-        //当前负载流出节点有功，key为节点id, value为流出值，当无负载时，为0
+        //当前负载流出节点有功，key为节点uid, value为流出值，当无负载时，为0
         let mut pd_node_vec : Vec<(usize, f64)> = Vec::new();
         //路径中所有节点列表
         let all_node_in_path_vec = i_group_list.to_vec();
@@ -2277,8 +2277,8 @@ impl Update for XiTong {
                 JiZuRangeLeiXing::BianYa => self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::TingJi,
                 _ => {}
             }
-            // println!("id:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}, bei_che_t:{:?}, bian_su_t:{:?}, bian_ya_t:{:?}", i, self.ji_zu_vec[i].common_ji.current_range, self.ji_zu_vec[i].common_ji.uab_ext, self.ji_zu_vec[i].common_ji.zhuan_su, self.ji_zu_vec[i].common_ji.f_ext, self.ji_zu_vec[i].common_ji.t_current_range,  self.ji_zu_vec[i].common_ji.bei_che_t,  self.ji_zu_vec[i].common_ji.bian_su_t,  self.ji_zu_vec[i].common_ji.bian_ya_t);
-            // println!("id:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}", i, self.ji_zu_vec[i].common_ji.current_range, self.ji_zu_vec[i].common_ji.uab_ext, self.ji_zu_vec[i].common_ji.zhuan_su, self.ji_zu_vec[i].common_ji.f_ext, self.ji_zu_vec[i].common_ji.t_current_range);
+            // println!("uid:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}, bei_che_t:{:?}, bian_su_t:{:?}, bian_ya_t:{:?}", i, self.ji_zu_vec[i].common_ji.current_range, self.ji_zu_vec[i].common_ji.uab_ext, self.ji_zu_vec[i].common_ji.zhuan_su, self.ji_zu_vec[i].common_ji.f_ext, self.ji_zu_vec[i].common_ji.t_current_range,  self.ji_zu_vec[i].common_ji.bei_che_t,  self.ji_zu_vec[i].common_ji.bian_su_t,  self.ji_zu_vec[i].common_ji.bian_ya_t);
+            // println!("uid:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}", i, self.ji_zu_vec[i].common_ji.current_range, self.ji_zu_vec[i].common_ji.uab_ext, self.ji_zu_vec[i].common_ji.zhuan_su, self.ji_zu_vec[i].common_ji.f_ext, self.ji_zu_vec[i].common_ji.t_current_range);
         }
 
     }
