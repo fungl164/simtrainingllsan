@@ -46,3 +46,19 @@ path = "examples/testrouter.rs"
 [[example]]
 name = "test-create-user"
 path = "examples/testcreateuser.rs"
+
+[[example]]
+name = "test-show-users"
+path = "examples/testshowusers.rs"
+
+[[example]]
+name = "test-find-user"
+path = "examples/testfinduser.rs"
+
+[[example]]
+name = "test-update-user"
+path = "examples/testupdateuser.rs"
+
+[[example]]
+name = "test-delete-user"
+path = "examples/testdeleteuser.rs"

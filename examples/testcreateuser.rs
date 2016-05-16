@@ -4,8 +4,7 @@ extern crate simtraining;
 extern crate diesel;
 
 use simtraining::*;
-use simtraining::user{User, Sex};
-use std::io::{stdin, Read};
+use std::io::{stdin};
 
 fn main() {
     let connection = establish_connection();
@@ -23,11 +22,11 @@ fn main() {
     println!("请输入年龄:");
     let mut age = String::new();
     stdin().read_line(&mut age).unwrap();
-    let mut age = i32::from_str(&age[..(age.len() - 1)]).unwrap(); // Drop the newline character
+    let age = &age[..(age.len() - 1)].parse::<i32>().unwrap(); // Drop the newline character
 
-    let result = User::create(&connection, &uid, &realname, age, Sex::Male);
+    let result = user::User::create(&connection, &uid, &realname, *age, "");
     match result {
-        Ok(user) => println!("用户{}创建成功", uid),
-        Err(err) => println!("{:?}", err);
+        Ok(user) => println!("用户{:?}创建成功", user),
+        Err(err) => println!("{:?}", err),
     }
 }
