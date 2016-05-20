@@ -44,6 +44,10 @@ name = "test-router"
 path = "examples/testrouter.rs"
 
 [[example]]
+name = "test-router-2"
+path = "examples/testrouter2.rs"
+
+[[example]]
 name = "test-create-user"
 path = "examples/testcreateuser.rs"
 

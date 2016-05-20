@@ -12,6 +12,10 @@ extern crate time;
 extern crate rand;
 extern crate libc;
 extern crate mio;
+
+extern crate iron;
+extern crate router;
+
 #[cfg(windows)]
 extern crate winapi;
 #[cfg(windows)]
@@ -30,10 +34,13 @@ pub mod xitong;
 
 pub mod schema;
 pub mod user;
-// pub mod evaluation;
-// pub mod projects;
-// pub mod station;
-// pub mod training;
+pub mod trainingsession;
+// pub mod trainingaction;
+// pub mod dev;
+pub mod zhanwei;
+
+pub mod route;
+
 use diesel::prelude::*;
 use diesel::pg::PgConnection;
 use dotenv::dotenv;

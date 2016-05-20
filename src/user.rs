@@ -14,33 +14,37 @@ pub enum Sex {
 #[insertable_into(users)]
 pub struct User {
     pub uid: String,
+    pub password: String,
+    pub level: i32,
     pub realname: String,
     pub age: i32,
     pub sex: String,
 }
 
 impl User {
-    pub fn new(_id: &str, _realname: &str, _age: i32, _sex: &str) -> User {
+    pub fn new(_uid: &str,
+               _password: &str,
+               _level: i32,
+               _realname: &str,
+               _age: i32,
+               _sex: &str)
+               -> User {
         User {
-            uid: _id.to_string(),
+            uid: _uid.to_string(),
+            password: _password.to_string(),
+            level: _level,
             realname: _realname.to_string(),
             age: _age,
             sex: _sex.to_string(),
         }
     }
-    pub fn create<'a>(conn: &PgConnection,
-                      _uid: &'a str,
-                      _realname: &'a str,
-                      _age: i32,
-                      _sex: &'a str)
-                      -> diesel::QueryResult<User> {
-        let uid_s = String::from(_uid);
-
-        match users::table.find(uid_s).first::<User>(conn) {
+    pub fn create(conn: &PgConnection, _user: User) -> diesel::QueryResult<User> {
+        let user = _user.clone();
+        match users::table.find(_user.uid).first::<User>(conn) {
             Err(Error::NotFound) => {
-                let new_user = User::new(_uid, _realname, _age, _sex);
-                return ::diesel::insert(&new_user).into(users::table)
-                    .get_result(conn);
+                return ::diesel::insert(&user)
+                           .into(users::table)
+                           .get_result(conn);
             }
             Ok(_) => return Err(Error::DatabaseError("此用户名已存在".to_string())),
             Err(e) => return Err(e),
@@ -60,5 +64,4 @@ impl User {
         use ::schema::users::dsl::*;
         diesel::delete(users.filter(uid.eq(_uid.to_string()))).execute(conn)
     }
-
 }
