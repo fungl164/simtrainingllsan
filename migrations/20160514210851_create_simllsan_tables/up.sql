@@ -35,8 +35,6 @@ CREATE TABLE training_actions (
   action_type VARCHAR NOT NULL,
   dev_uid VARCHAR NOT NULL,
   zhanwei_uid VARCHAR NOT NULL,
-  xitong_before TEXT NOT NULL,
-  xitong_after TEXT NOT NULL,
   sec_duration BIGINT NOT NULL,
   nsec_duration INTEGER NOT NULL,
   score_op_order DOUBLE PRECISION NOT NULL,
