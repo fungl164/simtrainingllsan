@@ -15,6 +15,8 @@ extern crate mio;
 
 extern crate iron;
 extern crate router;
+extern crate mount;
+extern crate staticfile;
 
 #[cfg(windows)]
 extern crate winapi;

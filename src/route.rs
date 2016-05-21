@@ -1,20 +1,27 @@
 use iron::prelude::*;
 use iron::mime::Mime;
 use iron::status;
-use router::{Router};
+use iron::middleware::Handler;
+use router::Router;
+use mount::Mount;
+use staticfile::Static;
+
+use std::path::Path;
 use serde_json;
 use xitong::XiTong;
 use zhiling::{ZhiLing, ZhiLingType};
 use simctrl::{DevType, ZhanWeiType};
 
-pub fn handler(_: &mut Request) -> IronResult<Response> {
+pub const API_ROOT_PATH: &'static str = "/api/v1";
+
+pub fn xi_tong_handler(_: &mut Request) -> IronResult<Response> {
     let x = XiTong::new(0);
     let x_ser_pretty = serde_json::to_string_pretty(&x).unwrap();
     let content_type = "application/json".parse::<Mime>().unwrap();
     Ok(Response::with((content_type, status::Ok, x_ser_pretty)))
 }
 
-pub fn zhi_ling_bei_che_handler(_: &mut Request) -> IronResult<Response> {
+pub fn zhi_ling_handler(_req: &mut Request) -> IronResult<Response> {
     let mut z = ZhiLing::new();
     z.zhi_ling_type = ZhiLingType::BeiChe;
     z.dev_type = DevType::JiZu;
@@ -28,10 +35,15 @@ pub fn zhi_ling_bei_che_handler(_: &mut Request) -> IronResult<Response> {
     let content_type = "application/json".parse::<Mime>().unwrap();
     Ok(Response::with((content_type, status::Ok, z_ser_pretty)))
 }
-
-pub fn create_and_config_route() -> Router {
+fn config_api_route<H, S>(router: &mut Router, path: S, handler: H) where H: Handler, S: AsRef<str> {
+    router.get(API_ROOT_PATH.to_string() + path.as_ref(), handler);
+}
+pub fn create_and_config_route() -> Mount {
     let mut router = Router::new();
-    router.get("/", handler);
-    router.get("/zhiling/beiche", zhi_ling_bei_che_handler);
-    return router;
+    config_api_route(&mut router, "/", xi_tong_handler);
+    config_api_route(&mut router, "/zhiling", zhi_ling_handler);
+    let mut mount = Mount::new();
+    mount.mount("/", router)
+         .mount("/docs/", Static::new(Path::new("target/doc")));
+    return mount;
 }
