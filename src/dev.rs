@@ -3,20 +3,21 @@ use diesel;
 use diesel::prelude::*;
 use diesel::pg::PgConnection;
 use diesel::result::Error;
+
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Queryable)]
 #[changeset_for(devs)]
 #[insertable_into(devs)]
 pub struct Dev {
     pub uid: String,
-    pub id: i32,
+    pub inner_id: i32,
     pub dev_type: String,
 }
 
 impl Dev {
-    pub fn new(uid: &str, id: i32, dev_type: &str) -> Dev {
+    pub fn new(uid: &str, inner_id: i32, dev_type: &str) -> Dev {
         Dev {
             uid: uid.to_string(),
-            id: id,
+            inner_id: inner_id,
             dev_type: dev_type.to_string(),
         }
     }

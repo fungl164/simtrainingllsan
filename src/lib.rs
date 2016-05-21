@@ -37,8 +37,8 @@ pub mod xitong;
 pub mod schema;
 pub mod user;
 pub mod trainingsession;
-// pub mod trainingaction;
-// pub mod dev;
+pub mod trainingaction;
+pub mod dev;
 pub mod zhanwei;
 
 pub mod route;

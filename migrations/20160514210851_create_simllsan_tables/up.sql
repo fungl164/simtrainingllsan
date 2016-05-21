@@ -31,10 +31,12 @@ CREATE TABLE training_actions (
   nsec INTEGER NOT NULL,
   name VARCHAR NOT NULL,
   session_id INTEGER NOT NULL,
-  user_uid INTEGER NOT NULL,
+  user_uid VARCHAR NOT NULL,
   action_type VARCHAR NOT NULL,
   dev_uid VARCHAR NOT NULL,
   zhanwei_uid VARCHAR NOT NULL,
+  xitong_before TEXT NOT NULL,
+  xitong_after TEXT NOT NULL,
   sec_duration BIGINT NOT NULL,
   nsec_duration INTEGER NOT NULL,
   score_op_order DOUBLE PRECISION NOT NULL,
@@ -46,11 +48,11 @@ CREATE TABLE training_actions (
 CREATE TABLE zhanweis (
   uid VARCHAR PRIMARY KEY,
   zhanwei_type VARCHAR NOT NULL,
-  user_id VARCHAR
+  user_uid VARCHAR
 );
 
 CREATE TABLE devs (
   uid VARCHAR PRIMARY KEY,
-  id INTEGER NOT NULL,
+  inner_id INTEGER NOT NULL,
   dev_type VARCHAR NOT NULL
 );

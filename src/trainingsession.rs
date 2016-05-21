@@ -2,7 +2,6 @@ use schema::*;
 use diesel;
 use diesel::prelude::*;
 use diesel::pg::PgConnection;
-#[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
 #[insertable_into(training_sessions)]
 pub struct NewTrainingSession {
     pub sec: i64,

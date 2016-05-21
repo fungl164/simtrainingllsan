@@ -9,15 +9,15 @@ use diesel::result::Error;
 pub struct ZhanWei {
     pub uid: String,
     pub zhanwei_type: String,
-    pub user_id: Option<String>,
+    pub user_uid: Option<String>,
 }
 
 impl ZhanWei {
-    pub fn new(uid: &str, zhanwei_type: &str, user_id: Option<String>) -> ZhanWei {
+    pub fn new(uid: &str, zhanwei_type: &str, user_uid: Option<String>) -> ZhanWei {
         ZhanWei {
             uid: uid.to_string(),
             zhanwei_type: zhanwei_type.to_string(),
-            user_id: user_id,
+            user_uid: user_uid,
         }
     }
     pub fn create(conn: &PgConnection, _zhanwei: ZhanWei) -> diesel::QueryResult<ZhanWei> {
