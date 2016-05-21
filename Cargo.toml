@@ -3,7 +3,6 @@ name = "simtraining"
 version = "0.1.0"
 authors = ["fuying"]
 # build = "build.rs"
-
 # [lib]
 # name = "simtraining"
 # path = "src/lib.rs"
@@ -20,7 +19,7 @@ iron = "^0.3.0"
 router = "^0.1.1"
 mount = "^0.1.0"
 staticfile = "^0.2.0"
-diesel = { git = "https://github.com/diesel-rs/diesel.git" }
+diesel = { git = "https://github.com/diesel-rs/diesel.git", features = ["large-tables"] }
 diesel_codegen = { git = "https://github.com/diesel-rs/diesel.git", default-features = false, features = ["nightly", "postgres"] }
 dotenv = "^0.8.0"
 dotenv_macros = "^0.8.0"
