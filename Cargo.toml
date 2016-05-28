@@ -39,31 +39,3 @@ ws2_32-sys = "^0.2"
 [target.i686-pc-windows-msvc.dependencies]
 winapi = "^0.2"
 ws2_32-sys = "^0.2"
-
-[[example]]
-name = "test-router"
-path = "examples/testrouter.rs"
-
-[[example]]
-name = "test-router-2"
-path = "examples/testrouter2.rs"
-
-[[example]]
-name = "test-create-user"
-path = "examples/testcreateuser.rs"
-
-[[example]]
-name = "test-show-users"
-path = "examples/testshowusers.rs"
-
-[[example]]
-name = "test-find-user"
-path = "examples/testfinduser.rs"
-
-[[example]]
-name = "test-update-user"
-path = "examples/testupdateuser.rs"
-
-[[example]]
-name = "test-delete-user"
-path = "examples/testdeleteuser.rs"
