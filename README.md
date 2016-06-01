@@ -1,5 +1,7 @@
 注：目前编译时必须安装rust的nightly版本
+
 先打开一个终端，运行cargo run --example testrouter2
+
 然后再打开一个终端，用examples/curl_test_script.txt中每一行的命令进行测试
 
 ```bash
