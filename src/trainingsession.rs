@@ -1,7 +1,14 @@
 use schema::*;
 use diesel;
 use diesel::prelude::*;
-use diesel::pg::PgConnection;
+use iron::prelude::*;
+use iron::mime::Mime;
+use iron::status;
+use std::io::prelude::*;
+use serde_json;
+use router::Router;
+
+#[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Queryable)]
 #[insertable_into(training_sessions)]
 pub struct NewTrainingSession {
     pub sec: i64,
@@ -114,26 +121,139 @@ impl TrainingSession {
             score: score,
         }
     }
-    pub fn create(conn: &PgConnection,
-                  _session: NewTrainingSession)
-                  -> diesel::QueryResult<TrainingSession> {
-        diesel::insert(&_session).into(training_sessions::table).get_result(conn)
+
+    pub fn create(req: &mut Request) -> IronResult<Response> {
+        let mut data_json = String::new();
+        let content_type_ok = "application/json".parse::<Mime>().unwrap();
+        let content_type_err = "text/plain".parse::<Mime>().unwrap();
+        match req.body.read_to_string(&mut data_json) {
+            Ok(_) => {
+                match serde_json::from_str::<NewTrainingSession>(&data_json) {
+                    Ok(data) => {
+                        match diesel::insert(&data)
+                                  .into(training_sessions::table)
+                                  .get_result::<TrainingSession>(&(establish_connection())) {
+                            Ok(data) => {
+                                return Ok(Response::with((content_type_ok,
+                                                          status::Ok,
+                                                          serde_json::to_string(&data)
+                                                              .unwrap())))
+                            }
+                            Err(e) => {
+                                return Ok(Response::with((content_type_err,
+                                                          status::InternalServerError,
+                                                          format!("{:?}", e))))
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        return Ok(Response::with((content_type_err,
+                                                  status::BadRequest,
+                                                  format!("{:?}", e))))
+                    }
+                }
+            }
+            Err(e) => {
+                return Ok(Response::with((content_type_err,
+                                          status::BadRequest,
+                                          format!("{:?}", e))))
+            }
+        }
     }
-    pub fn show_all(conn: &PgConnection) -> diesel::QueryResult<Vec<TrainingSession>> {
-        training_sessions::table.load::<TrainingSession>(conn)
+
+    pub fn show_all(_: &mut Request) -> IronResult<Response> {
+        match training_sessions::table.load::<TrainingSession>(&(establish_connection())) {
+            Ok(user_vec) => {
+                let content_type_ok = "application/json".parse::<Mime>().unwrap();
+                let user_vec_ser = serde_json::to_string(&user_vec).unwrap();
+                return Ok(Response::with((content_type_ok, status::Ok, user_vec_ser)));
+            }
+            Err(e) => {
+                let content_type_err = "text/plain".parse::<Mime>().unwrap();
+                return Ok(Response::with((content_type_err, status::NotFound, format!("{:?}", e))));
+            }
+        }
     }
-    pub fn find_by_id(conn: &PgConnection, _id: i32) -> diesel::QueryResult<TrainingSession> {
-        training_sessions::table.find(_id).first::<TrainingSession>(conn)
+
+    pub fn find_by_id(req: &mut Request) -> IronResult<Response> {
+        let id = req.extensions.get::<Router>().unwrap().find("id").unwrap().parse::<i32>().unwrap();
+        match training_sessions::table.find(id).first::<TrainingSession>(&(establish_connection())) {
+            Ok(data) => {
+                let content_type_ok = "application/json".parse::<Mime>().unwrap();
+                let data_ser = serde_json::to_string(&data).unwrap();
+                return Ok(Response::with((content_type_ok, status::Ok, data_ser)));
+            }
+            Err(e) => {
+                let content_type_err = "text/plain".parse::<Mime>().unwrap();
+                return Ok(Response::with((content_type_err, status::NotFound, format!("{:?}", e))));
+            }
+        }
     }
-    pub fn update(conn: &PgConnection,
-                  _id: i32,
-                  data: &TrainingSession)
-                  -> diesel::QueryResult<usize> {
+
+    pub fn update(req: &mut Request) -> IronResult<Response> {
         use ::schema::training_sessions::dsl::*;
-        diesel::update(training_sessions.filter(id.eq(_id))).set(data).execute(conn)
+        let mut data_json = String::new();
+        let content_type_err = "text/plain".parse::<Mime>().unwrap();
+        let _id = req.extensions.get::<Router>().unwrap().find("id").unwrap().parse::<i32>().unwrap();
+        match req.body.read_to_string(&mut data_json) {
+            Ok(_) => {
+                match serde_json::from_str::<TrainingSession>(&data_json) {
+                    Ok(data) => {
+                        match diesel::update(training_sessions.filter(id.eq(_id)))
+                                  .set(&data)
+                                  .execute(&(establish_connection())) {
+                            Ok(_) => {
+                                match training_sessions.filter( id.eq(_id)).first::<TrainingSession>(&(establish_connection()) ) {
+                                    Ok(data) => {
+                                        let content_type_ok = "application/json".parse::<Mime>().unwrap();
+                                        let data_ser = serde_json::to_string(&data).unwrap();
+                                        return Ok(Response::with((content_type_ok, status::Ok, data_ser)));
+                                    }
+                                    Err(e) => {
+                                        return Ok(Response::with((content_type_err, status::NotFound, format!("{:?}", e))));
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                return Ok(Response::with((content_type_err,
+                                                          status::NotFound,
+                                                          format!("{:?}", e))));
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        return Ok(Response::with((content_type_err,
+                                                  status::BadRequest,
+                                                  format!("{:?}", e))))
+                    }
+                }
+            }
+            Err(e) => {
+                return Ok(Response::with((content_type_err,
+                                          status::BadRequest,
+                                          format!("{:?}", e))))
+            }
+        }
     }
-    pub fn delete(conn: &PgConnection, _id: i32) -> diesel::QueryResult<usize> {
+
+    pub fn delete(req: &mut Request) -> IronResult<Response> {
         use ::schema::training_sessions::dsl::*;
-        diesel::delete(training_sessions.filter(id.eq(_id))).execute(conn)
+        let content_type = "text/plain".parse::<Mime>().unwrap();
+        let _id = req.extensions.get::<Router>().unwrap().find("id").unwrap().parse::<i32>().unwrap();
+        match diesel::delete(training_sessions.filter(id.eq(_id)))
+                  .execute(&(establish_connection())) {
+            Ok(n) if n>0 => {
+                return Ok(Response::with((content_type,
+                                          status::Ok,
+                                          format!("成功删除{:?}条记录", n))));
+            }
+            Ok(_) => {
+                return Ok(Response::with((content_type, status::NotFound, format!("{:?}", status::NotFound))));
+            }
+            Err(e) => {
+                return Ok(Response::with((content_type, status::NotFound, format!("{:?}", e))));
+            }
+        }
     }
+
 }

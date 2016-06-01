@@ -1,8 +1,14 @@
 use schema::*;
 use diesel;
 use diesel::prelude::*;
-use diesel::pg::PgConnection;
 use diesel::result::Error;
+use iron::prelude::*;
+use iron::mime::Mime;
+use iron::status;
+use std::io::prelude::*;
+use serde_json;
+use router::Router;
+
 #[derive(PartialEq, Clone, Debug, Serialize, Deserialize, Queryable)]
 #[changeset_for(zhanweis, treat_none_as_null="true")]
 #[insertable_into(zhanweis)]
@@ -20,30 +26,153 @@ impl ZhanWei {
             user_uid: user_uid,
         }
     }
-    pub fn create(conn: &PgConnection, _zhanwei: ZhanWei) -> diesel::QueryResult<ZhanWei> {
-        let zhanwei = _zhanwei.clone();
-        match zhanweis::table.find(_zhanwei.uid).first::<ZhanWei>(conn) {
-            Err(Error::NotFound) => {
-                return ::diesel::insert(&zhanwei)
-                           .into(zhanweis::table)
-                           .get_result(conn);
+    pub fn create(req: &mut Request) -> IronResult<Response> {
+        let mut data_json = String::new();
+        let content_type_ok = "application/json".parse::<Mime>().unwrap();
+        let content_type_err = "text/plain".parse::<Mime>().unwrap();
+        match req.body.read_to_string(&mut data_json) {
+            Ok(_) => {
+                match serde_json::from_str::<ZhanWei>(&data_json) {
+                    Ok(data) => {
+                        let uid = data.uid.clone();
+                        match zhanweis::table.find(uid).first::<ZhanWei>(&(establish_connection())) {
+                            Err(Error::NotFound) => {
+                                match diesel::insert(&data)
+                                          .into(zhanweis::table)
+                                          .get_result::<ZhanWei>(&(establish_connection())) {
+                                    Ok(data) => {
+                                        return Ok(Response::with((content_type_ok,
+                                                                  status::Ok,
+                                                                  serde_json::to_string(&data)
+                                                                      .unwrap())))
+                                    }
+                                    Err(e) => {
+                                        return Ok(Response::with((content_type_err,
+                                                                  status::InternalServerError,
+                                                                  format!("{:?}", e))))
+                                    }
+                                }
+                            }
+                            Ok(_) => {
+                                return Ok(Response::with((content_type_err,
+                                                          status::NotAcceptable,
+                                                          "此记录已存在".to_string())))
+                            }
+                            Err(e) => {
+                                return Ok(Response::with((content_type_err,
+                                                          status::InternalServerError,
+                                                          format!("{:?}", e))))
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        return Ok(Response::with((content_type_err,
+                                                  status::BadRequest,
+                                                  format!("{:?}", e))))
+                    }
+                }
             }
-            Ok(_) => return Err(Error::DatabaseError("此记录已存在".to_string())),
-            Err(e) => return Err(e),
+            Err(e) => {
+                return Ok(Response::with((content_type_err,
+                                          status::BadRequest,
+                                          format!("{:?}", e))))
+            }
         }
     }
-    pub fn show_all(conn: &PgConnection) -> diesel::QueryResult<Vec<ZhanWei>> {
-        zhanweis::table.load::<ZhanWei>(conn)
+
+    pub fn show_all(_: &mut Request) -> IronResult<Response> {
+        match zhanweis::table.load::<ZhanWei>(&(establish_connection())) {
+            Ok(user_vec) => {
+                let content_type_ok = "application/json".parse::<Mime>().unwrap();
+                let user_vec_ser = serde_json::to_string(&user_vec).unwrap();
+                return Ok(Response::with((content_type_ok, status::Ok, user_vec_ser)));
+            }
+            Err(e) => {
+                let content_type_err = "text/plain".parse::<Mime>().unwrap();
+                return Ok(Response::with((content_type_err, status::NotFound, format!("{:?}", e))));
+            }
+        }
     }
-    pub fn find_by_id(conn: &PgConnection, _uid: &str) -> diesel::QueryResult<ZhanWei> {
-        zhanweis::table.find(_uid.to_string()).first::<ZhanWei>(conn)
+
+    pub fn find_by_id(req: &mut Request) -> IronResult<Response> {
+        let uid = req.extensions.get::<Router>().unwrap().find("uid").unwrap();
+        match zhanweis::table.find(uid.to_string()).first::<ZhanWei>(&(establish_connection())) {
+            Ok(data) => {
+                let content_type_ok = "application/json".parse::<Mime>().unwrap();
+                let data_ser = serde_json::to_string(&data).unwrap();
+                return Ok(Response::with((content_type_ok, status::Ok, data_ser)));
+            }
+            Err(e) => {
+                let content_type_err = "text/plain".parse::<Mime>().unwrap();
+                return Ok(Response::with((content_type_err, status::NotFound, format!("{:?}", e))));
+            }
+        }
     }
-    pub fn update(conn: &PgConnection, _uid: &str, data: &ZhanWei) -> diesel::QueryResult<usize> {
+
+    pub fn update(req: &mut Request) -> IronResult<Response> {
         use ::schema::zhanweis::dsl::*;
-        diesel::update(zhanweis.filter(uid.eq(_uid.to_string()))).set(data).execute(conn)
+        let mut data_json = String::new();
+        let content_type_err = "text/plain".parse::<Mime>().unwrap();
+        let _uid = req.extensions.get::<Router>().unwrap().find("uid").unwrap();
+        match req.body.read_to_string(&mut data_json) {
+            Ok(_) => {
+                match serde_json::from_str::<ZhanWei>(&data_json) {
+                    Ok(data) => {
+                        match diesel::update(zhanweis.filter(uid.eq(_uid.to_string())))
+                                  .set(&data)
+                                  .execute(&(establish_connection())) {
+                            Ok(_) => {
+                                match zhanweis.filter( uid.eq(_uid.to_string())).first::<ZhanWei>(&(establish_connection()) ) {
+                                    Ok(data) => {
+                                        let content_type_ok = "application/json".parse::<Mime>().unwrap();
+                                        let data_ser = serde_json::to_string(&data).unwrap();
+                                        return Ok(Response::with((content_type_ok, status::Ok, data_ser)));
+                                    }
+                                    Err(e) => {
+                                        return Ok(Response::with((content_type_err, status::NotFound, format!("{:?}", e))));
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                return Ok(Response::with((content_type_err,
+                                                          status::NotFound,
+                                                          format!("{:?}", e))));
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        return Ok(Response::with((content_type_err,
+                                                  status::BadRequest,
+                                                  format!("{:?}", e))))
+                    }
+                }
+            }
+            Err(e) => {
+                return Ok(Response::with((content_type_err,
+                                          status::BadRequest,
+                                          format!("{:?}", e))))
+            }
+        }
     }
-    pub fn delete(conn: &PgConnection, _uid: &str) -> diesel::QueryResult<usize> {
+
+    pub fn delete(req: &mut Request) -> IronResult<Response> {
         use ::schema::zhanweis::dsl::*;
-        diesel::delete(zhanweis.filter(uid.eq(_uid.to_string()))).execute(conn)
+        let content_type = "text/plain".parse::<Mime>().unwrap();
+        let _uid = req.extensions.get::<Router>().unwrap().find("uid").unwrap();
+        match diesel::delete(zhanweis.filter(uid.eq(_uid.to_string())))
+                  .execute(&(establish_connection())) {
+            Ok(n) if n>0 => {
+                return Ok(Response::with((content_type,
+                                          status::Ok,
+                                          format!("成功删除{:?}条记录", n))));
+            }
+            Ok(_) => {
+                return Ok(Response::with((content_type, status::NotFound, format!("{:?}", status::NotFound))));
+            }
+            Err(e) => {
+                return Ok(Response::with((content_type, status::NotFound, format!("{:?}", e))));
+            }
+        }
     }
+
 }
