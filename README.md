@@ -1,4 +1,12 @@
-注：目前编译时必须安装rust的nightly版本
+# 环境搭建
+
+目前编译时必须安装rust的nightly版本;
+
+安装postgresql数据库;
+
+数据库设置具体看这里：http://diesel.rs/guides/getting-started/
+
+# 测试restful服务的方法（具体restful的URL配置参见examples/curl_test_script.txt）
 
 先打开一个终端，运行cargo run --example testrouter2
 
