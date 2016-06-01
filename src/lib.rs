@@ -2,6 +2,9 @@
 #![plugin(serde_macros, diesel_codegen, dotenv_macros)]
 
 #[macro_use]
+extern crate rustless;
+
+#[macro_use]
 extern crate diesel;
 extern crate dotenv;
 
@@ -18,6 +21,10 @@ extern crate router;
 extern crate mount;
 extern crate staticfile;
 
+extern crate url;
+extern crate rustc_serialize;
+extern crate valico;
+extern crate cookie;
 #[cfg(windows)]
 extern crate winapi;
 #[cfg(windows)]
@@ -40,19 +47,4 @@ pub mod trainingsession;
 pub mod trainingaction;
 pub mod dev;
 pub mod zhanwei;
-
 pub mod route;
-
-use diesel::prelude::*;
-use diesel::pg::PgConnection;
-use dotenv::dotenv;
-use std::env;
-
-pub fn establish_connection() -> PgConnection {
-    dotenv().ok();
-
-    let database_url = env::var("DATABASE_URL")
-        .expect("DATABASE_URL must be set");
-    PgConnection::establish(&database_url)
-        .expect(&format!("Error connecting to {}", database_url))
-}

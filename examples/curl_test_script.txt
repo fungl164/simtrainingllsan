@@ -1,0 +1,4 @@
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"uid":"4","password":"0","level":0,"realname":"0","age":0,"sex":"0"}' 'http://localhost:3000/api/v1/user'
+curl -X GET 'http://localhost:3000/api/v1/user/0'
+curl -X PUT --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"uid":"4","password":"0","level":6,"realname":"fuying","age":32,"sex":"0"}' 'http://localhost:3000/api/v1/user/4'
+curl -X DELETE --header 'Accept: application/json' 'http://localhost:3000/api/v1/user/4'

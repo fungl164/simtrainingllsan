@@ -23,6 +23,11 @@ diesel = { git = "https://github.com/diesel-rs/diesel.git", features = ["large-t
 diesel_codegen = { git = "https://github.com/diesel-rs/diesel.git", default-features = false, features = ["nightly", "postgres"] }
 dotenv = "^0.8.0"
 dotenv_macros = "^0.8.0"
+rustless = "^0.7"
+rustc-serialize = "^0.3"
+valico = "^0.8"
+url = "^1.1"
+cookie = "^0.2"
 
 # [dependencies.libevent_sys]
 # path = "libevent-sys"
