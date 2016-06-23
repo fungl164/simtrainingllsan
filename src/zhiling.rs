@@ -1,3 +1,7 @@
+use iron::prelude::*;
+use iron::mime::Mime;
+use iron::status;
+use serde_json;
 use simctrl;
 use std::string::String;
 #[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
@@ -147,6 +151,30 @@ impl ZhiLing {
             zhan_wei_type : simctrl::ZhanWeiType::Wu,
         }
     }
+    pub fn zhi_ling_example_handler(_: &mut Request) -> IronResult<Response> {
+        let mut z = ZhiLing::new();
+        z.zhi_ling_type = ZhiLingType::BeiChe;
+        z.dev_type = simctrl::DevType::JiZu;
+        z.dev_id = 0;
+        z.actor_id = 0;
+        z.zhan_wei_id = 0;
+        z.zhan_wei_type = simctrl::ZhanWeiType::JiaoLian;
+        let z_ser_pretty = serde_json::to_string_pretty(&z).unwrap();
+        let content_type = "application/json".parse::<Mime>().unwrap();
+        Ok(Response::with((content_type, status::Ok, z_ser_pretty)))
+    }
+    pub fn zhi_ling_handler(_: &mut Request) -> IronResult<Response> {
+        let mut z = ZhiLing::new();
+        z.zhi_ling_type = ZhiLingType::BeiChe;
+        z.dev_type = simctrl::DevType::JiZu;
+        z.dev_id = 0;
+        z.actor_id = 0;
+        z.zhan_wei_id = 0;
+        z.zhan_wei_type = simctrl::ZhanWeiType::JiaoLian;
+        let z_ser_pretty = serde_json::to_string(&z).unwrap();
+        let content_type = "application/json".parse::<Mime>().unwrap();
+        Ok(Response::with((content_type, status::Ok, z_ser_pretty)))
+    }
 }
 
 #[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
@@ -199,11 +227,19 @@ pub const BEI_CHE_FAIL_DESC : &'static str = "备车失败";
 pub const CAUSE_JI_ZU_RANGE_DISMATCH_1 : &'static str = "机组不处于停机状态";
 
 pub const QI_DONG_FAIL_DESC : &'static str = "启动失败";
-pub const CAUSE_DUAN_LU_QI_STATUS_DISMATCH_1 : &'static str = "机组断路器闭合或者故障";
+pub const CAUSE_DUAN_LU_QI_BI_HE_HUO_GU_ZHANG : &'static str = "机组断路器闭合或者故障";
 pub const CAUSE_JI_ZU_RANGE_DISMATCH_2 : &'static str = "机组未完成备车或者已经启动";
 
 pub const HE_ZHA_BING_CHE_FAIL_DESC : &'static str = "合闸/并车失败";
 pub const CAUSE_JI_ZU_RANGE_DISMATCH_6 : &'static str = "机组不处于稳态";
+pub const CAUSE_XI_TONG_HUI_LU_EXIST : &'static str = "系统中存在回路";
+pub const CAUSE_POWER_FLOW_ERR : &'static str = "系统拓扑分析算法存在问题，请修复";
+pub const CAUSE_DUO_JI_ZU_TONG_SHI_BING_LIAN : &'static str = "不能一次同时将多台机组并到电网上";
+
+pub const FEN_ZHA_JIE_LIE_FAIL_DESC : &'static str = "分闸/解列失败";
+pub const CAUSE_DUAN_LU_QI_FEN_DUAN_HUO_GU_ZHANG : &'static str = "机组断路器已经分断或者故障";
+pub const CAUSE_FEN_ZHA_JIE_LIE_WEI_SHOU_DONG_JIAN_ZAI : &'static str = "应对机组进行手动减载直至额定功率的10%";
+pub const CAUSE_FEN_ZHA_JIE_LIE_ZONG_GONG_LV_BU_GOU_YONG : &'static str = "解列后电网总输出功率不满足负载需求";
 
 pub const TING_JI_FAIL_DESC : &'static str = "停机失败";
 pub const CAUSE_JI_ZU_RANGE_DISMATCH_3 : &'static str = "机组不处于可停机状态";

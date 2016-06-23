@@ -1,50 +1,60 @@
-use mio::{ Handler, EventLoop, EventLoopConfig };
-pub trait Update {
+use mio;
+use mio::{ Handler };
+// use std::cell::RefCell;
+// use std::rc::Rc;
+pub trait Update : Handler {
     fn update(&mut self);
-}
-pub struct TimerHandler<E : Update> {
-    pub entity : E,
-}
-impl<E : Update> TimerHandler<E> {
-    pub fn new(e : E) -> TimerHandler<E> {
-        let mut ev_cfg = EventLoopConfig::new();
-        ev_cfg.timer_tick_ms(1);
-        TimerHandler {
-            entity : e,
-        }
+    fn run(&mut self, timeout : Self::Timeout, delay : u64) {
+        let mut ev_cfg = mio::EventLoopConfig::new();
+        ev_cfg.timer_tick_ms(10);
+        let mut ev_loop = mio::EventLoop::configured(ev_cfg).unwrap();
+        let _ = ev_loop.timeout_ms(timeout, delay).unwrap();
+        ev_loop.run(self).unwrap();
     }
 }
-
-impl<T : Update> Handler for TimerHandler<T> {
-    type Timeout = u64;
-    type Message = ();
-    fn timeout(&mut self, _event_loop: &mut EventLoop<Self>, _timeout: Self::Timeout) {
-        self.entity.update();
-        let _ = _event_loop.timeout_ms(_timeout, _timeout).unwrap();
-    }
-}
-pub struct Timer<H : Handler> {
-    pub ev_loop : Box<EventLoop<H>>,
-}
-
-impl<H : Handler> Timer<H> {
-    pub fn new() -> Timer<H> {
-        let mut ev_cfg = ::mio::EventLoopConfig::new();
-        ev_cfg.timer_tick_ms(1);
-        Timer {
-            ev_loop : Box::new(::mio::EventLoop::configured(ev_cfg).unwrap()),
-        }
-    }
-    pub fn start(&mut self, h : &mut H, timeout : H::Timeout, delay : u64) {
-        let _ = self.ev_loop.timeout_ms(timeout, delay).unwrap();
-        self.ev_loop.run(h).unwrap();
-    }
-    pub fn stop(&mut self){
-        if !self.ev_loop.is_running() {
-            self.ev_loop.shutdown();
-        }
-    }
-}
+// pub struct TimerHandler<E : Update> {
+//     pub entity : E,
+// }
+// impl<E : Update> TimerHandler<E> {
+//     pub fn new(e : E) -> TimerHandler<E> {
+//         let mut ev_cfg = EventLoopConfig::new();
+//         ev_cfg.timer_tick_ms(1);
+//         TimerHandler {
+//             entity : e,
+//         }
+//     }
+// }
+//
+// impl<E : Update> Handler for TimerHandler<E> {
+//     type Timeout = u64;
+//     type Message = ();
+//     fn timeout(&mut self, _event_loop: &mut EventLoop<Self>, _timeout: Self::Timeout) {
+//         self.entity.update();
+//         let _ = _event_loop.timeout_ms(_timeout, _timeout).unwrap();
+//     }
+// }
+// pub struct Timer<H : Handler> {
+//     pub ev_loop : Box<EventLoop<H>>,
+// }
+//
+// impl<H : Handler> Timer<H> {
+//     pub fn new() -> Timer<H> {
+//         let mut ev_cfg = ::mio::EventLoopConfig::new();
+//         ev_cfg.timer_tick_ms(1);
+//         Timer {
+//             ev_loop : Box::new(::mio::EventLoop::configured(ev_cfg).unwrap()),
+//         }
+//     }
+//     pub fn start(&mut self, h : &mut H, timeout : H::Timeout, delay : u64) {
+//         let _ = self.ev_loop.timeout_ms(timeout, delay).unwrap();
+//         self.ev_loop.run(h).unwrap();
+//     }
+//     pub fn stop(&mut self){
+//         if !self.ev_loop.is_running() {
+//             self.ev_loop.shutdown();
+//         }
+//     }
+// }
 
 pub const FANG_ZHEN_BU_CHANG : f64 = 100.0; //ms
 pub const CHAO_LIU_JI_SUAN_BU_CHANG : f64 = 1000.0; //ms
@@ -66,15 +76,15 @@ pub const DIAN_WANG_E_DING_XIAN_DIAN_YA : f64 = 380.0f64;
 pub const GEN_START_SIM_INTERVAL : f64 = FANG_ZHEN_BU_CHANG;
 pub const GEN_WEN_SIM_INTERVAL : f64 = FANG_ZHEN_BU_CHANG;
 
-pub const ZONG_SHU_DIAN_ZHAN : usize = 2;
-pub const ZONG_SHU_JI_ZU : usize = 7;
-pub const ZONG_SHU_JI_ZU_CHAI_YOU : usize = 6;
-pub const ZONG_SHU_JI_ZU_QI_LUN : usize = 0;
-pub const ZONG_SHU_AN_DIAN : usize = 1;
+pub const ZONG_SHU_DIAN_ZHAN : usize = 4;
+pub const ZONG_SHU_JI_ZU : usize = 13;
+pub const ZONG_SHU_JI_ZU_CHAI_YOU : usize = 5;
+pub const ZONG_SHU_JI_ZU_QI_LUN : usize = 4;
+pub const ZONG_SHU_AN_DIAN : usize = 4;
 pub const ZONG_SHU_NODE : usize = 8;
-pub const ZONG_SHU_ZHI_LU : usize = 8;
-pub const ZONG_SHU_FU_ZAI : usize = 6;
-pub const ZONG_SHU_DUAN_LU_QI : usize = 15;
+pub const ZONG_SHU_ZHI_LU : usize = 25;
+pub const ZONG_SHU_FU_ZAI : usize = 9;
+pub const ZONG_SHU_DUAN_LU_QI : usize = 38;
 pub const ZONG_SHU_SHOU_TI_DUI_JI_ZU : usize = 0;
 pub const ZONG_SHU_WEI_TI_DUI_JI_ZU : usize = 0;
 pub const ZONG_SHU_JI_ZU_IN_ONE_DIAN_ZHAN : usize = 3;

@@ -19,6 +19,7 @@ pub const JI_ZU_SHU_CHU_GONG_LV_YIN_SHU:f64 =  0.80f64;
 pub const JI_ZU_P_FACTOR:f64 =  JI_ZU_SHU_CHU_GONG_LV_YIN_SHU;
 pub const JI_ZU_Q_FACTOR:f64 =  0.6f64;
 pub const JI_ZU_Q_P:f64 =  0.75f64;
+pub const JI_ZU_JIE_LIE_GONG_LV_YU_ZHI : f64= 0.1 * JI_ZU_E_DING_GONG_LV;
 pub const GONG_LV_YIN_SHU_ZAO_SHENG_XIANG_DUI_FU_ZHI:f64 =  0.05f64;
 //机组备车完毕后的最大空闲时间，超过此时间将转入停机状��?
 pub const JI_ZU_BEI_CHE_WAN_BI_FREE_T : f64 = 900000.0;

@@ -7,17 +7,18 @@ use user::User;
 use zhanwei::ZhanWei;
 use trainingsession::TrainingSession;
 use trainingaction::TrainingAction;
-
+use zhiling::ZhiLing;
 pub fn build_route() -> Mount {
     let mut mount_api = Mount::new();
     mount_api.mount("/user/", build_user_route());
     mount_api.mount("/trainingsession/", build_training_session_route());
     mount_api.mount("/trainingaction/", build_training_action_route());
     mount_api.mount("/zhanwei/", build_zhan_wei_route());
+    mount_api.mount("/zhiling/", build_zhi_ling_route());
 
     let mut mount_root = Mount::new();
     mount_root.mount("/api/v1/", mount_api);
-    mount_root.mount("/docs/", Static::new(Path::new("target/doc")));
+    mount_root.mount("/client/", Static::new(Path::new("./client")));
     return mount_root;
 }
 
@@ -48,6 +49,13 @@ pub fn build_training_action_route() -> Router {
     router.post("/", TrainingAction::create);
     router.put("/:id", TrainingAction::update);
     router.delete("/:id", TrainingAction::delete);
+    return router;
+}
+
+pub fn build_zhi_ling_route() -> Router {
+    let mut router = Router::new();
+    router.get("/", ZhiLing::zhi_ling_example_handler);
+    router.post("/:id", ZhiLing::zhi_ling_handler);
     return router;
 }
 

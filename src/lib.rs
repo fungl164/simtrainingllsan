@@ -1,8 +1,8 @@
 #![feature(custom_derive, custom_attribute, plugin)]
 #![plugin(serde_macros, diesel_codegen, dotenv_macros)]
 
-#[macro_use]
-extern crate rustless;
+// #[macro_use]
+// extern crate rustless;
 
 #[macro_use]
 extern crate diesel;
@@ -21,10 +21,10 @@ extern crate router;
 extern crate mount;
 extern crate staticfile;
 
-extern crate url;
-extern crate rustc_serialize;
-extern crate valico;
-extern crate cookie;
+// extern crate url;
+// extern crate rustc_serialize;
+// extern crate valico;
+// extern crate cookie;
 #[cfg(windows)]
 extern crate winapi;
 #[cfg(windows)]
