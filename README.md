@@ -43,3 +43,4 @@ cargo run --example simserver
 ```
 可通过使用get方法访问`http://localhost:3000/api/v1/xitong`来获取当前运行系统的所有json数据，可通过使用get方法访问`http://localhost:3000/api/v1/zhiling`来获取发送指令的json数据格式示例，发送指令请采用post方法访问`http://localhost:3000/api/v1/zhiling/:id`，其中id为系统id，暂时规定为0，json数据格式与'./src/xitong.rs'中的`XiTong`结构体结构相同，如果想让json数据格式更美观一些，可使用`http://json.bloople.net/`将json转换为可嵌套的表格。
 目前发送指令还没有响应，具体代码正在紧张构建中。
+注意运行前记得将./.env文件中的DATABASE_URL改为自己机器上连接postgresql连接字符串。
