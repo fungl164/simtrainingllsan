@@ -1,17 +1,30 @@
-use mio;
-use mio::{ Handler };
+// use mio;
+// use mio::{ Handler };
 // use std::cell::RefCell;
 // use std::rc::Rc;
-pub trait Update : Handler {
-    fn update(&mut self);
-    fn run(&mut self, timeout : Self::Timeout, delay : u64) {
-        let mut ev_cfg = mio::EventLoopConfig::new();
-        ev_cfg.timer_tick_ms(10);
-        let mut ev_loop = mio::EventLoop::configured(ev_cfg).unwrap();
-        let _ = ev_loop.timeout_ms(timeout, delay).unwrap();
-        ev_loop.run(self).unwrap();
-    }
-}
+// pub trait Update : Handler {
+//     fn update(&mut self);
+//     fn run(&mut self, timeout : Self::Timeout, delay : u64) {
+//         let mut ev_cfg = mio::EventLoopConfig::new();
+//         ev_cfg.timer_tick_ms(10);
+//         let mut ev_loop = mio::EventLoop::configured(ev_cfg).unwrap();
+//         let _ = ev_loop.timeout_ms(timeout, delay).unwrap();
+//         ev_loop.run(self).unwrap();
+//     }
+// }
+// pub trait Update : Send {
+//     fn update(&mut self);
+//     fn run(&mut self, timeout : u64) {
+//         let new_thread = thread::spawn(move || {
+//             loop{
+//                 self.update();
+//                 thread::sleep(Duration::from_millis(timeout));
+//             }
+//         });
+//         // 等待新建线程执行完成
+//         new_thread.join().unwrap();
+//     }
+// }
 // pub struct TimerHandler<E : Update> {
 //     pub entity : E,
 // }
@@ -76,15 +89,15 @@ pub const DIAN_WANG_E_DING_XIAN_DIAN_YA : f64 = 380.0f64;
 pub const GEN_START_SIM_INTERVAL : f64 = FANG_ZHEN_BU_CHANG;
 pub const GEN_WEN_SIM_INTERVAL : f64 = FANG_ZHEN_BU_CHANG;
 
-pub const ZONG_SHU_DIAN_ZHAN : usize = 4;
-pub const ZONG_SHU_JI_ZU : usize = 13;
-pub const ZONG_SHU_JI_ZU_CHAI_YOU : usize = 5;
-pub const ZONG_SHU_JI_ZU_QI_LUN : usize = 4;
-pub const ZONG_SHU_AN_DIAN : usize = 4;
+pub const ZONG_SHU_DIAN_ZHAN : usize = 2;
+pub const ZONG_SHU_JI_ZU : usize = 7;
+pub const ZONG_SHU_JI_ZU_CHAI_YOU : usize = 6;
+pub const ZONG_SHU_JI_ZU_QI_LUN : usize = 0;
+pub const ZONG_SHU_AN_DIAN : usize = 1;
 pub const ZONG_SHU_NODE : usize = 8;
-pub const ZONG_SHU_ZHI_LU : usize = 25;
-pub const ZONG_SHU_FU_ZAI : usize = 9;
-pub const ZONG_SHU_DUAN_LU_QI : usize = 38;
+pub const ZONG_SHU_ZHI_LU : usize = 8;
+pub const ZONG_SHU_FU_ZAI : usize = 6;
+pub const ZONG_SHU_DUAN_LU_QI : usize = 15;
 pub const ZONG_SHU_SHOU_TI_DUI_JI_ZU : usize = 0;
 pub const ZONG_SHU_WEI_TI_DUI_JI_ZU : usize = 0;
 pub const ZONG_SHU_JI_ZU_IN_ONE_DIAN_ZHAN : usize = 3;

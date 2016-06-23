@@ -14,7 +14,7 @@ extern crate serde_json;
 extern crate time;
 extern crate rand;
 extern crate libc;
-extern crate mio;
+// extern crate mio;
 
 extern crate iron;
 extern crate router;

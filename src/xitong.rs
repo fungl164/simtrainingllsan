@@ -1,13 +1,17 @@
 use std::vec::Vec;
 use std::string::String;
+use std::thread;
+use std::time::Duration;
+use std::sync::Arc;
+use std::sync::RwLock;
 use iron;
 use iron::prelude::*;
 use iron::mime::Mime;
 use iron::status;
 use serde_json;
 use time;
-use mio;
-use mio::{ EventLoop };
+// use mio;
+// use mio::{ EventLoop };
 use jizu::{JiZu, JiJi, JiZuCtrl, JiZuRangeLeiXing};
 use dianzhan::DianZhan;
 use duanluqi::{DuanLuQi, DuanLuQiStatus};
@@ -16,7 +20,7 @@ use node::Node;
 use zhilu::ZhiLu;
 use zhilu::ZhiLuStatus;
 use zhiling::{ZhiLing, ZhiLingType, YingDaType, YingDaErr};
-use simctrl::{ Update };
+// use simctrl::{ Update };
 
 use jizu;
 use dianzhan;
@@ -2624,58 +2628,86 @@ impl iron::middleware::Handler for XiTong {
     }
 }
 
-impl mio::Handler for XiTong {
-    type Timeout = u64;
-    type Message = ();
-    fn timeout(&mut self, _event_loop: &mut EventLoop<Self>, _timeout: Self::Timeout) {
-        self.update();
-        let _ = _event_loop.timeout_ms(_timeout, _timeout).unwrap();
+// impl mio::Handler for XiTong {
+//     type Timeout = u64;
+//     type Message = ();
+//     fn timeout(&mut self, _event_loop: &mut EventLoop<Self>, _timeout: Self::Timeout) {
+//         self.update();
+//         let _ = _event_loop.timeout_ms(_timeout, _timeout).unwrap();
+//     }
+// }
+pub struct XiTongThread {
+    pub xt : Arc<RwLock<XiTong>>,
+}
+impl iron::middleware::Handler for XiTongThread {
+    fn handle(&self, _req: &mut Request) -> IronResult<Response> {
+        use std::ops::Deref;
+        let xt_shared = self.xt.clone();
+        let xt_raw = xt_shared.read().unwrap();
+        let x_ser = serde_json::to_string(xt_raw.deref()).unwrap();
+        let content_type = "application/json".parse::<Mime>().unwrap();
+        Ok(Response::with((content_type, status::Ok, x_ser)))
     }
 }
-impl Update for XiTong {
-    fn update(&mut self) {
-        for i in 0..simctrl::ZONG_SHU_JI_ZU {
-            self.ji_zu_vec[i].update();
-        }
-        self.compute_xi_tong_pf();
-        self.p_shou_ti_dui = 0.0;
-        self.u_shou_ti_dui = 0.0;
-        self.f_shou_ti_dui = 0.0;
-        self.pd_shou_ti_dui = 0.0;
+impl XiTongThread {
+    pub fn new(id:usize) -> XiTongThread {
+        let x = XiTongThread {
+            xt : Arc::new(RwLock::new(XiTong::new(id))),
+        };
+        // x.update();
+        x
+    }
+    pub fn update(&mut self) {
+        let xt_shared = self.xt.clone();
+        let new_thread = thread::spawn(move || {
+            loop{
+                let mut xt_raw = xt_shared.write().unwrap();
+                for i in 0..simctrl::ZONG_SHU_JI_ZU {
+                    xt_raw.ji_zu_vec[i].update();
+                }
+                xt_raw.compute_xi_tong_pf();
+                xt_raw.p_shou_ti_dui = 0.0;
+                xt_raw.u_shou_ti_dui = 0.0;
+                xt_raw.f_shou_ti_dui = 0.0;
+                xt_raw.pd_shou_ti_dui = 0.0;
 
-        self.p_wei_ti_dui = 0.0;
-        self.u_wei_ti_dui = 0.0;
-        self.f_wei_ti_dui = 0.0;
-        self.pd_wei_ti_dui = 0.0;
+                xt_raw.p_wei_ti_dui = 0.0;
+                xt_raw.u_wei_ti_dui = 0.0;
+                xt_raw.f_wei_ti_dui = 0.0;
+                xt_raw.pd_wei_ti_dui = 0.0;
 
-        self.p_quan_jian = 0.0;
-        for jizuid in 0..simctrl::ZONG_SHU_JI_ZU {
-            self.p_quan_jian += self.ji_zu_vec[jizuid].common_ji.p;
-        }
-        self.sec = time::get_time().sec;
-        self.nsec = time::get_time().nsec;
+                xt_raw.p_quan_jian = 0.0;
+                for jizuid in 0..simctrl::ZONG_SHU_JI_ZU {
+                    xt_raw.p_quan_jian += xt_raw.ji_zu_vec[jizuid].common_ji.p;
+                }
+                xt_raw.sec = time::get_time().sec;
+                xt_raw.nsec = time::get_time().nsec;
 
-        //以下为测试内容，实际运行时请注释
-        println!("{:?}.{:?}", self.sec, self.nsec);
-        // for i in 0..2 {
-        //     match self.ji_zu_vec[i].common_ji.current_range {
-        //         JiZuRangeLeiXing::TingJi | JiZuRangeLeiXing::JinJiGuZhang => self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::BeiCheZanTai,
-        //         JiZuRangeLeiXing::BeiCheWanBi => self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::QiDong,
-        //         JiZuRangeLeiXing::Wen => {
-        //             self.ji_zu_vec[i].set_bian_su_params(7.0, false);
-        //             self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::BianSu;
-        //         }
-        //         JiZuRangeLeiXing::BianSu => {
-        //             self.ji_zu_vec[i].set_bian_ya_params(3.0);
-        //             self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::BianYa;
-        //         }
-        //         JiZuRangeLeiXing::BianYa => self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::TingJi,
-        //         _ => {}
-        //     }
-        //     // println!("uid:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}, bei_che_t:{:?}, bian_su_t:{:?}, bian_ya_t:{:?}", i, self.ji_zu_vec[i].common_ji.current_range, self.ji_zu_vec[i].common_ji.uab_ext, self.ji_zu_vec[i].common_ji.zhuan_su, self.ji_zu_vec[i].common_ji.f_ext, self.ji_zu_vec[i].common_ji.t_current_range,  self.ji_zu_vec[i].common_ji.bei_che_t,  self.ji_zu_vec[i].common_ji.bian_su_t,  self.ji_zu_vec[i].common_ji.bian_ya_t);
-        //     // println!("uid:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}", i, self.ji_zu_vec[i].common_ji.current_range, self.ji_zu_vec[i].common_ji.uab_ext, self.ji_zu_vec[i].common_ji.zhuan_su, self.ji_zu_vec[i].common_ji.f_ext, self.ji_zu_vec[i].common_ji.t_current_range);
-        // }
-
+                //以下为测试内容，实际运行时请注释
+                // println!("{:?}.{:?}", xt_raw.sec, xt_raw.nsec);
+                // for i in 0..2 {
+                //     match self.ji_zu_vec[i].common_ji.current_range {
+                //         JiZuRangeLeiXing::TingJi | JiZuRangeLeiXing::JinJiGuZhang => self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::BeiCheZanTai,
+                //         JiZuRangeLeiXing::BeiCheWanBi => self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::QiDong,
+                //         JiZuRangeLeiXing::Wen => {
+                //             self.ji_zu_vec[i].set_bian_su_params(7.0, false);
+                //             self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::BianSu;
+                //         }
+                //         JiZuRangeLeiXing::BianSu => {
+                //             self.ji_zu_vec[i].set_bian_ya_params(3.0);
+                //             self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::BianYa;
+                //         }
+                //         JiZuRangeLeiXing::BianYa => self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::TingJi,
+                //         _ => {}
+                //     }
+                //     // println!("uid:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}, bei_che_t:{:?}, bian_su_t:{:?}, bian_ya_t:{:?}", i, self.ji_zu_vec[i].common_ji.current_range, self.ji_zu_vec[i].common_ji.uab_ext, self.ji_zu_vec[i].common_ji.zhuan_su, self.ji_zu_vec[i].common_ji.f_ext, self.ji_zu_vec[i].common_ji.t_current_range,  self.ji_zu_vec[i].common_ji.bei_che_t,  self.ji_zu_vec[i].common_ji.bian_su_t,  self.ji_zu_vec[i].common_ji.bian_ya_t);
+                //     // println!("uid:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}", i, self.ji_zu_vec[i].common_ji.current_range, self.ji_zu_vec[i].common_ji.uab_ext, self.ji_zu_vec[i].common_ji.zhuan_su, self.ji_zu_vec[i].common_ji.f_ext, self.ji_zu_vec[i].common_ji.t_current_range);
+                // }
+                thread::sleep(Duration::from_millis(simctrl::FANG_ZHEN_BU_CHANG as u64));
+            }
+        });
+        // 等待新建线程执行完成
+        new_thread.join().unwrap();
     }
 }
 

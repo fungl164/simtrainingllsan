@@ -10,11 +10,11 @@ extern crate mount;
 use simtraining::route;
 use iron::prelude::*;
 use router::Router;
-use simtraining::xitong::XiTong;
+use simtraining::xitong::XiTongThread;
 // use simtraining::simctrl;
 // use simtraining::simctrl::{Timer, TimerHandler};
 fn main() {
-    let xt = XiTong::new(0);
+    let xt = XiTongThread::new(0);
     // let x = Rc::new(RefCell::new(xt));
     let mut router = Router::new();
     router.get("/", xt);
