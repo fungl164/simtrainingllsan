@@ -29,3 +29,7 @@ curl -X POST --header 'Content-Type: application/json' --header 'Accept: applica
 curl -X GET 'http://localhost:3000/api/v1/trainingsession/2'
 curl -X PUT --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"id":2,"sec":1,"nsec":1,"name":"0","xitong_id":0,"admin_uid":"0","users_uid":["0","1"],"actions_id":[0,1],"mode":"0","state":"0","sec_duration":0,"nsec_duration":0,"score_op_order":0,"score_op_correct":0,"score_op_duration":0,"score":0}' 'http://localhost:3000/api/v1/trainingsession/2'
 curl -X DELETE --header 'Accept: application/json' 'http://localhost:3000/api/v1/trainingsession/2'
+
+
+
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"BeiChe":[]},"dev_type":{"JiZu":[]},"dev_id":0,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'

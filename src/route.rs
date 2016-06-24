@@ -8,13 +8,14 @@ use zhanwei::ZhanWei;
 use trainingsession::TrainingSession;
 use trainingaction::TrainingAction;
 use zhiling::ZhiLing;
+
 pub fn build_route() -> Mount {
     let mut mount_api = Mount::new();
     mount_api.mount("/user/", build_user_route());
     mount_api.mount("/trainingsession/", build_training_session_route());
     mount_api.mount("/trainingaction/", build_training_action_route());
     mount_api.mount("/zhanwei/", build_zhan_wei_route());
-    mount_api.mount("/zhiling/", build_zhi_ling_route());
+    // mount_api.mount("/zhiling/", build_zhi_ling_route());
 
     let mut mount_root = Mount::new();
     mount_root.mount("/api/v1/", mount_api);

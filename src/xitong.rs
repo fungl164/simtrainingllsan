@@ -2636,6 +2636,44 @@ impl iron::middleware::Handler for XiTong {
 //         let _ = _event_loop.timeout_ms(_timeout, _timeout).unwrap();
 //     }
 // }
+pub struct ZhiLingHandler {
+    pub xt : Arc<RwLock<XiTong>>,
+}
+impl iron::middleware::Handler for ZhiLingHandler {
+    fn handle(&self, req: &mut Request) -> IronResult<Response> {
+        use std::ops::DerefMut;
+        use std::io::prelude::*;
+        let xt_shared = self.xt.clone();
+        let mut xt_raw = xt_shared.write().unwrap();
+
+        let mut data_json = String::new();
+        let content_type_ok = "application/json".parse::<Mime>().unwrap();
+        let content_type_err = "text/plain".parse::<Mime>().unwrap();
+        match req.body.read_to_string(&mut data_json) {
+            Ok(_) => {
+                match serde_json::from_str::<ZhiLing>(&data_json) {
+                    Ok(data) => {
+                        xt_raw.deref_mut().handle_zhi_ling(&data);
+                        return Ok(Response::with((content_type_ok,
+                                                  status::Ok,
+                                                  data_json)));
+                    }
+                    Err(e) => {
+                        return Ok(Response::with((content_type_err,
+                                                  status::BadRequest,
+                                                  format!("{:?}", e))))
+                    }
+                }
+            }
+            Err(e) => {
+                return Ok(Response::with((content_type_err,
+                                          status::BadRequest,
+                                          format!("{:?}", e))))
+            }
+        }
+    }
+}
+
 pub struct XiTongThread {
     pub xt : Arc<RwLock<XiTong>>,
 }
@@ -2651,15 +2689,15 @@ impl iron::middleware::Handler for XiTongThread {
 }
 impl XiTongThread {
     pub fn new(id:usize) -> XiTongThread {
-        let x = XiTongThread {
+        let mut x = XiTongThread {
             xt : Arc::new(RwLock::new(XiTong::new(id))),
         };
-        // x.update();
+        x.update();
         x
     }
     pub fn update(&mut self) {
         let xt_shared = self.xt.clone();
-        let new_thread = thread::spawn(move || {
+        let _ = thread::spawn(move || {
             loop{
                 let mut xt_raw = xt_shared.write().unwrap();
                 for i in 0..simctrl::ZONG_SHU_JI_ZU {
@@ -2706,8 +2744,7 @@ impl XiTongThread {
                 thread::sleep(Duration::from_millis(simctrl::FANG_ZHEN_BU_CHANG as u64));
             }
         });
-        // 等待新建线程执行完成
-        new_thread.join().unwrap();
+        // th_inner.join().unwrap();
     }
 }
 
