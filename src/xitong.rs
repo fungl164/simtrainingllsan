@@ -95,26 +95,81 @@ pub struct XiTong {
 impl XiTong {
     pub fn build_zhilu_node_vec(&mut self) {
         /*构建支路――节点之间的映射，key为支路，查找支路对应的节点*/
-        /*10条母联支路*/
-        self.zhilu_node_vec.push((0,0));
         self.zhilu_node_vec.push((0,1));
+        self.zhilu_node_vec.push((0,2));
+
+        self.zhilu_node_vec.push((1,0));
         self.zhilu_node_vec.push((1,1));
-        self.zhilu_node_vec.push((1,2));
 
+        self.zhilu_node_vec.push((2,2));
         self.zhilu_node_vec.push((2,3));
-        self.zhilu_node_vec.push((2,4));
-        self.zhilu_node_vec.push((3,4));
-        self.zhilu_node_vec.push((3,5));
 
-        self.zhilu_node_vec.push((4,0));
-        self.zhilu_node_vec.push((4,6));
-        self.zhilu_node_vec.push((5,6));
-        self.zhilu_node_vec.push((5,3));
+        self.zhilu_node_vec.push((3,6));
+        self.zhilu_node_vec.push((3,7));
 
-        self.zhilu_node_vec.push((6,2));
-        self.zhilu_node_vec.push((6,7));
-        self.zhilu_node_vec.push((7,5));
-        self.zhilu_node_vec.push((7,7));
+        self.zhilu_node_vec.push((1,0));
+        self.zhilu_node_vec.push((1,1));
+
+        self.zhilu_node_vec.push((1,0));
+        self.zhilu_node_vec.push((1,1));
+
+        self.zhilu_node_vec.push((1,0));
+        self.zhilu_node_vec.push((1,1));
+
+        self.zhilu_node_vec.push((1,0));
+        self.zhilu_node_vec.push((1,1));
+
+        self.zhilu_node_vec.push((1,0));
+        self.zhilu_node_vec.push((1,1));
+
+        self.zhilu_node_vec.push((1,0));
+        self.zhilu_node_vec.push((1,1));
+
+        self.zhilu_node_vec.push((1,0));
+        self.zhilu_node_vec.push((1,1));
+
+        self.zhilu_node_vec.push((1,0));
+        self.zhilu_node_vec.push((1,1));
+
+        self.zhilu_node_vec.push((1,0));
+        self.zhilu_node_vec.push((1,1));
+
+        self.zhilu_node_vec.push((1,0));
+        self.zhilu_node_vec.push((1,1));
+
+        self.zhilu_node_vec.push((1,0));
+        self.zhilu_node_vec.push((1,1));
+
+        self.zhilu_node_vec.push((1,0));
+        self.zhilu_node_vec.push((1,1));
+
+        self.zhilu_node_vec.push((1,0));
+        self.zhilu_node_vec.push((1,1));
+
+        self.zhilu_node_vec.push((1,0));
+        self.zhilu_node_vec.push((1,1));
+
+        self.zhilu_node_vec.push((1,0));
+        self.zhilu_node_vec.push((1,1));
+
+        self.zhilu_node_vec.push((1,0));
+        self.zhilu_node_vec.push((1,1));
+
+        self.zhilu_node_vec.push((1,0));
+        self.zhilu_node_vec.push((1,1));
+
+        self.zhilu_node_vec.push((1,0));
+        self.zhilu_node_vec.push((1,1));
+
+        self.zhilu_node_vec.push((1,0));
+        self.zhilu_node_vec.push((1,1));
+
+        self.zhilu_node_vec.push((1,0));
+        self.zhilu_node_vec.push((1,1));
+
+        self.zhilu_node_vec.push((1,0));
+        self.zhilu_node_vec.push((1,1));
+
     }
     pub fn build_zhilu_duanluqi_vec(&mut self){
         /*构建支路与支路断路器之间的映射，key为支路uid，value为支路断路器uid*/
@@ -273,6 +328,10 @@ impl XiTong {
         x.ji_zu_vec.push(JiZu::new(simctrl::ZONG_SHU_JI_ZU_CHAI_YOU, JiJi::AD(jizu::AnDianJiJi)));
         for i in 0..simctrl::ZONG_SHU_DIAN_ZHAN {
             x.dian_zhan_vec[i].uid = i;
+            x.dian_zhan_vec[i].ji_zu_num = 2;
+            if i==3 {
+                x.dian_zhan_vec[i].ji_zu_num = 3;
+            }
         }
         for i in 0..simctrl::ZONG_SHU_DUAN_LU_QI {
             x.duan_lu_qi_vec[i].uid = i;
@@ -1311,7 +1370,7 @@ impl XiTong {
             for jizuid in jizuid_vec{
                 self.dian_zhan_vec[i].p += self.ji_zu_vec[jizuid].common_ji.p;
             }
-            self.dian_zhan_vec[i].p_yu_du = 1.0f64 - self.dian_zhan_vec[i].p/(jizu::JI_ZU_E_DING_GONG_LV * simctrl::ZONG_SHU_JI_ZU_IN_ONE_DIAN_ZHAN as f64);
+            self.dian_zhan_vec[i].p_yu_du = 1.0f64 - self.dian_zhan_vec[i].p/(jizu::JI_ZU_E_DING_GONG_LV * self.dian_zhan_vec[i].ji_zu_num as f64);
         }
     }
 

@@ -11,6 +11,7 @@ pub struct DianZhan {
   pub f : f64,
   pub p : f64,
   pub p_yu_du : f64,
+  pub ji_zu_num : usize,
 }
 
 impl DianZhan {
@@ -29,6 +30,7 @@ impl DianZhan {
             f : 0.0f64,
             p : 0.0f64,
             p_yu_du : 0.0f64,
+            ji_zu_num : 2,
         }
     }
 }
