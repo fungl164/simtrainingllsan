@@ -883,6 +883,27 @@ pub enum JiJi{
     QL(QiLunJiJi),
     AD(AnDianJiJi),
 }
+impl JiJi {
+    pub fn is_an_dian(&self) -> bool {
+        match *self {
+            JiJi::AD(..) => return true,
+            _ => return false,
+        }
+    }
+    pub fn is_chai_you(&self) -> bool {
+        match *self {
+            JiJi::CY(..) => return true,
+            _ => return false,
+        }
+    }
+    pub fn is_qi_lun(&self) -> bool {
+        match *self {
+            JiJi::QL(..) => return true,
+            _ => return false,
+        }
+    }
+
+}
 impl AttrSetter for JiJi {
     fn ting_ji_setter(&mut self) {
     }
@@ -931,7 +952,6 @@ impl<J> JiZu<J> {
         }
 
     }
-
     pub fn set_bian_su_params(&mut self, zhuan_su_delta : f64, is_bian_zai : bool) -> bool {
         self.common_ji.is_bian_zai = is_bian_zai;
         let zhuan_su_temp = self.common_ji.zhuan_su + self.common_ji.zhuan_su_delta + zhuan_su_delta;

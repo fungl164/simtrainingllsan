@@ -1017,7 +1017,7 @@ impl XiTong {
         if ji_zu_online_vec.is_empty() {
             //所有节点参数为0
             for n in all_node_in_path_vec {
-                self.node_vec[n].vm = 0.0;
+                self.node_vec[n].u = 0.0;
                 self.node_vec[n].f = 0.0;
             }
             //所有支路参数为0
@@ -1040,7 +1040,7 @@ impl XiTong {
 
         //确定所有节点参数
         for n in all_node_in_path_vec.to_vec() {
-            self.node_vec[n].vm = jizu::JI_ZU_E_DING_DIAN_YA;
+            self.node_vec[n].u = jizu::JI_ZU_E_DING_DIAN_YA;
             self.node_vec[n].f = jizu::JI_ZU_E_DING_PIN_LV;
         }
         //2. 由_chaoLiuFangFa选择潮流计算方法
@@ -1165,7 +1165,7 @@ impl XiTong {
                     let zhi_lu_id : usize = node_zhi_lu_online_vec.iter().find(|&n_z|n_z.0 == n).unwrap().1;
                     if zhi_lu_not_computed_vec.contains(&zhi_lu_id) {
                         //计算支路参数
-                        let u = self.node_vec[n].vm;
+                        let u = self.node_vec[n].u;
                         let f = self.node_vec[n].f;
                         let p = pg_node_vec.iter().find(|&n_p| n_p.0 == n).unwrap().1 - pd_node_vec.iter().find(|&n_p| n_p.0 == n).unwrap().1;
                         let i = p * 1000.0f64 / (3.0f64.sqrt() * u * jizu::JI_ZU_P_FACTOR);
@@ -1202,7 +1202,7 @@ impl XiTong {
                         node_computed_vec.push(n);
                         if !zhi_lu_computed_vec.contains(&i_zhi_lu) {
                             //计算支路参数
-                            let u = self.node_vec[n].vm;
+                            let u = self.node_vec[n].u;
                             let f = self.node_vec[n].f;
                             let p = pg_node_vec.iter().find(|&n_pg|n_pg.0 == n).unwrap().1 + self.zhi_lu_vec[i_zhi_lu_g].p - pd_node_vec.iter().find(|&n_pd|n_pd.0 == n).unwrap().1;
                             let i = p * 1000.0 / (3.0f64.sqrt() * u * jizu::JI_ZU_P_FACTOR);
@@ -1241,7 +1241,7 @@ impl XiTong {
                     node_computed_vec.push(n);
                     if zhi_lu_not_computed_num == 1 {
                         //计算支路参数
-                        let u = self.node_vec[n].vm;
+                        let u = self.node_vec[n].u;
                         let f = self.node_vec[n].f;
                         let p = pg_node_vec.iter().find(|&n_pg|n_pg.0 == n).unwrap().1 + all_zhi_lu_g_p - pd_node_vec.iter().find(|&n_pd|n_pd.0 == n).unwrap().1;
                         let i = p * 1000.0 / (3.0f64.sqrt() * u * jizu::JI_ZU_P_FACTOR);
@@ -1299,8 +1299,8 @@ impl XiTong {
             let mut u = 0.0f64;
             let mut f = 0.0f64;
             for n in n_vec {
-                if u < self.node_vec[n].vm {
-                    u = self.node_vec[n].vm;
+                if u < self.node_vec[n].u {
+                    u = self.node_vec[n].u;
                     f = self.node_vec[n].f;
                 }
             }
@@ -2679,10 +2679,11 @@ pub struct XiTongThread {
 }
 impl iron::middleware::Handler for XiTongThread {
     fn handle(&self, _req: &mut Request) -> IronResult<Response> {
+        use jsoninf::XiTongInf;
         use std::ops::Deref;
         let xt_shared = self.xt.clone();
         let xt_raw = xt_shared.read().unwrap();
-        let x_ser = serde_json::to_string(xt_raw.deref()).unwrap();
+        let x_ser = serde_json::to_string(&(XiTongInf::from_ob(xt_raw.deref()))).unwrap();
         let content_type = "application/json".parse::<Mime>().unwrap();
         Ok(Response::with((content_type, status::Ok, x_ser)))
     }
@@ -2699,48 +2700,50 @@ impl XiTongThread {
         let xt_shared = self.xt.clone();
         let _ = thread::spawn(move || {
             loop{
-                let mut xt_raw = xt_shared.write().unwrap();
-                for i in 0..simctrl::ZONG_SHU_JI_ZU {
-                    xt_raw.ji_zu_vec[i].update();
+                {
+                    let mut xt_raw = xt_shared.write().unwrap();
+                    for i in 0..simctrl::ZONG_SHU_JI_ZU {
+                        xt_raw.ji_zu_vec[i].update();
+                    }
+                    xt_raw.compute_xi_tong_pf();
+                    xt_raw.p_shou_ti_dui = 0.0;
+                    xt_raw.u_shou_ti_dui = 0.0;
+                    xt_raw.f_shou_ti_dui = 0.0;
+                    xt_raw.pd_shou_ti_dui = 0.0;
+
+                    xt_raw.p_wei_ti_dui = 0.0;
+                    xt_raw.u_wei_ti_dui = 0.0;
+                    xt_raw.f_wei_ti_dui = 0.0;
+                    xt_raw.pd_wei_ti_dui = 0.0;
+
+                    xt_raw.p_quan_jian = 0.0;
+                    for jizuid in 0..simctrl::ZONG_SHU_JI_ZU {
+                        xt_raw.p_quan_jian += xt_raw.ji_zu_vec[jizuid].common_ji.p;
+                    }
+                    xt_raw.sec = time::get_time().sec;
+                    xt_raw.nsec = time::get_time().nsec;
+
+                    //以下为测试内容，实际运行时请注释
+                    // println!("{:?}.{:?}", xt_raw.sec, xt_raw.nsec);
+                    // for i in 0..2 {
+                    //     match self.ji_zu_vec[i].common_ji.current_range {
+                    //         JiZuRangeLeiXing::TingJi | JiZuRangeLeiXing::JinJiGuZhang => self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::BeiCheZanTai,
+                    //         JiZuRangeLeiXing::BeiCheWanBi => self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::QiDong,
+                    //         JiZuRangeLeiXing::Wen => {
+                    //             self.ji_zu_vec[i].set_bian_su_params(7.0, false);
+                    //             self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::BianSu;
+                    //         }
+                    //         JiZuRangeLeiXing::BianSu => {
+                    //             self.ji_zu_vec[i].set_bian_ya_params(3.0);
+                    //             self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::BianYa;
+                    //         }
+                    //         JiZuRangeLeiXing::BianYa => self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::TingJi,
+                    //         _ => {}
+                    //     }
+                    //     // println!("uid:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}, bei_che_t:{:?}, bian_su_t:{:?}, bian_ya_t:{:?}", i, self.ji_zu_vec[i].common_ji.current_range, self.ji_zu_vec[i].common_ji.uab_ext, self.ji_zu_vec[i].common_ji.zhuan_su, self.ji_zu_vec[i].common_ji.f_ext, self.ji_zu_vec[i].common_ji.t_current_range,  self.ji_zu_vec[i].common_ji.bei_che_t,  self.ji_zu_vec[i].common_ji.bian_su_t,  self.ji_zu_vec[i].common_ji.bian_ya_t);
+                    //     // println!("uid:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}", i, self.ji_zu_vec[i].common_ji.current_range, self.ji_zu_vec[i].common_ji.uab_ext, self.ji_zu_vec[i].common_ji.zhuan_su, self.ji_zu_vec[i].common_ji.f_ext, self.ji_zu_vec[i].common_ji.t_current_range);
+                    // }
                 }
-                xt_raw.compute_xi_tong_pf();
-                xt_raw.p_shou_ti_dui = 0.0;
-                xt_raw.u_shou_ti_dui = 0.0;
-                xt_raw.f_shou_ti_dui = 0.0;
-                xt_raw.pd_shou_ti_dui = 0.0;
-
-                xt_raw.p_wei_ti_dui = 0.0;
-                xt_raw.u_wei_ti_dui = 0.0;
-                xt_raw.f_wei_ti_dui = 0.0;
-                xt_raw.pd_wei_ti_dui = 0.0;
-
-                xt_raw.p_quan_jian = 0.0;
-                for jizuid in 0..simctrl::ZONG_SHU_JI_ZU {
-                    xt_raw.p_quan_jian += xt_raw.ji_zu_vec[jizuid].common_ji.p;
-                }
-                xt_raw.sec = time::get_time().sec;
-                xt_raw.nsec = time::get_time().nsec;
-
-                //以下为测试内容，实际运行时请注释
-                // println!("{:?}.{:?}", xt_raw.sec, xt_raw.nsec);
-                // for i in 0..2 {
-                //     match self.ji_zu_vec[i].common_ji.current_range {
-                //         JiZuRangeLeiXing::TingJi | JiZuRangeLeiXing::JinJiGuZhang => self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::BeiCheZanTai,
-                //         JiZuRangeLeiXing::BeiCheWanBi => self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::QiDong,
-                //         JiZuRangeLeiXing::Wen => {
-                //             self.ji_zu_vec[i].set_bian_su_params(7.0, false);
-                //             self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::BianSu;
-                //         }
-                //         JiZuRangeLeiXing::BianSu => {
-                //             self.ji_zu_vec[i].set_bian_ya_params(3.0);
-                //             self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::BianYa;
-                //         }
-                //         JiZuRangeLeiXing::BianYa => self.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::TingJi,
-                //         _ => {}
-                //     }
-                //     // println!("uid:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}, bei_che_t:{:?}, bian_su_t:{:?}, bian_ya_t:{:?}", i, self.ji_zu_vec[i].common_ji.current_range, self.ji_zu_vec[i].common_ji.uab_ext, self.ji_zu_vec[i].common_ji.zhuan_su, self.ji_zu_vec[i].common_ji.f_ext, self.ji_zu_vec[i].common_ji.t_current_range,  self.ji_zu_vec[i].common_ji.bei_che_t,  self.ji_zu_vec[i].common_ji.bian_su_t,  self.ji_zu_vec[i].common_ji.bian_ya_t);
-                //     // println!("uid:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}", i, self.ji_zu_vec[i].common_ji.current_range, self.ji_zu_vec[i].common_ji.uab_ext, self.ji_zu_vec[i].common_ji.zhuan_su, self.ji_zu_vec[i].common_ji.f_ext, self.ji_zu_vec[i].common_ji.t_current_range);
-                // }
                 thread::sleep(Duration::from_millis(simctrl::FANG_ZHEN_BU_CHANG as u64));
             }
         });
