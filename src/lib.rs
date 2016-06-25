@@ -48,3 +48,4 @@ pub mod trainingaction;
 pub mod dev;
 pub mod zhanwei;
 pub mod route;
+pub mod jsoninf;
