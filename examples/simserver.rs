@@ -24,6 +24,7 @@ fn main() {
     let mut router_zl = Router::new();
     router_zl.post("/", zl);
     router_zl.get("/example", ZhiLing::zhi_ling_example_handler);
+    router_zl.get("/examplepretty", ZhiLing::zhi_ling_example_handler);
     let mut mount_root = route::build_route();
     mount_root.mount("/api/v1/xitong/", router_xt);
     mount_root.mount("/api/v1/zhiling/", router_zl);

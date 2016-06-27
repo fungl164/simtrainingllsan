@@ -30,6 +30,72 @@ curl -X GET 'http://localhost:3000/api/v1/trainingsession/2'
 curl -X PUT --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"id":2,"sec":1,"nsec":1,"name":"0","xitong_id":0,"admin_uid":"0","users_uid":["0","1"],"actions_id":[0,1],"mode":"0","state":"0","sec_duration":0,"nsec_duration":0,"score_op_order":0,"score_op_correct":0,"score_op_duration":0,"score":0}' 'http://localhost:3000/api/v1/trainingsession/2'
 curl -X DELETE --header 'Accept: application/json' 'http://localhost:3000/api/v1/trainingsession/2'
 
+训练流程的具体测试方法：
 
+（控制方式转换）半自动--（操作部位转换）电站集控/机组遥控
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"CtrlMode":["SemiAuto"]},"dev_type":{"DianZhan":[]},"dev_id":0,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
 
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"OperatingStation":["JiKong"]},"dev_type":{"DianZhan":[]},"dev_id":0,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"OperatingStation":["Remote"]},"dev_type":{"JiZu":[]},"dev_id":0,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+任意机组：（机组）备车---启动---合闸----加载---减载----分闸---停机
+以机组DG1为例（其他机组更改dev_id）
+备车：
 curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"BeiChe":[]},"dev_type":{"JiZu":[]},"dev_id":0,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+启动：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"QiDong":[]},"dev_type":{"JiZu":[]},"dev_id":0,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+合闸：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"HeZhaBingChe":[]},"dev_type":{"JiZu":[]},"dev_id":0,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+加载：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"BianZai":[150,150]},"dev_type":{"FuZai":[]},"dev_id":0,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+减载：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"BianZai":[-110,-110]},"dev_type":{"FuZai":[]},"dev_id":0,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+分闸：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"FenZhaJieLie":[]},"dev_type":{"JiZu":[]},"dev_id":0,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+停机：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"TingJi":[]},"dev_type":{"JiZu":[]},"dev_id":0,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+机组并联：DG1（备车--启动--合闸）--负载0（加载）--DG2（备车--启动--并车---解列---停机）---DG1（分闸--停机）
+机组DG1备车：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"BeiChe":[]},"dev_type":{"JiZu":[]},"dev_id":0,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+机组DG1启动：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"QiDong":[]},"dev_type":{"JiZu":[]},"dev_id":0,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+机组DG1合闸：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"HeZhaBingChe":[]},"dev_type":{"JiZu":[]},"dev_id":0,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+负载0加载：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"BianZai":[450,450]},"dev_type":{"FuZai":[]},"dev_id":0,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+机组DG2备车：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"BeiChe":[]},"dev_type":{"JiZu":[]},"dev_id":1,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+机组DG2启动：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"QiDong":[]},"dev_type":{"JiZu":[]},"dev_id":1,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+断路器2（1QF3）合闸：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"HeZhaBingChe":[]},"dev_type":{"DuanLuQi":[]},"dev_id":2,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+机组DG2并车：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"HeZhaBingChe":[]},"dev_type":{"JiZu":[]},"dev_id":1,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+机组DG2解列：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"FenZhaJieLie":[]},"dev_type":{"JiZu":[]},"dev_id":1,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+机组DG2停机：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"Tingji":[]},"dev_type":{"JiZu":[]},"dev_id":1,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+机组DG1分闸：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"FenZhaJieLie":[]},"dev_type":{"JiZu":[]},"dev_id":0,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+机组DG1停机：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"TingJi":[]},"dev_type":{"JiZu":[]},"dev_id":0,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+其他机组和电站类似

@@ -473,7 +473,7 @@ impl XiTong {
         for i in 0..simctrl::ZONG_SHU_DUAN_LU_QI {
             x.duan_lu_qi_vec[i].uid = i;
         }
-        for i in 0..simctrl::ZONG_SHU_FU_ZAI { 
+        for i in 0..simctrl::ZONG_SHU_FU_ZAI {
             x.fu_zai_vec[i].uid = i;
         }
         for i in 0..simctrl::ZONG_SHU_NODE {
@@ -2461,7 +2461,8 @@ impl XiTong {
                 else if xt_temp.fu_zai_vec[zl.dev_id].q < 0.0 {
                     xt_temp.fu_zai_vec[zl.dev_id].q = 0.0;
                 }
-                if xt_temp.fu_zai_vec[zl.dev_id].p == 0.0 && xt_temp.fu_zai_vec[zl.dev_id].q == 0.0 {
+                let node_id = xt_temp.get_nodeid_from_fuzaiid(zl.dev_id).unwrap();
+                if xt_temp.fu_zai_vec[zl.dev_id].p == 0.0 && xt_temp.fu_zai_vec[zl.dev_id].q == 0.0 || xt_temp.node_vec[node_id].u == 0.0 {
                     xt_temp.fu_zai_vec[zl.dev_id].is_online = false;
                 }
                 else {

@@ -153,8 +153,20 @@ impl ZhiLing {
     }
     pub fn zhi_ling_example_handler(_: &mut Request) -> IronResult<Response> {
         let mut z = ZhiLing::new();
-        z.zhi_ling_type = ZhiLingType::BeiChe;
-        z.dev_type = simctrl::DevType::JiZu;
+        z.zhi_ling_type = ZhiLingType::BianZai(150.0, 150.0);
+        z.dev_type = simctrl::DevType::FuZai;
+        z.dev_id = 0;
+        z.actor_id = 0;
+        z.zhan_wei_id = 0;
+        z.zhan_wei_type = simctrl::ZhanWeiType::JiaoLian;
+        let z_ser_pretty = serde_json::to_string(&z).unwrap();
+        let content_type = "application/json".parse::<Mime>().unwrap();
+        Ok(Response::with((content_type, status::Ok, z_ser_pretty)))
+    }
+    pub fn zhi_ling_example_pretty_handler(_: &mut Request) -> IronResult<Response> {
+        let mut z = ZhiLing::new();
+        z.zhi_ling_type = ZhiLingType::BianZai(150.0, 150.0);
+        z.dev_type = simctrl::DevType::FuZai;
         z.dev_id = 0;
         z.actor_id = 0;
         z.zhan_wei_id = 0;
