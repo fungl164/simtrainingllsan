@@ -363,8 +363,8 @@ impl JiZuCommonJi {
             bian_ya_t : std::f64::MAX,
             bian_zai_t : std::f64::MAX,
             t_current_range : 0.0,
-            bei_che_t : std::f64::MAX,
-            qi_dong_t : std::f64::MAX,
+            bei_che_t : JI_ZU_CHAI_YOU_BEI_CHE_T,
+            qi_dong_t : JI_ZU_QI_DONG_TA + JI_ZU_QI_DONG_TB,
             i_delta : 0.0f64,
             u_delta : 0.0f64,
             f_delta : 0.0f64,
@@ -578,9 +578,8 @@ impl AttrSetter for JiZuCommonJi {
             self.uab_in = GEN_V_START_REMAINDER;
             self.ubc_in = GEN_V_START_REMAINDER;
             self.uca_in = GEN_V_START_REMAINDER;
-            self.f_ext = zan_tai_linear(self.t_current_range , 0.0,
-                JI_ZU_E_DING_PIN_LV-JI_ZU_PIN_LV_BIAN_HUA_YU_ZHI_WEN_TAI,
-                0.0, JI_ZU_QI_DONG_TA);
+            self.f_ext = zan_tai_linear(self.t_current_range , 0.0,    JI_ZU_E_DING_PIN_LV-JI_ZU_PIN_LV_BIAN_HUA_YU_ZHI_WEN_TAI, 0.0, JI_ZU_QI_DONG_TA);
+            self.zhuan_su = JI_ZU_E_DING_ZHUAN_SU / JI_ZU_E_DING_PIN_LV * self.f_ext;
             self.f_in = self.f_ext;
         }
         else if self.t_current_range > JI_ZU_QI_DONG_TA && self.t_current_range < JI_ZU_QI_DONG_TB {

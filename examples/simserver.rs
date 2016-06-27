@@ -1,4 +1,3 @@
-#![feature(drop_types_in_const)]
 extern crate simtraining;
 extern crate iron;
 extern crate serde;
