@@ -34,3 +34,17 @@ fn main() {
     th.join().unwrap();
 
 }
+// fn main() {
+//     use simtraining::xitong::XiTong;
+//     let xt = XiTong::new(0);
+//     let mut router_xt = Router::new();
+//     router_xt.get("/", xt);
+//     let mut mount_root = route::build_route();
+//     mount_root.mount("/api/v1/xitong/", router_xt);
+//     // Timer::new().start(&mut TimerHandler::new(x), simctrl::FANG_ZHEN_BU_CHANG as u64, simctrl::FANG_ZHEN_BU_CHANG as u64);
+//     let th = thread::spawn(move || {
+//         Iron::new(mount_root).http("localhost:3000").unwrap();
+//     });
+//     th.join().unwrap();
+//
+// }

@@ -487,16 +487,8 @@ impl AttrSetter for JiZuCommonJi {
         self.p_delta = 0.0f64;
     }
     fn wen_setter(&mut self) {
-        self.ia_ext = 0.0f64;
-        self.ib_ext = 0.0f64;
-        self.ic_ext = 0.0f64;
         self.f_ext = JI_ZU_E_DING_PIN_LV;
-        self.ia_in = 0.0f64;
-        self.ib_in = 0.0f64;
-        self.ic_in = 0.0f64;
         self.f_in = JI_ZU_E_DING_PIN_LV;
-        self.p = 0.0f64;
-        self.q = 0.0f64;
         self.p_factor = JI_ZU_SHU_CHU_GONG_LV_YIN_SHU;
         self.q_factor = (1.0f64-JI_ZU_SHU_CHU_GONG_LV_YIN_SHU*
             JI_ZU_SHU_CHU_GONG_LV_YIN_SHU).sqrt();

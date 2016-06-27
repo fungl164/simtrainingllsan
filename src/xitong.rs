@@ -107,125 +107,187 @@ impl XiTong {
         self.zhilu_node_vec.push((3,6));
         self.zhilu_node_vec.push((3,7));
 
-        self.zhilu_node_vec.push((1,0));
-        self.zhilu_node_vec.push((1,1));
+        self.zhilu_node_vec.push((4,5));
+        self.zhilu_node_vec.push((4,6));
 
-        self.zhilu_node_vec.push((1,0));
-        self.zhilu_node_vec.push((1,1));
+        self.zhilu_node_vec.push((5,7));
+        self.zhilu_node_vec.push((5,8));
 
-        self.zhilu_node_vec.push((1,0));
-        self.zhilu_node_vec.push((1,1));
+        self.zhilu_node_vec.push((6,14));
+        self.zhilu_node_vec.push((6,15));
 
-        self.zhilu_node_vec.push((1,0));
-        self.zhilu_node_vec.push((1,1));
+        self.zhilu_node_vec.push((7,13));
+        self.zhilu_node_vec.push((7,14));
 
-        self.zhilu_node_vec.push((1,0));
-        self.zhilu_node_vec.push((1,1));
+        self.zhilu_node_vec.push((8,15));
+        self.zhilu_node_vec.push((8,16));
 
-        self.zhilu_node_vec.push((1,0));
-        self.zhilu_node_vec.push((1,1));
+        self.zhilu_node_vec.push((9,18));
+        self.zhilu_node_vec.push((9,19));
 
-        self.zhilu_node_vec.push((1,0));
-        self.zhilu_node_vec.push((1,1));
+        self.zhilu_node_vec.push((10,19));
+        self.zhilu_node_vec.push((10,20));
 
-        self.zhilu_node_vec.push((1,0));
-        self.zhilu_node_vec.push((1,1));
+        self.zhilu_node_vec.push((11,20));
+        self.zhilu_node_vec.push((11,21));
 
-        self.zhilu_node_vec.push((1,0));
-        self.zhilu_node_vec.push((1,1));
+        self.zhilu_node_vec.push((12,21));
+        self.zhilu_node_vec.push((12,22));
 
-        self.zhilu_node_vec.push((1,0));
-        self.zhilu_node_vec.push((1,1));
+        self.zhilu_node_vec.push((13,4));
+        self.zhilu_node_vec.push((13,5));
 
-        self.zhilu_node_vec.push((1,0));
-        self.zhilu_node_vec.push((1,1));
+        self.zhilu_node_vec.push((14,0));
+        self.zhilu_node_vec.push((14,4));
 
-        self.zhilu_node_vec.push((1,0));
-        self.zhilu_node_vec.push((1,1));
+        self.zhilu_node_vec.push((15,4));
+        self.zhilu_node_vec.push((15,10));
 
-        self.zhilu_node_vec.push((1,0));
-        self.zhilu_node_vec.push((1,1));
+        self.zhilu_node_vec.push((16,12));
+        self.zhilu_node_vec.push((16,13));
 
-        self.zhilu_node_vec.push((1,0));
-        self.zhilu_node_vec.push((1,1));
+        self.zhilu_node_vec.push((17,10));
+        self.zhilu_node_vec.push((17,12));
 
-        self.zhilu_node_vec.push((1,0));
-        self.zhilu_node_vec.push((1,1));
+        self.zhilu_node_vec.push((18,12));
+        self.zhilu_node_vec.push((18,18));
 
-        self.zhilu_node_vec.push((1,0));
-        self.zhilu_node_vec.push((1,1));
+        self.zhilu_node_vec.push((19,8));
+        self.zhilu_node_vec.push((19,9));
 
-        self.zhilu_node_vec.push((1,0));
-        self.zhilu_node_vec.push((1,1));
+        self.zhilu_node_vec.push((20,3));
+        self.zhilu_node_vec.push((20,9));
 
-        self.zhilu_node_vec.push((1,0));
-        self.zhilu_node_vec.push((1,1));
+        self.zhilu_node_vec.push((21,9));
+        self.zhilu_node_vec.push((21,11));
 
-        self.zhilu_node_vec.push((1,0));
-        self.zhilu_node_vec.push((1,1));
+        self.zhilu_node_vec.push((22,16));
+        self.zhilu_node_vec.push((22,17));
 
-        self.zhilu_node_vec.push((1,0));
-        self.zhilu_node_vec.push((1,1));
+        self.zhilu_node_vec.push((23,11));
+        self.zhilu_node_vec.push((23,17));
 
-        self.zhilu_node_vec.push((1,0));
-        self.zhilu_node_vec.push((1,1));
+        self.zhilu_node_vec.push((24,17));
+        self.zhilu_node_vec.push((24,22));
 
     }
     pub fn build_zhilu_duanluqi_vec(&mut self){
         /*构建支路与支路断路器之间的映射，key为支路uid，value为支路断路器uid*/
-        self.zhilu_duanluqi_vec.push((0,6));
-        self.zhilu_duanluqi_vec.push((1,7));
-        self.zhilu_duanluqi_vec.push((2,8));
-        self.zhilu_duanluqi_vec.push((3,9));
+        self.zhilu_duanluqi_vec.push((0,2));
+        self.zhilu_duanluqi_vec.push((1,3));
+        self.zhilu_duanluqi_vec.push((2,4));
+        self.zhilu_duanluqi_vec.push((3,7));
 
-        self.zhilu_duanluqi_vec.push((4,10));
-        self.zhilu_duanluqi_vec.push((5,12));
-        self.zhilu_duanluqi_vec.push((6,11));
-        self.zhilu_duanluqi_vec.push((7,13));
+        self.zhilu_duanluqi_vec.push((4,8));
+        self.zhilu_duanluqi_vec.push((5,9));
+        self.zhilu_duanluqi_vec.push((6,14));
+        self.zhilu_duanluqi_vec.push((7,15));
+
+        self.zhilu_duanluqi_vec.push((8,16));
+        self.zhilu_duanluqi_vec.push((9,22));
+        self.zhilu_duanluqi_vec.push((10,23));
+        self.zhilu_duanluqi_vec.push((11,24));
+
+        self.zhilu_duanluqi_vec.push((12,25));
+        self.zhilu_duanluqi_vec.push((13,26));
+        self.zhilu_duanluqi_vec.push((14,27));
+        self.zhilu_duanluqi_vec.push((15,28));
+
+        self.zhilu_duanluqi_vec.push((16,29));
+        self.zhilu_duanluqi_vec.push((17,30));
+        self.zhilu_duanluqi_vec.push((18,31));
+        self.zhilu_duanluqi_vec.push((19,32));
+
+        self.zhilu_duanluqi_vec.push((20,33));
+        self.zhilu_duanluqi_vec.push((21,34));
+        self.zhilu_duanluqi_vec.push((22,35));
+        self.zhilu_duanluqi_vec.push((23,36));
+
+        self.zhilu_duanluqi_vec.push((24,37));
     }
     pub fn build_jizu_duanluqi_vec(&mut self){
-        /*6个柴油机与柴油机断路器*/
         self.jizu_duanluqi_vec.push((0,0));
         self.jizu_duanluqi_vec.push((1,1));
-        self.jizu_duanluqi_vec.push((2,2));
-        self.jizu_duanluqi_vec.push((3,3));
+        self.jizu_duanluqi_vec.push((2,5));
+        self.jizu_duanluqi_vec.push((3,6));
+        self.jizu_duanluqi_vec.push((4,12));
 
-        self.jizu_duanluqi_vec.push((4,4));
-        self.jizu_duanluqi_vec.push((5,5));
-        self.jizu_duanluqi_vec.push((6,14));
+        self.jizu_duanluqi_vec.push((5,13));
+        self.jizu_duanluqi_vec.push((6,19));
+        self.jizu_duanluqi_vec.push((7,20));
+        self.jizu_duanluqi_vec.push((8,21));
+
+        self.jizu_duanluqi_vec.push((9,10));
+        self.jizu_duanluqi_vec.push((10,11));
+        self.jizu_duanluqi_vec.push((11,17));
+        self.jizu_duanluqi_vec.push((12,18));
+
     }
     pub fn build_jizuandian_duanluqi_vec(&mut self){
-        self.jizuandian_duanluqi_vec.push((6,14));
+        self.jizuandian_duanluqi_vec.push((9,10));
+        self.jizuandian_duanluqi_vec.push((10,11));
+        self.jizuandian_duanluqi_vec.push((11,17));
+        self.jizuandian_duanluqi_vec.push((12,18));
     }
     pub fn build_jizuchaiyou_duanluqi_vec(&mut self){
         /*6个柴油机与柴油机断路器*/
         self.jizuchaiyou_duanluqi_vec.push((0,0));
         self.jizuchaiyou_duanluqi_vec.push((1,1));
-        self.jizuchaiyou_duanluqi_vec.push((2,2));
-        self.jizuchaiyou_duanluqi_vec.push((3,3));
+        self.jizuchaiyou_duanluqi_vec.push((6,19));
+        self.jizuchaiyou_duanluqi_vec.push((7,20));
 
-        self.jizuchaiyou_duanluqi_vec.push((4,4));
-        self.jizuchaiyou_duanluqi_vec.push((5,5));
+        self.jizuchaiyou_duanluqi_vec.push((8,21));
     }
     pub fn build_jizuqilun_duanluqi_vec(&mut self){
+        self.jizuqilun_duanluqi_vec.push((2,5));
+        self.jizuqilun_duanluqi_vec.push((3,6));
+        self.jizuqilun_duanluqi_vec.push((4,12));
+        self.jizuqilun_duanluqi_vec.push((5,13));
     }
     pub fn build_node_jizu_vec(&mut self){
-        self.node_jizu_vec.push((0,0));
-        self.node_jizu_vec.push((1,1));
-        self.node_jizu_vec.push((2,2));
-        self.node_jizu_vec.push((3,3));
+        self.node_jizu_vec.push((1,0));
+        self.node_jizu_vec.push((2,1));
+        self.node_jizu_vec.push((6,2));
+        self.node_jizu_vec.push((7,3));
+        self.node_jizu_vec.push((14,4));
 
-        self.node_jizu_vec.push((4,4));
-        self.node_jizu_vec.push((5,5));
-        self.node_jizu_vec.push((7,6));
+        self.node_jizu_vec.push((15,5));
+        self.node_jizu_vec.push((19,6));
+        self.node_jizu_vec.push((20,7));
+        self.node_jizu_vec.push((21,8));
+        self.node_jizu_vec.push((5,9));
+
+        self.node_jizu_vec.push((8,10));
+        self.node_jizu_vec.push((13,11));
+        self.node_jizu_vec.push((16,12));
+
     }
     pub fn build_node_fuzai_vec(&mut self){
-        self.node_fuzai_vec.push((0,0));
+        self.node_fuzai_vec.push((1,0));
         self.node_fuzai_vec.push((1,1));
         self.node_fuzai_vec.push((2,2));
-        self.node_fuzai_vec.push((3,3));
-        self.node_fuzai_vec.push((4,4));
-        self.node_fuzai_vec.push((5,5));
+        self.node_fuzai_vec.push((2,3));
+        self.node_fuzai_vec.push((6,4));
+
+        self.node_fuzai_vec.push((6,5));
+        self.node_fuzai_vec.push((6,6));
+        self.node_fuzai_vec.push((7,7));
+        self.node_fuzai_vec.push((7,8));
+        self.node_fuzai_vec.push((14,9));
+
+        self.node_fuzai_vec.push((14,10));
+        self.node_fuzai_vec.push((14,11));
+        self.node_fuzai_vec.push((15,12));
+        self.node_fuzai_vec.push((15,13));
+        self.node_fuzai_vec.push((15,14));
+
+        self.node_fuzai_vec.push((19,15));
+        self.node_fuzai_vec.push((19,16));
+        self.node_fuzai_vec.push((19,17));
+        self.node_fuzai_vec.push((20,18));
+        self.node_fuzai_vec.push((21,19));
+
+        self.node_fuzai_vec.push((21,20));
     }
     pub fn build_jizunode_vec(&mut self){
         self.jizunode_vec =  self.node_jizu_vec.iter().cloned().map(|node_jizu|node_jizu.0).collect()
@@ -236,46 +298,112 @@ impl XiTong {
     pub fn build_jizu_dianzhan_vec(&mut self) {
         self.jizu_dianzhan_vec.push((0, 0));
         self.jizu_dianzhan_vec.push((1, 0));
-        self.jizu_dianzhan_vec.push((2, 0));
+
+        self.jizu_dianzhan_vec.push((2, 1));
         self.jizu_dianzhan_vec.push((3, 1));
-        self.jizu_dianzhan_vec.push((4, 1));
-        self.jizu_dianzhan_vec.push((5, 1));
+
+        self.jizu_dianzhan_vec.push((4, 2));
+        self.jizu_dianzhan_vec.push((5, 2));
+
+        self.jizu_dianzhan_vec.push((6, 3));
+        self.jizu_dianzhan_vec.push((7, 3));
+        self.jizu_dianzhan_vec.push((8, 3));
     }
     pub fn build_fuzai_dianzhan_vec(&mut self) {
         self.fuzai_dianzhan_vec.push((0, 0));
         self.fuzai_dianzhan_vec.push((1, 0));
         self.fuzai_dianzhan_vec.push((2, 0));
-        self.fuzai_dianzhan_vec.push((3, 1));
+        self.fuzai_dianzhan_vec.push((3, 0));
+
         self.fuzai_dianzhan_vec.push((4, 1));
         self.fuzai_dianzhan_vec.push((5, 1));
+        self.fuzai_dianzhan_vec.push((6, 1));
+        self.fuzai_dianzhan_vec.push((7, 1));
+        self.fuzai_dianzhan_vec.push((8, 1));
+
+        self.fuzai_dianzhan_vec.push((9, 2));
+        self.fuzai_dianzhan_vec.push((10, 2));
+        self.fuzai_dianzhan_vec.push((11, 2));
+        self.fuzai_dianzhan_vec.push((12, 2));
+        self.fuzai_dianzhan_vec.push((13, 2));
+        self.fuzai_dianzhan_vec.push((14, 2));
+
+        self.fuzai_dianzhan_vec.push((15, 3));
+        self.fuzai_dianzhan_vec.push((16, 3));
+        self.fuzai_dianzhan_vec.push((17, 3));
+        self.fuzai_dianzhan_vec.push((18, 3));
+        self.fuzai_dianzhan_vec.push((19, 3));
+        self.fuzai_dianzhan_vec.push((20, 3));
     }
     pub fn build_duanluqi_dianzhan_vec(&mut self) {
         self.duanluqi_dianzhan_vec.push((0, 0));
         self.duanluqi_dianzhan_vec.push((1, 0));
         self.duanluqi_dianzhan_vec.push((2, 0));
-        self.duanluqi_dianzhan_vec.push((6, 0));
+        self.duanluqi_dianzhan_vec.push((3, 0));
+        self.duanluqi_dianzhan_vec.push((4, 0));
 
-        self.duanluqi_dianzhan_vec.push((7, 0));
-        self.duanluqi_dianzhan_vec.push((10, 0));
-        self.duanluqi_dianzhan_vec.push((11, 0));
-        self.duanluqi_dianzhan_vec.push((14, 0));
-
-        self.duanluqi_dianzhan_vec.push((3, 1));
-        self.duanluqi_dianzhan_vec.push((4, 1));
         self.duanluqi_dianzhan_vec.push((5, 1));
         self.duanluqi_dianzhan_vec.push((6, 1));
-
+        self.duanluqi_dianzhan_vec.push((7, 1));
+        self.duanluqi_dianzhan_vec.push((8, 1));
         self.duanluqi_dianzhan_vec.push((9, 1));
-        self.duanluqi_dianzhan_vec.push((12, 1));
-        self.duanluqi_dianzhan_vec.push((13, 1));
+        self.duanluqi_dianzhan_vec.push((10, 1));
+        self.duanluqi_dianzhan_vec.push((11, 1));
+        self.duanluqi_dianzhan_vec.push((26, 1));
+        self.duanluqi_dianzhan_vec.push((27, 1));
+        self.duanluqi_dianzhan_vec.push((28, 1));
+        self.duanluqi_dianzhan_vec.push((32, 1));
+        self.duanluqi_dianzhan_vec.push((33, 1));
+        self.duanluqi_dianzhan_vec.push((34, 1));
+
+        self.duanluqi_dianzhan_vec.push((12, 2));
+        self.duanluqi_dianzhan_vec.push((13, 2));
+        self.duanluqi_dianzhan_vec.push((14, 2));
+        self.duanluqi_dianzhan_vec.push((15, 2));
+        self.duanluqi_dianzhan_vec.push((16, 2));
+        self.duanluqi_dianzhan_vec.push((17, 2));
+        self.duanluqi_dianzhan_vec.push((18, 2));
+        self.duanluqi_dianzhan_vec.push((29, 2));
+        self.duanluqi_dianzhan_vec.push((30, 2));
+        self.duanluqi_dianzhan_vec.push((31, 2));
+        self.duanluqi_dianzhan_vec.push((35, 2));
+        self.duanluqi_dianzhan_vec.push((36, 2));
+        self.duanluqi_dianzhan_vec.push((37, 2));
+
+        self.duanluqi_dianzhan_vec.push((19, 3));
+        self.duanluqi_dianzhan_vec.push((20, 3));
+        self.duanluqi_dianzhan_vec.push((21, 3));
+        self.duanluqi_dianzhan_vec.push((22, 3));
+        self.duanluqi_dianzhan_vec.push((23, 3));
+        self.duanluqi_dianzhan_vec.push((24, 3));
+        self.duanluqi_dianzhan_vec.push((25, 3));
     }
     pub fn build_node_dianzhan_vec(&mut self) {
         self.node_dianzhan_vec.push((0, 0));
         self.node_dianzhan_vec.push((1, 0));
         self.node_dianzhan_vec.push((2, 0));
-        self.node_dianzhan_vec.push((3, 1));
+        self.node_dianzhan_vec.push((3, 0));
+
         self.node_dianzhan_vec.push((4, 1));
         self.node_dianzhan_vec.push((5, 1));
+        self.node_dianzhan_vec.push((6, 1));
+        self.node_dianzhan_vec.push((7, 1));
+        self.node_dianzhan_vec.push((8, 1));
+        self.node_dianzhan_vec.push((9, 1));
+
+        self.node_dianzhan_vec.push((12, 2));
+        self.node_dianzhan_vec.push((13, 2));
+        self.node_dianzhan_vec.push((14, 2));
+        self.node_dianzhan_vec.push((15, 2));
+        self.node_dianzhan_vec.push((16, 2));
+        self.node_dianzhan_vec.push((17, 2));
+
+        self.node_dianzhan_vec.push((18, 3));
+        self.node_dianzhan_vec.push((19, 3));
+        self.node_dianzhan_vec.push((20, 3));
+        self.node_dianzhan_vec.push((21, 3));
+        self.node_dianzhan_vec.push((22, 3));
+
     }
     pub fn new(_id : usize) -> XiTong {
         let mut x = XiTong{
@@ -294,7 +422,16 @@ impl XiTong {
             p_quan_jian : 0.0f64,
             is_xiao_sheng : true,
             is_ying_da : true,
-            ji_zu_vec : vec![JiZu::new(0, JiJi::CY(jizu::ChaiYouJiJi::new())); simctrl::ZONG_SHU_JI_ZU_CHAI_YOU],
+            ji_zu_vec : {
+                let mut vec1 = vec![JiZu::new(0, JiJi::CY(jizu::ChaiYouJiJi::new())); 2];
+                let mut vec2 = vec![JiZu::new(0, JiJi::QL(jizu::QiLunJiJi::new())); 4];
+                let mut vec3 = vec![JiZu::new(0, JiJi::CY(jizu::ChaiYouJiJi::new())); 3];
+                let mut vec4 = vec![JiZu::new(0, JiJi::AD(jizu::AnDianJiJi)); 4];
+                vec1.append(&mut vec2);
+                vec1.append(&mut vec3);
+                vec1.append(&mut vec4);
+                vec1
+            },
             dian_zhan_vec : vec![DianZhan::new(0); simctrl::ZONG_SHU_DIAN_ZHAN],
             duan_lu_qi_vec : vec![DuanLuQi::new(0); simctrl::ZONG_SHU_DUAN_LU_QI],
             fu_zai_vec : vec![FuZai::new(0); simctrl::ZONG_SHU_FU_ZAI],
@@ -317,7 +454,7 @@ impl XiTong {
             jizunode_vec : Vec::new(),
             jizuduanluqi_vec : Vec::new(),
         };
-        for i in 0..simctrl::ZONG_SHU_JI_ZU_CHAI_YOU {
+        for i in 0..simctrl::ZONG_SHU_JI_ZU {
             x.ji_zu_vec[i].uid = i;
             match x.ji_zu_vec[i].ji_can_shu_ji {
                 JiJi::CY(_) => x.ji_zu_vec[i].common_ji.bei_che_t = jizu::JI_ZU_CHAI_YOU_BEI_CHE_T,
@@ -336,7 +473,7 @@ impl XiTong {
         for i in 0..simctrl::ZONG_SHU_DUAN_LU_QI {
             x.duan_lu_qi_vec[i].uid = i;
         }
-        for i in 0..simctrl::ZONG_SHU_FU_ZAI {
+        for i in 0..simctrl::ZONG_SHU_FU_ZAI { 
             x.fu_zai_vec[i].uid = i;
         }
         for i in 0..simctrl::ZONG_SHU_NODE {
@@ -480,31 +617,40 @@ impl XiTong {
         }
     }
 
-    pub fn get_fuzai_from_node(&mut self, _node : &node::Node)->Option<&mut fuzai::FuZai>{
-        match self.node_fuzai_vec.iter()
+    pub fn get_fuzaiid_vec_from_nodeid(&mut self, node_id : usize) -> Vec<usize>{
+        self.node_fuzai_vec.iter()
         .cloned()
-        .find(|node_fuzai|node_fuzai.0 == _node.uid) {
-            Some(node_fuzai) => return Some(&mut self.fu_zai_vec[node_fuzai.1]),
-            None => return None,
-        }
+        .filter(|node_fuzai|node_fuzai.0 == node_id)
+        .map(|node_fuzai|node_fuzai.1).collect()
     }
 
-    pub fn get_fuzai_from_nodeid(&mut self, node_id : usize)->Option<&mut fuzai::FuZai>{
-        match self.node_fuzai_vec.iter()
+    pub fn get_nodeid_from_fuzaiid(&mut self, fu_zai_id : usize) -> Option<usize>{
+        self.node_fuzai_vec.iter()
         .cloned()
-        .find(|node_fuzai|node_fuzai.0 == node_id) {
-            Some(node_fuzai) => return Some(&mut self.fu_zai_vec[node_fuzai.1]),
-            None => return None,
-        }
+        .find(|node_fuzai|node_fuzai.1 == fu_zai_id).map(|node_fuzai|node_fuzai.1)
     }
 
-    pub fn get_fuzaiid_from_nodeid(&mut self, node_id : usize)->Option<usize>{
-        match self.node_fuzai_vec.iter()
+    pub fn get_pd_from_nodeid(&mut self, node_id : usize) -> f64 {
+        self.node_fuzai_vec.to_vec().iter()
         .cloned()
-        .find(|node_fuzai|node_fuzai.0 == node_id) {
-            Some(node_fuzai) => return Some(node_fuzai.1),
-            None => return None,
-        }
+        .filter(|node_fuzai|node_fuzai.0 == node_id)
+        .map(|node_fuzai|self.fu_zai_vec[node_fuzai.1].p).sum()
+    }
+
+    pub fn get_pd_from_nodeid_vec(&mut self, node_id_vec : Vec<usize>) -> f64 {
+        node_id_vec.iter().map(|&id|self.get_pd_from_nodeid(id)).sum()
+    }
+
+    pub fn get_pd_from_jizuid(&mut self, ji_zu_id : usize) -> f64 {
+        let node_id = self.get_nodeid_from_jizuid(ji_zu_id).unwrap();
+        self.node_fuzai_vec.to_vec().iter()
+        .cloned()
+        .filter(|node_fuzai|node_fuzai.0 == node_id)
+        .map(|node_fuzai|self.fu_zai_vec[node_fuzai.1].p).sum()
+    }
+
+    pub fn get_pd_from_jizuid_vec(&mut self, ji_zu_id_vec : Vec<usize>) -> f64 {
+        ji_zu_id_vec.iter().map(|&id|self.get_pd_from_jizuid(id)).sum()
     }
 
     //获取发电机断路器状态
@@ -809,8 +955,8 @@ impl XiTong {
         for i in 0..node_id_group_vec_bing_che.len() {
             let mut fu_zai_id_group = Vec::new();
             for j in 0..node_id_group_vec_bing_che[i].len() {
-                let fu_zai_id = self.get_jizuid_from_nodeid(node_id_group_vec_bing_che[i][j]).unwrap();
-                fu_zai_id_group.push(fu_zai_id);
+                let mut fu_zai_id = self.get_fuzaiid_vec_from_nodeid(node_id_group_vec_bing_che[i][j]);
+                fu_zai_id_group.append(&mut fu_zai_id);
             }
             fu_zai_group_vec_bing_che.push(fu_zai_id_group);
         }
@@ -829,7 +975,7 @@ impl XiTong {
 
     //由某一负载获取与此负载相关联的所有并联机组
     pub fn get_ji_zu_group_from_fu_zai_id(&mut self, fu_zai_id : usize) -> Vec<usize> {
-        let node_id = self.get_nodeid_from_jizuid(fu_zai_id).unwrap();
+        let node_id = self.get_nodeid_from_fuzaiid(fu_zai_id).unwrap();
         let node_group = self.get_node_group_from_node_id(node_id).unwrap();
         let mut ji_zu_id_group = Vec::new();
         for node_id in node_group {
@@ -1118,9 +1264,9 @@ impl XiTong {
                 all_ji_zu_p += self.ji_zu_vec[j].common_ji.p;
             }
             for n in all_node_in_path_vec.to_vec() {
-                let option = self.get_fuzai_from_nodeid(n);
-                if option != None {
-                    all_fu_zai_p += option.unwrap().p;
+                let fuzaiid_vec = self.get_fuzaiid_vec_from_nodeid(n);
+                for i in fuzaiid_vec {
+                    all_fu_zai_p += self.fu_zai_vec[i].p;
                 }
             }
             let p_delta = (all_fu_zai_p - all_ji_zu_p)/(ji_zu_online_vec.to_vec().len()) as f64;
@@ -1193,16 +1339,9 @@ impl XiTong {
         }
         //得到节点注入和流出功率Map
         for n in all_node_in_path_vec.to_vec() {
-            let option = self.get_fuzaiid_from_nodeid(n);
-            if option != None {
-                let option_online = pd_online_vec.iter().find(|f_p|f_p.0 == option.unwrap());
-                if option_online != None {
-                    pd_node_vec.push((n, option_online.unwrap().1));
-                }
-                else {
-                    pd_node_vec.push((n, 0.0));
-                }
-            }
+            let fuzaiid_vec = self.get_fuzaiid_vec_from_nodeid(n);
+            let pd_online : f64 = pd_online_vec.iter().filter(|f_p|fuzaiid_vec.contains(&(f_p.0))).map(|f_p|f_p.1).sum();
+            pd_node_vec.push((n, pd_online));
         }
         //4. 若nodeWeiJiSuan0ZhiLuList不为空，而其他均为空，则计算结束，返回1
         if !node_not_computed_0_zhi_lu_vec.is_empty() && node_not_computed_1_zhi_lu_vec.is_empty() && node_not_computed_2_zhi_lu_vec.is_empty() && node_not_computed_duo_zhi_lu_vec.is_empty()
@@ -1348,6 +1487,17 @@ impl XiTong {
                 }
             }
             pf_fang_fa_vec.push((n_g,fang_fa));
+        }
+        for fu_zai_id in 0..simctrl::ZONG_SHU_FU_ZAI {
+            if self.fu_zai_vec[fu_zai_id].is_online {
+                let nodeid = self.get_nodeid_from_fuzaiid(fu_zai_id).unwrap();
+                self.fu_zai_vec[fu_zai_id].i = self.fu_zai_vec[fu_zai_id].p * 1000f64 /(3f64.sqrt() * self.node_vec[nodeid].u * fuzai::FU_ZAI_P_FACTOR);
+            }
+            else {
+                self.fu_zai_vec[fu_zai_id].p = 0.0;
+                self.fu_zai_vec[fu_zai_id].q = 0.0;
+                self.fu_zai_vec[fu_zai_id].i = 0.0;
+            }
         }
         for n_g_f in pf_fang_fa_vec {
              self.compute_path_pf(n_g_f.0, n_g_f.1);
@@ -2124,10 +2274,7 @@ impl XiTong {
                 if ji_zu_vec_bing_lian.to_vec().iter().all(|&j|self.ji_zu_vec[j].common_ji.current_range == jizu::JiZuRangeLeiXing::Wen){
                     //首先判断解列后功率是否够用，够用则解列，不够用则解列失败
                     let p_ji_zu_bing_lian : f64 = ji_zu_vec_bing_lian.len() as f64 * jizu::JI_ZU_E_DING_GONG_LV;
-                    let mut p_fu_zai_bing_lian = self.fu_zai_vec[jizuid].p;
-                    for i in ji_zu_vec_bing_lian.to_vec(){
-                        p_fu_zai_bing_lian += self.fu_zai_vec[i].p;
-                    }
+                    let p_fu_zai_bing_lian = self.get_pd_from_jizuid(jizuid) + self.get_pd_from_jizuid_vec(ji_zu_vec_bing_lian.to_vec());
                     if p_ji_zu_bing_lian>=p_fu_zai_bing_lian {//功率够用
                         let mut xt_temp = self.clone();
                         xt_temp.duan_lu_qi_vec[duanluqiid].status = duanluqi::DuanLuQiStatus::Off{fault: xt_temp.duan_lu_qi_vec[duanluqiid].is_fault(), ready_to_bing_che : false};
@@ -2314,12 +2461,20 @@ impl XiTong {
                 else if xt_temp.fu_zai_vec[zl.dev_id].q < 0.0 {
                     xt_temp.fu_zai_vec[zl.dev_id].q = 0.0;
                 }
+                if xt_temp.fu_zai_vec[zl.dev_id].p == 0.0 && xt_temp.fu_zai_vec[zl.dev_id].q == 0.0 {
+                    xt_temp.fu_zai_vec[zl.dev_id].is_online = false;
+                }
+                else {
+                    xt_temp.fu_zai_vec[zl.dev_id].is_online = true;
+                }
             }
             _ => {}
         }
         xt_temp.compute_xi_tong_pf();
         self.fu_zai_vec[zl.dev_id].p = xt_temp.fu_zai_vec[zl.dev_id].p;
         self.fu_zai_vec[zl.dev_id].q = xt_temp.fu_zai_vec[zl.dev_id].q;
+        self.fu_zai_vec[zl.dev_id].is_online = xt_temp.fu_zai_vec[zl.dev_id].is_online;
+        self.fu_zai_vec[zl.dev_id].i = xt_temp.fu_zai_vec[zl.dev_id].i;
         let ji_zu_group = self.get_ji_zu_group_from_fu_zai_id(zl.dev_id);
         for j in ji_zu_group {
             if self.ji_zu_vec[j].common_ji.current_range == jizu::JiZuRangeLeiXing::BianSu {

@@ -1,6 +1,6 @@
 #![feature(custom_derive, custom_attribute, plugin)]
 #![plugin(serde_macros, diesel_codegen, dotenv_macros)]
-
+#![feature(iter_arith)]
 // #[macro_use]
 // extern crate rustless;
 

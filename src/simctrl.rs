@@ -94,13 +94,13 @@ pub const ZONG_SHU_JI_ZU : usize = 13;
 pub const ZONG_SHU_JI_ZU_CHAI_YOU : usize = 5;
 pub const ZONG_SHU_JI_ZU_QI_LUN : usize = 4;
 pub const ZONG_SHU_AN_DIAN : usize = 4;
-pub const ZONG_SHU_NODE : usize = 22;
-pub const ZONG_SHU_ZHI_LU : usize = 24;
-pub const ZONG_SHU_FU_ZAI : usize = 9;
-pub const ZONG_SHU_DUAN_LU_QI : usize = 37;
-pub const ZONG_SHU_SHOU_TI_DUI_JI_ZU : usize = 0;
-pub const ZONG_SHU_WEI_TI_DUI_JI_ZU : usize = 0;
-pub const ZONG_SHU_JI_ZU_IN_ONE_DIAN_ZHAN : usize = 3;
+pub const ZONG_SHU_NODE : usize = 23;
+pub const ZONG_SHU_ZHI_LU : usize = 25;
+pub const ZONG_SHU_FU_ZAI : usize = 21;
+pub const ZONG_SHU_DUAN_LU_QI : usize = 38;
+// pub const ZONG_SHU_SHOU_TI_DUI_JI_ZU : usize = 0;
+// pub const ZONG_SHU_WEI_TI_DUI_JI_ZU : usize = 0;
+// pub const ZONG_SHU_JI_ZU_IN_ONE_DIAN_ZHAN : usize = 3;
 
 #[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum DevType{
