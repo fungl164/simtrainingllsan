@@ -46,4 +46,4 @@ cargo run --example simserver
 注意运行前记得将./.env文件中的DATABASE_URL改为自己机器上连接postgresql连接字符串。
 
 
-训练流程的具体测试方法参见./examples/curl_test_script.txt的后半部分。
+训练流程的具体测试方法参见./examples/curl_test_script.txt的后半部分，测试中的每行均为服务器开启后在终端下键入的命令。
