@@ -29,7 +29,7 @@ fn main() {
     mount_root.mount("/api/v1/zhiling/", router_zl);
     // Timer::new().start(&mut TimerHandler::new(x), simctrl::FANG_ZHEN_BU_CHANG as u64, simctrl::FANG_ZHEN_BU_CHANG as u64);
     let th = thread::spawn(move || {
-        Iron::new(mount_root).http("localhost:3000").unwrap();
+        Iron::new(mount_root).http("0.0.0.0:3000").unwrap();
     });
     th.join().unwrap();
 

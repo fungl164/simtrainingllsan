@@ -33,7 +33,7 @@ fn main() {
     mount_root.mount("/api/v1/xitong/", router_xt);
     mount_root.mount("/api/v1/zhiling/", router_zl);
     let th = thread::spawn(move || {
-        Iron::new(mount_root).http("localhost:3000").unwrap();
+        Iron::new(mount_root).http("0.0.0.0:3000").unwrap();
     });
     th.join().unwrap();
 }
@@ -101,10 +101,9 @@ impl XiTongThread {
     pub fn update(&mut self) {
         let xt_shared = self.xt.clone();
         let _ = thread::spawn(move || {
-            // let mut tick = 0u32;
+            let mut tick = 0u32;
             loop{
                 {
-                    // tick +=1;
                     let mut xt_raw = xt_shared.write().unwrap();
                     for i in 0..simctrl::ZONG_SHU_JI_ZU {
                         xt_raw.ji_zu_vec[i].update();
@@ -144,12 +143,14 @@ impl XiTongThread {
                             JiZuRangeLeiXing::BianYa => xt_raw.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::TingJiZanTai,
                             _ => {}
                         }
-                        // if tick == 10 {
-                        //     tick = 0;
-                        //     println!("uid:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}, bei_che_t:{:?}", i, xt_raw.ji_zu_vec[i].common_ji.current_range, xt_raw.ji_zu_vec[i].common_ji.uab_ext, xt_raw.ji_zu_vec[i].common_ji.zhuan_su, xt_raw.ji_zu_vec[i].common_ji.f_ext, xt_raw.ji_zu_vec[i].common_ji.t_current_range,  xt_raw.ji_zu_vec[i].common_ji.bei_che_t);
-                        //     // println!("uid:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}, bei_che_t:{:?}, bian_su_t:{:?}, bian_ya_t:{:?}", i, xt_raw.ji_zu_vec[i].common_ji.current_range, xt_raw.ji_zu_vec[i].common_ji.uab_ext, xt_raw.ji_zu_vec[i].common_ji.zhuan_su, xt_raw.ji_zu_vec[i].common_ji.f_ext, xt_raw.ji_zu_vec[i].common_ji.t_current_range,  xt_raw.ji_zu_vec[i].common_ji.bei_che_t,  xt_raw.ji_zu_vec[i].common_ji.bian_su_t,  xt_raw.ji_zu_vec[i].common_ji.bian_ya_t);
-                        //     // println!("uid:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}", i, xt_raw.ji_zu_vec[i].common_ji.current_range, xt_raw.ji_zu_vec[i].common_ji.uab_ext, xt_raw.ji_zu_vec[i].common_ji.zhuan_su, xt_raw.ji_zu_vec[i].common_ji.f_ext, xt_raw.ji_zu_vec[i].common_ji.t_current_range);
-                        // }
+                    }
+
+                    tick +=1;
+                    if tick == 10 {
+                        tick = 0;
+                        // println!("uid:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}, bei_che_t:{:?}", i, xt_raw.ji_zu_vec[i].common_ji.current_range, xt_raw.ji_zu_vec[i].common_ji.uab_ext, xt_raw.ji_zu_vec[i].common_ji.zhuan_su, xt_raw.ji_zu_vec[i].common_ji.f_ext, xt_raw.ji_zu_vec[i].common_ji.t_current_range,  xt_raw.ji_zu_vec[i].common_ji.bei_che_t);
+                        // println!("uid:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}, bei_che_t:{:?}, bian_su_t:{:?}, bian_ya_t:{:?}", i, xt_raw.ji_zu_vec[i].common_ji.current_range, xt_raw.ji_zu_vec[i].common_ji.uab_ext, xt_raw.ji_zu_vec[i].common_ji.zhuan_su, xt_raw.ji_zu_vec[i].common_ji.f_ext, xt_raw.ji_zu_vec[i].common_ji.t_current_range,  xt_raw.ji_zu_vec[i].common_ji.bei_che_t,  xt_raw.ji_zu_vec[i].common_ji.bian_su_t,  xt_raw.ji_zu_vec[i].common_ji.bian_ya_t);
+                        println!("uid:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}", 0, xt_raw.ji_zu_vec[0].common_ji.current_range, xt_raw.ji_zu_vec[0].common_ji.uab_ext, xt_raw.ji_zu_vec[0].common_ji.zhuan_su, xt_raw.ji_zu_vec[0].common_ji.f_ext, xt_raw.ji_zu_vec[0].common_ji.t_current_range);
                     }
                 }
                 thread::sleep(Duration::from_millis(simctrl::FANG_ZHEN_BU_CHANG as u64));
