@@ -99,5 +99,18 @@ impl DuanLuQi {
             }
         }
     }
+    pub fn set_on(&mut self) {
+        match self.status {
+            DuanLuQiStatus::Off{fault : f, ..} => self.status = DuanLuQiStatus::On{fault : f, ready_to_jie_lie : false},
+            DuanLuQiStatus::On{..} => {},
+        }
+    }
+
+    pub fn set_off(&mut self) {
+        match self.status {
+            DuanLuQiStatus::On{fault : f, ..} => self.status = DuanLuQiStatus::Off{fault : f, ready_to_bing_che : false},
+            DuanLuQiStatus::Off{..} => {},
+        }
+    }
 
 }

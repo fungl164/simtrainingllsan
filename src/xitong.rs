@@ -1468,6 +1468,69 @@ impl XiTong {
 
     //计算系统的潮流
     pub fn compute_xi_tong_pf(&mut self) {
+        //首先更新断路器状态，由于断路器在闭合和分断时有准备并车和准备解列两个子状态
+        for i in 0..simctrl::ZONG_SHU_DUAN_LU_QI {
+            if (self.duan_lu_qi_vec[i].is_ready_to_bing_che() || self.duan_lu_qi_vec[i].is_ready_to_jie_lie() ) && (self.is_ji_zu_duan_lu_qi(i) || self.is_an_dian_duan_lu_qi(i) ) {
+                match self.duan_lu_qi_vec[i].status {
+                    duanluqi::DuanLuQiStatus::Off{fault : f, ..} => self.duan_lu_qi_vec[i].status = duanluqi::DuanLuQiStatus::On{fault : f, ready_to_jie_lie : false},
+                    duanluqi::DuanLuQiStatus::On{fault : f, ..} => self.duan_lu_qi_vec[i].status = duanluqi::DuanLuQiStatus::Off{fault : f, ready_to_bing_che : false},
+                }
+            }
+            else if self.duan_lu_qi_vec[i].is_ready_to_bing_che() {
+                let mut xt_temp = self.clone();
+                match xt_temp.duan_lu_qi_vec[i].status {
+                    duanluqi::DuanLuQiStatus::Off{fault : f, ..} => xt_temp.duan_lu_qi_vec[i].status = duanluqi::DuanLuQiStatus::On{fault : f, ready_to_jie_lie : false},
+                    duanluqi::DuanLuQiStatus::On{..} => {},
+                }
+                xt_temp.update_node_group_vec();
+                let jizu_vec_vec_bing_che = self.compare_two_xi_tong_he_zha_ji_zu(&mut xt_temp);
+                let mut is_all_ji_zu_wen = true;
+                for j in jizu_vec_vec_bing_che {
+                    for k in j {
+                        if self.ji_zu_vec[k].common_ji.current_range != jizu::JiZuRangeLeiXing::Wen {
+                            is_all_ji_zu_wen = false;
+                            break;
+                        }
+                    }
+                    if !is_all_ji_zu_wen {
+                        break;
+                    }
+                }
+                if is_all_ji_zu_wen {
+                    match self.duan_lu_qi_vec[i].status {
+                        duanluqi::DuanLuQiStatus::Off{fault : f, ..} => self.duan_lu_qi_vec[i].status = duanluqi::DuanLuQiStatus::On{fault : f, ready_to_jie_lie : false},
+                        _ => {},
+                    }
+                }
+            }
+            else if self.duan_lu_qi_vec[i].is_ready_to_jie_lie() {
+                let mut xt_temp = self.clone();
+                match xt_temp.duan_lu_qi_vec[i].status {
+                    duanluqi::DuanLuQiStatus::On{fault : f, ..} => xt_temp.duan_lu_qi_vec[i].status = duanluqi::DuanLuQiStatus::Off{fault : f, ready_to_bing_che : false},
+                    _ => {},
+                }
+                xt_temp.update_node_group_vec();
+                let jizu_vec_vec_bing_che = xt_temp.compare_two_xi_tong_he_zha_ji_zu(self);
+                let mut is_all_ji_zu_wen = true;
+                for j in jizu_vec_vec_bing_che {
+                    for k in j {
+                        if self.ji_zu_vec[k].common_ji.current_range != jizu::JiZuRangeLeiXing::Wen {
+                            is_all_ji_zu_wen = false;
+                            break;
+                        }
+                    }
+                    if !is_all_ji_zu_wen {
+                        break;
+                    }
+                }
+                if is_all_ji_zu_wen {
+                    match self.duan_lu_qi_vec[i].status {
+                        duanluqi::DuanLuQiStatus::On{fault : f, ..} => self.duan_lu_qi_vec[i].status = duanluqi::DuanLuQiStatus::Off{fault : f, ready_to_bing_che : false},
+                        _ => {},
+                    }
+                }
+            }
+        }
         //更新系统拓扑
         self.update_node_group_vec();
         let mut pf_fang_fa_vec : Vec<(Vec<usize>, u32)> = Vec::new();
@@ -1489,11 +1552,13 @@ impl XiTong {
             pf_fang_fa_vec.push((n_g,fang_fa));
         }
         for fu_zai_id in 0..simctrl::ZONG_SHU_FU_ZAI {
-            if self.fu_zai_vec[fu_zai_id].is_online {
-                let nodeid = self.get_nodeid_from_fuzaiid(fu_zai_id).unwrap();
-                self.fu_zai_vec[fu_zai_id].i = self.fu_zai_vec[fu_zai_id].p * 1000f64 /(3f64.sqrt() * self.node_vec[nodeid].u * fuzai::FU_ZAI_P_FACTOR);
+            let nodeid = self.get_nodeid_from_fuzaiid(fu_zai_id).unwrap();
+            let u = self.node_vec[nodeid].u;
+            if u != 0.0 && self.fu_zai_vec[fu_zai_id].is_online {
+                self.fu_zai_vec[fu_zai_id].i = self.fu_zai_vec[fu_zai_id].p * 1000f64 /(3f64.sqrt() * u * fuzai::FU_ZAI_P_FACTOR);
             }
             else {
+                self.fu_zai_vec[fu_zai_id].is_online = false;
                 self.fu_zai_vec[fu_zai_id].p = 0.0;
                 self.fu_zai_vec[fu_zai_id].q = 0.0;
                 self.fu_zai_vec[fu_zai_id].i = 0.0;
@@ -1987,7 +2052,7 @@ impl XiTong {
                     //如果为手动合闸，则判断是否经过手动并车
                     if self.ji_zu_vec[zl.dev_id].common_ji.ctrl_mode == simctrl::CtrlMode::Manual {
                         if self.ji_zu_vec[zl.dev_id].common_ji.f_ext > self.ji_zu_vec[ji_zu_vec_bing_lian_temp[0]].common_ji.f_ext && self.ji_zu_vec[zl.dev_id].common_ji.f_ext - self.ji_zu_vec[ji_zu_vec_bing_lian_temp[0]].common_ji.f_ext <= jizu::JI_ZU_PIN_LV_BIAN_HUA_YU_ZHI_WEN_TAI && self.ji_zu_vec[zl.dev_id].common_ji.uab_ext <= jizu::JI_ZU_DIAN_YA_WEN_TAI_ZUI_DA_YU_ZHI && self.ji_zu_vec[zl.dev_id].common_ji.uab_ext >= jizu::JI_ZU_DIAN_YA_WEN_TAI_ZUI_XIAO_YU_ZHI {
-                            match self.duan_lu_qi_vec[duanluqi_id].status {
+                           match self.duan_lu_qi_vec[duanluqi_id].status {
                                duanluqi::DuanLuQiStatus::Off{fault : f, ..} => self.duan_lu_qi_vec[duanluqi_id].status = duanluqi::DuanLuQiStatus::On{fault : f, ready_to_jie_lie : false},
                                duanluqi::DuanLuQiStatus::On{..} => {},
                            }
@@ -2464,6 +2529,8 @@ impl XiTong {
                 let node_id = xt_temp.get_nodeid_from_fuzaiid(zl.dev_id).unwrap();
                 if xt_temp.fu_zai_vec[zl.dev_id].p == 0.0 && xt_temp.fu_zai_vec[zl.dev_id].q == 0.0 || xt_temp.node_vec[node_id].u == 0.0 {
                     xt_temp.fu_zai_vec[zl.dev_id].is_online = false;
+                    xt_temp.fu_zai_vec[zl.dev_id].p = 0.0;
+                    xt_temp.fu_zai_vec[zl.dev_id].q = 0.0;
                 }
                 else {
                     xt_temp.fu_zai_vec[zl.dev_id].is_online = true;

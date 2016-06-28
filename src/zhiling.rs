@@ -151,6 +151,16 @@ impl ZhiLing {
             zhan_wei_type : simctrl::ZhanWeiType::Wu,
         }
     }
+    pub fn from_params(zhi_ling_type : ZhiLingType, dev_type : simctrl::DevType, dev_id : usize, actor_id : usize, zhan_wei_id : usize, zhan_wei_type : simctrl::ZhanWeiType) -> ZhiLing {
+        ZhiLing{
+            zhi_ling_type : zhi_ling_type,
+            dev_type : dev_type,
+            dev_id : dev_id,
+            actor_id : actor_id,
+            zhan_wei_id : zhan_wei_id,
+            zhan_wei_type : zhan_wei_type,
+        }
+    }
     pub fn zhi_ling_example_handler(_: &mut Request) -> IronResult<Response> {
         let mut z = ZhiLing::new();
         z.zhi_ling_type = ZhiLingType::BianZai(150.0, 150.0);
