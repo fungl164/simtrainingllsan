@@ -2955,11 +2955,10 @@ impl iron::middleware::Handler for ZhiLingHandler {
         }
     }
 }
-
-pub struct XiTongThread {
+pub struct XiTongHandler {
     pub xt : Arc<RwLock<XiTong>>,
 }
-impl iron::middleware::Handler for XiTongThread {
+impl iron::middleware::Handler for XiTongHandler {
     fn handle(&self, _req: &mut Request) -> IronResult<Response> {
         use jsoninf::XiTongInf;
         use std::ops::Deref;
@@ -2970,16 +2969,29 @@ impl iron::middleware::Handler for XiTongThread {
         Ok(Response::with((content_type, status::Ok, x_ser)))
     }
 }
-impl XiTongThread {
-    pub fn new(id:usize) -> XiTongThread {
+pub trait Condition {
+    fn can_exec(&self, xt : &XiTong) -> bool;
+    fn exec(&self, xt : &mut XiTong);
+}
+use std::marker::{Sync, Send};
+pub struct XiTongThread<Z : Condition + Sync + Send> {
+    pub xt : Arc<RwLock<XiTong>>,
+    pub flow : Arc<RwLock<Vec<Z>>>,
+}
+impl<Z : Condition + Sync + Send> XiTongThread<Z> {
+    pub fn new(id:usize) -> XiTongThread<Z> {
         let mut x = XiTongThread {
             xt : Arc::new(RwLock::new(XiTong::new(id))),
+            flow : Arc::new(RwLock::new(Vec::new())),
         };
         x.update();
         x
     }
     pub fn update(&mut self) {
+        use std::ops::Deref;
+        use std::ops::DerefMut;
         let xt_shared = self.xt.clone();
+        let flow_share = self.flow.clone();
         let _ = thread::spawn(move || {
             loop{
                 {
@@ -3005,6 +3017,10 @@ impl XiTongThread {
                     xt_raw.sec = time::get_time().sec;
                     xt_raw.nsec = time::get_time().nsec;
 
+                    let mut flow_raw = flow_share.write().unwrap();
+                    if !flow_raw.is_empty() && flow_raw.last().unwrap().can_exec(xt_raw.deref()){
+                        flow_raw.pop().unwrap().exec(xt_raw.deref_mut());
+                    }
                     //以下为测试内容，实际运行时请注释
                     // println!("{:?}.{:?}", xt_raw.sec, xt_raw.nsec);
                     // for i in 0..2 {
