@@ -2658,7 +2658,7 @@ impl XiTong {
                             //     is_auto_exist = true;
                             // }
                         }
-                        if is_manual_exist || !self.is_mu_lian_lian_tong(zl.dev_id) {
+                        if is_manual_exist /*|| !self.is_mu_lian_lian_tong(zl.dev_id) */ {
                             self.dian_zhan_vec[zl.dev_id].ctrl_mode = simctrl::CtrlMode::Manual;
                             if self.dian_zhan_vec[zl.dev_id].operating_station == simctrl::OperatingStation::JiKong {
                                 self.dian_zhan_vec[zl.dev_id].operating_station = simctrl::OperatingStation::Local;
@@ -2710,7 +2710,7 @@ impl XiTong {
                                 is_semiauto_exist = true;
                             }
                         }
-                        if is_manual_exist || !self.is_mu_lian_lian_tong(zl.dev_id) {
+                        if is_manual_exist /* || !self.is_mu_lian_lian_tong(zl.dev_id)*/ {
                             self.dian_zhan_vec[zl.dev_id].ctrl_mode = simctrl::CtrlMode::Manual;
                             if self.dian_zhan_vec[zl.dev_id].operating_station == simctrl::OperatingStation::JiKong {
                                 self.dian_zhan_vec[zl.dev_id].operating_station = simctrl::OperatingStation::Local;
