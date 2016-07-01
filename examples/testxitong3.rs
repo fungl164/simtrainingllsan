@@ -21,29 +21,98 @@ use std::time::Duration;
 use simtraining::jizu::{JiZuCtrl};
 
 fn main() {
-    let mut flow = vec![ZhiLing::from_params(ZhiLingType::BeiChe, simctrl::DevType::JiZu, 0, 0, 0, simctrl::ZhanWeiType::JiaoLian); 7];
-    let mut flow2 = vec![ZhiLing::from_params(ZhiLingType::BeiChe, simctrl::DevType::JiZu, 1, 0, 0, simctrl::ZhanWeiType::JiaoLian); 7];
-    flow.append(&mut flow2);
+    //机组并联：电站0/1（控制方式半自动---操作部位集控）---机组0（备车--启动--合闸）--负载0（加载）--断路器2/4/32/33（合闸）--机组1（备车--启动--并车)---机组3（备车--启动--合闸）---断路器9并车----机组3(解列---停机）---断路器2解列------机组1(分闸---停机）---机组0（分闸--停机）
+    let mut flow = vec![ZhiLing::from_params(ZhiLingType::BeiChe, simctrl::DevType::JiZu, 0, 0, 0, simctrl::ZhanWeiType::JiaoLian); 26];
+
+    flow[25].zhi_ling_type = ZhiLingType::OperatingStation(simctrl::OperatingStation::JiKong);
+    flow[25].dev_type = simctrl::DevType::DianZhan;
+
+    flow[24].zhi_ling_type = ZhiLingType::CtrlMode(simctrl::CtrlMode::SemiAuto);
+    flow[24].dev_type = simctrl::DevType::DianZhan;
+
+    flow[23].zhi_ling_type = ZhiLingType::OperatingStation(simctrl::OperatingStation::JiKong);
+    flow[23].dev_type = simctrl::DevType::DianZhan;
+    flow[23].dev_id = 1;
+
+    flow[22].zhi_ling_type = ZhiLingType::CtrlMode(simctrl::CtrlMode::SemiAuto);
+    flow[22].dev_type = simctrl::DevType::DianZhan;
+    flow[22].dev_id = 1;
+
+    //机组并联：电站0/1（控制方式半自动---操作部位集控）---机组0（备车--启动--合闸）--负载0（加载）--断路器2/4/32/33（合闸）--机组1（备车--启动--并车)---机组3（备车--启动--合闸）---断路器9并车----机组3(解列---停机）---断路器2解列------机组1(分闸---停机）---机组0（分闸--停机）
+    flow[21].zhi_ling_type = ZhiLingType::BeiChe;
+
+    flow[20].zhi_ling_type = ZhiLingType::QiDong;
+
+    flow[19].zhi_ling_type = ZhiLingType::HeZhaBingChe;
+
+    flow[18].zhi_ling_type = ZhiLingType::BianZai(1600.0, 1200.0);
+    flow[18].dev_type = simctrl::DevType::FuZai;
+
+    flow[17].zhi_ling_type = ZhiLingType::HeZhaBingChe;
+    flow[17].dev_type = simctrl::DevType::DuanLuQi;
+    flow[17].dev_id = 2;
+
+    flow[16].zhi_ling_type = ZhiLingType::HeZhaBingChe;
+    flow[16].dev_type = simctrl::DevType::DuanLuQi;
+    flow[16].dev_id = 4;
+
+    flow[15].zhi_ling_type = ZhiLingType::HeZhaBingChe;
+    flow[15].dev_type = simctrl::DevType::DuanLuQi;
+    flow[15].dev_id = 32;
+
+    flow[14].zhi_ling_type = ZhiLingType::HeZhaBingChe;
+    flow[14].dev_type = simctrl::DevType::DuanLuQi;
+    flow[14].dev_id = 33;
+
+    //机组并联：电站0/1（控制方式半自动---操作部位集控）---机组0（备车--启动--合闸）--负载0（加载）--断路器2/4/32/33（合闸）--机组1（备车--启动--并车)---机组3（备车--启动--合闸）---断路器9并车----机组3(解列---停机）---断路器2解列------机组1(分闸---停机）---机组0（分闸--停机）
+
     flow[13].zhi_ling_type = ZhiLingType::BeiChe;
+    flow[13].dev_id = 1;
+
     flow[12].zhi_ling_type = ZhiLingType::QiDong;
+    flow[12].dev_id = 1;
+
     flow[11].zhi_ling_type = ZhiLingType::HeZhaBingChe;
-    flow[10].zhi_ling_type = ZhiLingType::BianZai(550.0, 550.0);
-    flow[10].dev_type = simctrl::DevType::FuZai;
+    flow[11].dev_id = 1;
+
+    flow[10].zhi_ling_type = ZhiLingType::BeiChe;
     flow[10].dev_id = 3;
-    flow[9].zhi_ling_type = ZhiLingType::BianZai(-150.0, -150.0);
-    flow[9].dev_type = simctrl::DevType::FuZai;
+
+    flow[9].zhi_ling_type = ZhiLingType::QiDong;
     flow[9].dev_id = 3;
-    flow[8].zhi_ling_type = ZhiLingType::FenZhaJieLie;
-    flow[7].zhi_ling_type = ZhiLingType::TingJi;
-    flow[6].zhi_ling_type = ZhiLingType::BeiChe;
-    flow[5].zhi_ling_type = ZhiLingType::QiDong;
-    flow[4].zhi_ling_type = ZhiLingType::HeZhaBingChe;
-    flow[3].zhi_ling_type = ZhiLingType::BianZai(550.0, 550.0);
-    flow[3].dev_type = simctrl::DevType::FuZai;
-    flow[2].zhi_ling_type = ZhiLingType::BianZai(-150.0, -150.0);
-    flow[2].dev_type = simctrl::DevType::FuZai;
+
+    flow[8].zhi_ling_type = ZhiLingType::HeZhaBingChe;
+    flow[8].dev_id = 3;
+
+    flow[7].zhi_ling_type = ZhiLingType::HeZhaBingChe;
+    flow[7].dev_type = simctrl::DevType::DuanLuQi;
+    flow[7].dev_id = 9;
+
+    //机组并联：电站0/1（控制方式半自动---操作部位集控）---机组0（备车--启动--合闸）--负载0（加载）--断路器2/4/32/33（合闸）--机组1（备车--启动--并车)---机组3（备车--启动--合闸）---断路器9并车----机组3(解列---停机）---断路器2解列------机组1(分闸---停机）---机组0（分闸--停机）
+
+    flow[6].zhi_ling_type = ZhiLingType::FenZhaJieLie;
+    flow[6].dev_id = 3;
+
+    flow[5].zhi_ling_type = ZhiLingType::TingJi;
+    flow[5].dev_id = 3;
+
+    flow[4].zhi_ling_type = ZhiLingType::FenZhaJieLie;
+    flow[4].dev_type = simctrl::DevType::DuanLuQi;
+    flow[4].dev_id = 2;
+
+    flow[3].zhi_ling_type = ZhiLingType::FenZhaJieLie;
+    flow[3].dev_id = 1;
+
+    flow[2].zhi_ling_type = ZhiLingType::TingJi;
+    flow[2].dev_id = 1;
+
     flow[1].zhi_ling_type = ZhiLingType::FenZhaJieLie;
+    flow[1].dev_id = 0;
+
     flow[0].zhi_ling_type = ZhiLingType::TingJi;
+    flow[0].dev_id = 0;
+
+
     let xt = XiTongThread::new(0, flow);
     let zl = ZhiLingHandler { xt : xt.xt.clone() };
     let mut router_xt = Router::new();
@@ -184,8 +253,11 @@ impl XiTongThread {
                         tick = 0;
                         // println!("uid:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}, bei_che_t:{:?}", i, xt_raw.ji_zu_vec[i].common_ji.current_range, xt_raw.ji_zu_vec[i].common_ji.uab_ext, xt_raw.ji_zu_vec[i].common_ji.zhuan_su, xt_raw.ji_zu_vec[i].common_ji.f_ext, xt_raw.ji_zu_vec[i].common_ji.t_current_range,  xt_raw.ji_zu_vec[i].common_ji.bei_che_t);
                         // println!("uid:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}, bei_che_t:{:?}, bian_su_t:{:?}, bian_ya_t:{:?}", i, xt_raw.ji_zu_vec[i].common_ji.current_range, xt_raw.ji_zu_vec[i].common_ji.uab_ext, xt_raw.ji_zu_vec[i].common_ji.zhuan_su, xt_raw.ji_zu_vec[i].common_ji.f_ext, xt_raw.ji_zu_vec[i].common_ji.t_current_range,  xt_raw.ji_zu_vec[i].common_ji.bei_che_t,  xt_raw.ji_zu_vec[i].common_ji.bian_su_t,  xt_raw.ji_zu_vec[i].common_ji.bian_ya_t);
-                        println!("uid:{}, 状态:{:?}, u:{}, 转速:{}, p:{}， t_current_range:{:?}", 0, xt_raw.ji_zu_vec[0].common_ji.current_range, xt_raw.ji_zu_vec[0].common_ji.uab_ext, xt_raw.ji_zu_vec[0].common_ji.zhuan_su, xt_raw.ji_zu_vec[0].common_ji.p, xt_raw.ji_zu_vec[0].common_ji.t_current_range);
-                        println!("uid:{}, 状态:{:?}, u:{}, 转速:{}, p:{}， t_current_range:{:?}", 1, xt_raw.ji_zu_vec[1].common_ji.current_range, xt_raw.ji_zu_vec[1].common_ji.uab_ext, xt_raw.ji_zu_vec[1].common_ji.zhuan_su, xt_raw.ji_zu_vec[1].common_ji.p, xt_raw.ji_zu_vec[1].common_ji.t_current_range);
+                        println!("电站0-1（uid, 控制方式, 操作部位, 控制方式设置, 操作部位设置, u, p）:\n({:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?})", xt_raw.dian_zhan_vec[0].uid, xt_raw.dian_zhan_vec[0].ctrl_mode, xt_raw.dian_zhan_vec[0].operating_station, xt_raw.dian_zhan_vec[0].ctrl_mode_she_zhi, xt_raw.dian_zhan_vec[0].operating_station_she_zhi, xt_raw.dian_zhan_vec[0].u, xt_raw.dian_zhan_vec[0].p, xt_raw.dian_zhan_vec[1].uid, xt_raw.dian_zhan_vec[1].ctrl_mode, xt_raw.dian_zhan_vec[1].operating_station, xt_raw.dian_zhan_vec[1].ctrl_mode_she_zhi, xt_raw.dian_zhan_vec[1].operating_station_she_zhi, xt_raw.dian_zhan_vec[1].u, xt_raw.dian_zhan_vec[1].p);
+                        println!("机组0-2（uid, current_range, u, f, p）:\n({:?}, {:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?}, {:?})", xt_raw.ji_zu_vec[0].uid, xt_raw.ji_zu_vec[0].common_ji.current_range, xt_raw.ji_zu_vec[0].common_ji.uab_ext, xt_raw.ji_zu_vec[0].common_ji.f_ext, xt_raw.ji_zu_vec[0].common_ji.p, xt_raw.ji_zu_vec[1].uid, xt_raw.ji_zu_vec[1].common_ji.current_range, xt_raw.ji_zu_vec[1].common_ji.uab_ext, xt_raw.ji_zu_vec[1].common_ji.f_ext, xt_raw.ji_zu_vec[1].common_ji.p, xt_raw.ji_zu_vec[2].uid, xt_raw.ji_zu_vec[2].common_ji.current_range, xt_raw.ji_zu_vec[2].common_ji.uab_ext, xt_raw.ji_zu_vec[2].common_ji.f_ext, xt_raw.ji_zu_vec[2].common_ji.p);
+                        println!("节点1-3,7-9（uid, u, f, 状态）:\n({:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?})", xt_raw.node_vec[1].uid, xt_raw.node_vec[1].u, xt_raw.node_vec[1].f, xt_raw.node_vec[1].status, xt_raw.node_vec[2].uid, xt_raw.node_vec[2].u, xt_raw.node_vec[2].f, xt_raw.node_vec[2].status, xt_raw.node_vec[3].uid, xt_raw.node_vec[3].u, xt_raw.node_vec[3].f, xt_raw.node_vec[3].status, xt_raw.node_vec[7].uid, xt_raw.node_vec[7].u, xt_raw.node_vec[7].f, xt_raw.node_vec[7].status, xt_raw.node_vec[8].uid, xt_raw.node_vec[8].u, xt_raw.node_vec[8].f, xt_raw.node_vec[8].status, xt_raw.node_vec[9].uid, xt_raw.node_vec[9].u, xt_raw.node_vec[9].f, xt_raw.node_vec[9].status);
+                        println!("支路0,2,5,19,20（uid, p, i, 状态）:\n({:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?})", xt_raw.zhi_lu_vec[0].uid, xt_raw.zhi_lu_vec[0].p, xt_raw.zhi_lu_vec[0].i, xt_raw.zhi_lu_vec[0].status, xt_raw.zhi_lu_vec[2].uid, xt_raw.zhi_lu_vec[2].p, xt_raw.zhi_lu_vec[2].i, xt_raw.zhi_lu_vec[2].status, xt_raw.zhi_lu_vec[5].uid, xt_raw.zhi_lu_vec[5].p, xt_raw.zhi_lu_vec[5].i, xt_raw.zhi_lu_vec[5].status, xt_raw.zhi_lu_vec[19].uid, xt_raw.zhi_lu_vec[19].p, xt_raw.zhi_lu_vec[19].i, xt_raw.zhi_lu_vec[19].status, xt_raw.zhi_lu_vec[20].uid, xt_raw.zhi_lu_vec[20].p, xt_raw.zhi_lu_vec[20].i, xt_raw.zhi_lu_vec[20].status);
+                        println!("断路器0,1,2,4,6,9,32,33（uid, 状态）:\n({:?}, {:?})  ({:?}, {:?})  ({:?}, {:?})  ({:?}, {:?})\n({:?}, {:?})  ({:?}, {:?})  ({:?}, {:?})  ({:?}, {:?})\n", xt_raw.duan_lu_qi_vec[0].uid, xt_raw.duan_lu_qi_vec[0].is_on(), xt_raw.duan_lu_qi_vec[1].uid, xt_raw.duan_lu_qi_vec[1].is_on(), xt_raw.duan_lu_qi_vec[2].uid, xt_raw.duan_lu_qi_vec[2].is_on(), xt_raw.duan_lu_qi_vec[4].uid, xt_raw.duan_lu_qi_vec[4].is_on(), xt_raw.duan_lu_qi_vec[6].uid, xt_raw.duan_lu_qi_vec[6].is_on(), xt_raw.duan_lu_qi_vec[9].uid, xt_raw.duan_lu_qi_vec[9].is_on(), xt_raw.duan_lu_qi_vec[32].uid, xt_raw.duan_lu_qi_vec[32].is_on(), xt_raw.duan_lu_qi_vec[33].uid, xt_raw.duan_lu_qi_vec[33].is_on());
                     }
                 }
                 thread::sleep(Duration::from_millis(simctrl::FANG_ZHEN_BU_CHANG as u64));

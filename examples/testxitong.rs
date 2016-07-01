@@ -6,7 +6,7 @@ extern crate router;
 extern crate mount;
 extern crate time;
 use simtraining::xitong::XiTong;
-use simtraining::zhiling::ZhiLing;
+use simtraining::zhiling::{ZhiLing, ZhiLingType};
 use simtraining::simctrl;
 use simtraining::route;
 
@@ -18,10 +18,16 @@ use std::thread;
 use std::sync::Arc;
 use std::sync::RwLock;
 use std::time::Duration;
-use simtraining::jizu::{JiZuCtrl, JiZuRangeLeiXing};
+use simtraining::jizu::{JiZuCtrl};
 
 fn main() {
-    let xt = XiTongThread::new(0);
+    let mut flow = vec![ZhiLing::from_params(ZhiLingType::BeiChe, simctrl::DevType::JiZu, 0, 0, 0, simctrl::ZhanWeiType::JiaoLian); 5];
+    flow[4].zhi_ling_type = ZhiLingType::BeiChe;
+    flow[3].zhi_ling_type = ZhiLingType::QiDong;
+    flow[2].zhi_ling_type = ZhiLingType::BianSu(4.0);
+    flow[1].zhi_ling_type = ZhiLingType::BianYa(-10.0);
+    flow[0].zhi_ling_type = ZhiLingType::TingJi;
+    let xt = XiTongThread::new(0, flow);
     let zl = ZhiLingHandler { xt : xt.xt.clone() };
     let mut router_xt = Router::new();
     router_xt.get("/", xt);
@@ -78,6 +84,7 @@ impl iron::middleware::Handler for ZhiLingHandler {
 
 pub struct XiTongThread {
     pub xt : Arc<RwLock<XiTong>>,
+    pub flow : Arc<RwLock<Vec<ZhiLing>>>,
 }
 impl iron::middleware::Handler for XiTongThread {
     fn handle(&self, _req: &mut Request) -> IronResult<Response> {
@@ -91,15 +98,19 @@ impl iron::middleware::Handler for XiTongThread {
     }
 }
 impl XiTongThread {
-    pub fn new(id:usize) -> XiTongThread {
+    pub fn new(id:usize, flow : Vec<ZhiLing>) -> XiTongThread {
         let mut x = XiTongThread {
             xt : Arc::new(RwLock::new(XiTong::new(id))),
+            flow : Arc::new(RwLock::new(flow)),
         };
         x.update();
         x
     }
     pub fn update(&mut self) {
+        use std::ops::DerefMut;
+        use simtraining::zhiling::Condition;
         let xt_shared = self.xt.clone();
+        let flow_share = self.flow.clone();
         let _ = thread::spawn(move || {
             let mut tick = 0u32;
             loop{
@@ -126,24 +137,30 @@ impl XiTongThread {
                     xt_raw.sec = time::get_time().sec;
                     xt_raw.nsec = time::get_time().nsec;
 
+                    let mut flow_raw = flow_share.write().unwrap();
+                    if !flow_raw.is_empty() && flow_raw.last().unwrap().can_exec(xt_raw.deref_mut()){
+                        xt_raw.handle_zhi_ling(&(flow_raw.pop().unwrap()));
+                    }
+
                     //以下为测试内容，实际运行时请注释
                     // println!("{:?}.{:?}", xt_raw.sec, xt_raw.nsec);
-                    for i in 0..simctrl::ZONG_SHU_JI_ZU {
-                        match xt_raw.ji_zu_vec[i].common_ji.current_range {
-                            JiZuRangeLeiXing::TingJi | JiZuRangeLeiXing::JinJiGuZhang => xt_raw.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::BeiCheZanTai,
-                            JiZuRangeLeiXing::BeiCheWanBi => xt_raw.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::QiDong,
-                            JiZuRangeLeiXing::Wen => {
-                                xt_raw.ji_zu_vec[i].set_bian_su_params(7.0, false);
-                                xt_raw.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::BianSu;
-                            }
-                            JiZuRangeLeiXing::BianSu => {
-                                xt_raw.ji_zu_vec[i].set_bian_ya_params(3.0);
-                                xt_raw.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::BianYa;
-                            }
-                            JiZuRangeLeiXing::BianYa => xt_raw.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::TingJiZanTai,
-                            _ => {}
-                        }
-                    }
+                    // for i in 0..simctrl::ZONG_SHU_JI_ZU {
+                    //
+                    //     match xt_raw.ji_zu_vec[i].common_ji.current_range {
+                    //         JiZuRangeLeiXing::TingJi | JiZuRangeLeiXing::JinJiGuZhang => xt_raw.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::BeiCheZanTai,
+                    //         JiZuRangeLeiXing::BeiCheWanBi => xt_raw.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::QiDong,
+                    //         JiZuRangeLeiXing::Wen => {
+                    //             xt_raw.ji_zu_vec[i].set_bian_su_params(7.0, false);
+                    //             xt_raw.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::BianSu;
+                    //         }
+                    //         JiZuRangeLeiXing::BianSu => {
+                    //             xt_raw.ji_zu_vec[i].set_bian_ya_params(3.0);
+                    //             xt_raw.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::BianYa;
+                    //         }
+                    //         JiZuRangeLeiXing::BianYa => xt_raw.ji_zu_vec[i].common_ji.current_range = JiZuRangeLeiXing::TingJiZanTai,
+                    //         _ => {}
+                    //     }
+                    // }
 
                     tick +=1;
                     if tick == 10 {

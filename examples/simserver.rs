@@ -15,7 +15,7 @@ use simtraining::zhiling::ZhiLing;
 // use simtraining::simctrl;
 // use simtraining::simctrl::{Timer, TimerHandler};
 fn main() {
-    let xt = XiTongThread::new(0);
+    let xt = XiTongThread::new(0, Vec::new());
     let zl = ZhiLingHandler { xt : xt.xt.clone() };
     // let x = Rc::new(RefCell::new(xt));
     let mut router_xt = Router::new();

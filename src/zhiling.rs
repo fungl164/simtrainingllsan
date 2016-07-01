@@ -3,7 +3,9 @@ use iron::mime::Mime;
 use iron::status;
 use serde_json;
 use simctrl;
+use xitong::XiTong;
 use std::string::String;
+use jizu::{ JiZuRangeLeiXing };
 #[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub enum ZhiLingType {
     Tick,
@@ -130,6 +132,10 @@ pub enum FaultType {
     HeZhaShiBai,
     JieLieShiBai,
 }
+pub trait Condition {
+    fn can_exec(&self, xt : &mut XiTong) -> bool;
+}
+
 #[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct ZhiLing {
   pub zhi_ling_type : ZhiLingType,
@@ -196,6 +202,166 @@ impl ZhiLing {
         let z_ser_pretty = serde_json::to_string(&z).unwrap();
         let content_type = "application/json".parse::<Mime>().unwrap();
         Ok(Response::with((content_type, status::Ok, z_ser_pretty)))
+    }
+}
+
+impl Condition for ZhiLing {
+    fn can_exec(&self, xt : &mut XiTong) -> bool {
+        if !xt.is_zhi_ling_valid(self) {
+            return false;
+        }
+        match self.zhi_ling_type {
+            ZhiLingType::QiDong => {
+                if xt.ji_zu_vec[self.dev_id].common_ji.current_range == JiZuRangeLeiXing::BeiCheWanBi {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            },
+            ZhiLingType::TingJi => {
+                if xt.get_duanluqi_from_jizuid(self.dev_id).unwrap().is_off() {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            },
+            ZhiLingType::HeZhaBingChe => {
+                if self.dev_type == simctrl::DevType::JiZu && xt.ji_zu_vec[self.dev_id].common_ji.current_range == JiZuRangeLeiXing::Wen {
+                    return true;
+                }
+                else if self.dev_type == simctrl::DevType::DuanLuQi {
+                    let mut xt_temp = xt.clone();
+                    xt_temp.duan_lu_qi_vec[self.dev_id].set_on();
+                    xt_temp.update_node_group_vec();
+                    let jizu_vec_vec_bing_che = xt.compare_two_xi_tong_he_zha_ji_zu(&mut xt_temp);
+                    if jizu_vec_vec_bing_che.len() == 2 {
+                        if jizu_vec_vec_bing_che[0].len() == 0 || jizu_vec_vec_bing_che[1].len() == 0 {
+                            return true;
+                        }
+                        else if jizu_vec_vec_bing_che[0].len() == 1 || jizu_vec_vec_bing_che[1].len() == 1 {
+                            let mut is_all_ji_zu_wen = true;
+                            for j in jizu_vec_vec_bing_che {
+                                for k in j {
+                                    if xt_temp.ji_zu_vec[k].common_ji.current_range != JiZuRangeLeiXing::Wen {
+                                        is_all_ji_zu_wen = false;
+                                        break;
+                                    }
+                                }
+                                if !is_all_ji_zu_wen {
+                                    break;
+                                }
+                            }
+                            if is_all_ji_zu_wen {
+                                return true;
+                            }
+                            else {
+                                return false;
+                            }
+                        }
+                        else {
+                            return false;
+                        }
+                    }
+                    else {
+                        return false;
+                    }
+                }
+                else {
+                    return false;
+                }
+            },
+            ZhiLingType::FenZhaJieLie => {
+                if self.dev_type == simctrl::DevType::JiZu && xt.ji_zu_vec[self.dev_id].common_ji.current_range == JiZuRangeLeiXing::Wen {
+                    return true;
+                }
+                else if self.dev_type == simctrl::DevType::DuanLuQi {
+                    let mut xt_temp = xt.clone();
+                    xt_temp.duan_lu_qi_vec[self.dev_id].set_off();
+                    xt_temp.update_node_group_vec();
+                    let jizu_vec_vec_bing_che = xt_temp.compare_two_xi_tong_he_zha_ji_zu(xt);
+                    if jizu_vec_vec_bing_che.len() == 2 {
+                        if jizu_vec_vec_bing_che[0].len() == 0 || jizu_vec_vec_bing_che[1].len() == 0 {
+                            return true;
+                        }
+                        else if jizu_vec_vec_bing_che[0].len() == 1 || jizu_vec_vec_bing_che[1].len() == 1 {
+                            let mut is_all_ji_zu_wen = true;
+                            for j in jizu_vec_vec_bing_che {
+                                for k in j {
+                                    if xt_temp.ji_zu_vec[k].common_ji.current_range != JiZuRangeLeiXing::Wen {
+                                        is_all_ji_zu_wen = false;
+                                        break;
+                                    }
+                                }
+                                if !is_all_ji_zu_wen {
+                                    break;
+                                }
+                            }
+                            if is_all_ji_zu_wen {
+                                return true;
+                            }
+                            else {
+                                return false;
+                            }
+                        }
+                        else {
+                            return false;
+                        }
+                    }
+                    else {
+                        return false;
+                    }
+                }
+                else {
+                    return false;
+                }
+            },
+            ZhiLingType::BeiChe => {
+                if xt.ji_zu_vec[self.dev_id].common_ji.current_range == JiZuRangeLeiXing::TingJi {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            },
+            ZhiLingType::BianZai(..) | ZhiLingType::ZhongZaiJiaZai(..) => {
+                let ji_zu_bing_lian_group = xt.get_ji_zu_group_from_fu_zai_id(self.dev_id);
+                let mut is_all_ji_zu_run = true;
+                for j in ji_zu_bing_lian_group {
+                    if xt.ji_zu_vec[j].common_ji.current_range != JiZuRangeLeiXing::Wen && xt.ji_zu_vec[j].common_ji.current_range != JiZuRangeLeiXing::BianSu {
+                        println!("{:?}, {:?}", j, xt.ji_zu_vec[j].common_ji.current_range);
+                        is_all_ji_zu_run = false;
+                        break;
+                    }
+                }
+                if is_all_ji_zu_run {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            },
+            ZhiLingType::AnDianHeZha => {true},
+            ZhiLingType::AnDianFenZha => {true},
+            ZhiLingType::BianSu(..) => {
+                if xt.ji_zu_vec[self.dev_id].common_ji.current_range == JiZuRangeLeiXing::Wen || xt.ji_zu_vec[self.dev_id].common_ji.current_range == JiZuRangeLeiXing::BianSu {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            },
+            ZhiLingType::BianYa(..) => {
+                if xt.ji_zu_vec[self.dev_id].common_ji.current_range == JiZuRangeLeiXing::Wen || xt.ji_zu_vec[self.dev_id].common_ji.current_range == JiZuRangeLeiXing::BianYa {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            },
+            _ => true,
+        }
     }
 }
 
