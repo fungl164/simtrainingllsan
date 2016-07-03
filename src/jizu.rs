@@ -954,6 +954,7 @@ impl<J> JiZu<J> {
         }
         match self.common_ji.current_range {
             JiZuRangeLeiXing::Wen => {
+                self.common_ji.t_current_range = 0.0;
                 self.common_ji.zhuan_su_delta = zhuan_su_delta;
                 self.common_ji.bian_su_t = zhuan_su_delta.abs() *1000.0 / JI_ZU_ZHUAN_SU_BIAN_HUA_LV;
                 self.common_ji.p_delta = p_delta;
@@ -964,7 +965,7 @@ impl<J> JiZu<J> {
             }
             JiZuRangeLeiXing::BianSu => {
                 self.common_ji.zhuan_su_delta += zhuan_su_delta;
-                self.common_ji.bian_su_t = self.common_ji.zhuan_su_delta.abs() *1000.0 / JI_ZU_ZHUAN_SU_BIAN_HUA_LV;
+                self.common_ji.bian_su_t += self.common_ji.zhuan_su_delta.abs() *1000.0 / JI_ZU_ZHUAN_SU_BIAN_HUA_LV;
                 self.common_ji.p_delta = self.common_ji.zhuan_su_delta/JI_ZU_ZHUAN_SU_BIAN_HUA_YU_ZHI_WEN_TAI * JI_ZU_E_DING_GONG_LV;
                 self.common_ji.u_delta = self.common_ji.zhuan_su_delta / JI_ZU_ZHUAN_SU_BIAN_HUA_YU_ZHI_WEN_TAI * (-(JI_ZU_DIAN_YA_WEN_TAI_YA_BIAN_ZHI));
                 self.common_ji.f_delta = self.common_ji.zhuan_su_delta / ZHUAN_SU_CHAI_YOU_ZHENG_CHANG * JI_ZU_E_DING_PIN_LV;

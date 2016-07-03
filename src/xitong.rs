@@ -16,7 +16,7 @@ use jizu::{JiZu, JiJi, JiZuCtrl, JiZuRangeLeiXing};
 use dianzhan::DianZhan;
 use duanluqi::{DuanLuQi};
 use fuzai::FuZai;
-use node::Node;
+use node::{Node, NodeStatus};
 use zhilu::ZhiLu;
 use zhilu::ZhiLuStatus;
 use zhiling::{ZhiLing, ZhiLingType, YingDaType, YingDaErr};
@@ -1268,6 +1268,7 @@ impl XiTong {
         for n in all_node_in_path_vec.to_vec() {
             self.node_vec[n].u = jizu::JI_ZU_E_DING_DIAN_YA;
             self.node_vec[n].f = jizu::JI_ZU_E_DING_PIN_LV;
+            self.node_vec[n].status = NodeStatus::On;
         }
         //2. 由_chaoLiuFangFa选择潮流计算方法
         //3. _chaoLiuFangFa==0，由机组确定负载值，_chaoLiuFangFa==1，由负载确定机组值
@@ -1290,18 +1291,36 @@ impl XiTong {
                     all_fu_zai_p += self.fu_zai_vec[i].p;
                 }
             }
-            let p_delta = (all_fu_zai_p - all_ji_zu_p)/(ji_zu_online_vec.to_vec().len()) as f64;
-            for j in ji_zu_online_vec.to_vec() {
-                self.ji_zu_vec[j].common_ji.p += p_delta;
-                self.ji_zu_vec[j].common_ji.q = self.ji_zu_vec[j].common_ji.p * jizu::JI_ZU_Q_P;
-                self.ji_zu_vec[j].common_ji.p_factor = jizu::JI_ZU_P_FACTOR;
-                let i : f64 = self.ji_zu_vec[j].common_ji.p * 1000.0 / (3.0f64.sqrt() * self.ji_zu_vec[j].common_ji.uab_ext * jizu::JI_ZU_P_FACTOR);
-                self.ji_zu_vec[j].common_ji.ia_ext = i;
-                self.ji_zu_vec[j].common_ji.ib_ext = i;
-                self.ji_zu_vec[j].common_ji.ic_ext = i;
-                self.ji_zu_vec[j].common_ji.ia_in = i;
-                self.ji_zu_vec[j].common_ji.ib_in = i;
-                self.ji_zu_vec[j].common_ji.ic_in = i;
+            if all_ji_zu_p >= all_fu_zai_p {
+                //负载值和机组值都不变，将负载值放入实时负载Map中
+                for n in all_node_in_path_vec.to_vec() {
+                    let fuzaiid_vec = self.get_fuzaiid_vec_from_nodeid(n);
+                    for i in fuzaiid_vec {
+                        pd_online_vec.push((i, self.fu_zai_vec[i].p));
+                    }
+                }
+            }
+            else {
+                //机组输出小于负载需求，从最大的负载开始满足
+                for n in all_node_in_path_vec.to_vec() {
+                    let mut fuzaiid_vec = self.get_fuzaiid_vec_from_nodeid(n);
+                    let mut fuzai_p_vec : Vec<i32> = fuzaiid_vec.iter().map(|&id|self.fu_zai_vec[id].p as i32).collect();
+                    //降序排列
+                    fuzai_p_vec.sort_by(|a, b| b.cmp(a));
+                    for p in fuzai_p_vec {
+                        let id : usize = *(fuzaiid_vec.iter().find(|&&id|self.fu_zai_vec[id].p as i32 == p).unwrap());
+                        fuzaiid_vec.retain(|&fuzaiid|fuzaiid != id);
+                        if all_fu_zai_p > self.fu_zai_vec[id].p {
+                            pd_online_vec.push((id, self.fu_zai_vec[id].p));
+                            all_fu_zai_p -= self.fu_zai_vec[id].p;
+                        }
+                        else {
+                            pd_online_vec.push((id, all_fu_zai_p));
+                            all_fu_zai_p = 0.0;
+                            break;
+                        }
+                    }
+                }
             }
         }
         //3. _chaoLiuFangFa==1，由负载确定机组值
@@ -1576,15 +1595,15 @@ impl XiTong {
                     }
                     None => {},
                 }
-                let option_dian_zhan = self.get_dianzhan_from_nodeid(n);
-                match option_dian_zhan {
-                    Some(&mut dian_zhan) => {
-                        if dian_zhan.ctrl_mode == simctrl::CtrlMode::Manual {
-                            fang_fa = 0;
-                        }
-                    }
-                    None => {}
-                }
+                // let option_dian_zhan = self.get_dianzhan_from_nodeid(n);
+                // match option_dian_zhan {
+                //     Some(&mut dian_zhan) => {
+                //         if dian_zhan.ctrl_mode == simctrl::CtrlMode::Manual {
+                //             fang_fa = 0;
+                //         }
+                //     }
+                //     None => {}
+                // }
             }
             pf_fang_fa_vec.push((n_g,fang_fa));
         }
@@ -1623,6 +1642,20 @@ impl XiTong {
                 self.dian_zhan_vec[i].p += self.ji_zu_vec[jizuid].common_ji.p;
             }
             self.dian_zhan_vec[i].p_yu_du = 1.0f64 - self.dian_zhan_vec[i].p/(jizu::JI_ZU_E_DING_GONG_LV * self.dian_zhan_vec[i].ji_zu_num as f64);
+            match self.dian_zhan_vec[i].ctrl_mode_she_zhi {
+                simctrl::CtrlMode::Manual => {
+                    let zl = ZhiLing::from_params(ZhiLingType::CtrlMode(simctrl::CtrlMode::Manual), simctrl::DevType::DianZhan, i, 0, 0, simctrl::ZhanWeiType::Internal);
+                    self.handle_ctrl_mode(&zl);
+                }
+                simctrl::CtrlMode::SemiAuto => {
+                    let zl = ZhiLing::from_params(ZhiLingType::CtrlMode(simctrl::CtrlMode::SemiAuto), simctrl::DevType::DianZhan, i, 0, 0, simctrl::ZhanWeiType::Internal);
+                    self.handle_ctrl_mode(&zl);
+                }
+                simctrl::CtrlMode::Auto => {
+                    let zl = ZhiLing::from_params(ZhiLingType::CtrlMode(simctrl::CtrlMode::Auto), simctrl::DevType::DianZhan, i, 0, 0, simctrl::ZhanWeiType::Internal);
+                    self.handle_ctrl_mode(&zl);
+                }
+            }
         }
     }
 
@@ -1920,7 +1953,6 @@ impl XiTong {
             }
             simctrl::DevType::DianZhan => {
                 match zl.zhi_ling_type {
-                    ZhiLingType::BeiChe => self.handle_bei_che(zl),
                     ZhiLingType::OperatingStation(simctrl::OperatingStation::Local) | ZhiLingType::OperatingStation(simctrl::OperatingStation::JiKong) => self.handle_operating_station(zl),
                     ZhiLingType::CtrlMode(..) => self.handle_ctrl_mode(zl),
                     ZhiLingType::Prio => self.handle_prio(zl),
@@ -2021,7 +2053,10 @@ impl XiTong {
 
     pub fn handle_bei_che(&mut self, zl : &ZhiLing) {
         match self.ji_zu_vec[zl.dev_id].common_ji.current_range {
-            jizu::JiZuRangeLeiXing::TingJi => self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::BeiCheZanTai,
+            jizu::JiZuRangeLeiXing::TingJi => {
+                self.ji_zu_vec[zl.dev_id].common_ji.t_current_range = 0.0;
+                self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::BeiCheZanTai;
+            },
             _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::BeiCheFail(*zl, String::from(zhiling::BEI_CHE_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_1)))),
         }
     }
@@ -2029,6 +2064,7 @@ impl XiTong {
         if self.get_duanluqi_from_jizuid(zl.dev_id).unwrap().is_off() {
             match self.ji_zu_vec[zl.dev_id].common_ji.current_range {
                 jizu::JiZuRangeLeiXing::BeiCheWanBi => {
+                    self.ji_zu_vec[zl.dev_id].common_ji.t_current_range = 0.0;
                     self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::QiDong;
                 }
                 _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::QiDongFail(*zl,  String::from(zhiling::QI_DONG_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_2)))),
@@ -2112,6 +2148,7 @@ impl XiTong {
         if self.get_duanluqi_from_jizuid(zl.dev_id).unwrap().is_off() {
             match self.ji_zu_vec[zl.dev_id].common_ji.current_range {
                 jizu::JiZuRangeLeiXing::Wen | jizu::JiZuRangeLeiXing::BianSu | jizu::JiZuRangeLeiXing::BianYa => {
+                    self.ji_zu_vec[zl.dev_id].common_ji.t_current_range = 0.0;
                     self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::TingJiZanTai;
                 }
                 _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::BeiCheFail(*zl,  String::from(zhiling::TING_JI_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_3)))),
@@ -2681,6 +2718,7 @@ impl XiTong {
                         for d in dian_zhan_r_vec.to_vec() {
                             if self.dian_zhan_vec[d].ctrl_mode_she_zhi == simctrl::CtrlMode::Manual {
                                 is_manual_exist = true;
+                                break;
                             }
                             // else if self.dian_zhan_vec[d].ctrl_mode_she_zhi == simctrl::CtrlMode::Auto {
                             //     is_auto_exist = true;
@@ -2708,18 +2746,17 @@ impl XiTong {
                         }
                         else {
                             self.dian_zhan_vec[zl.dev_id].ctrl_mode = simctrl::CtrlMode::SemiAuto;
+                            self.dian_zhan_vec[zl.dev_id].operating_station = self.dian_zhan_vec[zl.dev_id].operating_station_she_zhi;
                             let jizuid_vec = self.get_jizuid_vec_from_dianzhanid(zl.dev_id);
                             for j in jizuid_vec {
                                 self.ji_zu_vec[j].common_ji.ctrl_mode = simctrl::CtrlMode::SemiAuto;
                             }
                             for d in dian_zhan_r_vec {
-                                self.dian_zhan_vec[d].ctrl_mode = simctrl::CtrlMode::Manual;
-                                if self.dian_zhan_vec[d].operating_station == simctrl::OperatingStation::JiKong {
-                                    self.dian_zhan_vec[d].operating_station = simctrl::OperatingStation::Local;
-                                }
+                                self.dian_zhan_vec[d].ctrl_mode = simctrl::CtrlMode::SemiAuto;
+                                self.dian_zhan_vec[d].operating_station = self.dian_zhan_vec[zl.dev_id].operating_station_she_zhi;
                                 let jizuid_vec = self.get_jizuid_vec_from_dianzhanid(d);
                                 for j in jizuid_vec {
-                                    self.ji_zu_vec[j].common_ji.ctrl_mode = simctrl::CtrlMode::Manual;
+                                    self.ji_zu_vec[j].common_ji.ctrl_mode = simctrl::CtrlMode::SemiAuto;
                                 }
                             }
                         }
@@ -2733,9 +2770,11 @@ impl XiTong {
                         for d in dian_zhan_r_vec.to_vec() {
                             if self.dian_zhan_vec[d].ctrl_mode_she_zhi == simctrl::CtrlMode::Manual {
                                 is_manual_exist = true;
+                                break;
                             }
                             else if self.dian_zhan_vec[d].ctrl_mode_she_zhi == simctrl::CtrlMode::Auto {
                                 is_semiauto_exist = true;
+                                break;
                             }
                         }
                         if is_manual_exist /* || !self.is_mu_lian_lian_tong(zl.dev_id)*/ {
@@ -2760,12 +2799,14 @@ impl XiTong {
                         }
                         else if is_semiauto_exist {
                             self.dian_zhan_vec[zl.dev_id].ctrl_mode = simctrl::CtrlMode::SemiAuto;
+                            self.dian_zhan_vec[zl.dev_id].operating_station = self.dian_zhan_vec[zl.dev_id].operating_station_she_zhi;
                             let jizuid_vec = self.get_jizuid_vec_from_dianzhanid(zl.dev_id);
                             for j in jizuid_vec {
                                 self.ji_zu_vec[j].common_ji.ctrl_mode = simctrl::CtrlMode::SemiAuto;
                             }
                             for d in dian_zhan_r_vec {
                                 self.dian_zhan_vec[d].ctrl_mode = simctrl::CtrlMode::SemiAuto;
+                                self.dian_zhan_vec[d].operating_station = self.dian_zhan_vec[zl.dev_id].operating_station_she_zhi;
                                 let jizuid_vec = self.get_jizuid_vec_from_dianzhanid(d);
                                 for j in jizuid_vec {
                                     self.ji_zu_vec[j].common_ji.ctrl_mode = simctrl::CtrlMode::SemiAuto;
@@ -2774,6 +2815,7 @@ impl XiTong {
                         }
                         else {
                             self.dian_zhan_vec[zl.dev_id].ctrl_mode = simctrl::CtrlMode::Auto;
+                            self.dian_zhan_vec[zl.dev_id].operating_station = self.dian_zhan_vec[zl.dev_id].operating_station_she_zhi;
                             let jizuid_vec = self.get_jizuid_vec_from_dianzhanid(zl.dev_id);
                             for j in jizuid_vec {
                                 self.ji_zu_vec[j].common_ji.ctrl_mode = simctrl::CtrlMode::Auto;
@@ -2781,6 +2823,7 @@ impl XiTong {
                             let dian_zhan_r_vec = self.get_dian_zhan_guan_lian_vec_from_dian_zhan_id(zl.dev_id);
                             for d in dian_zhan_r_vec {
                                 self.dian_zhan_vec[d].ctrl_mode = simctrl::CtrlMode::Auto;
+                                self.dian_zhan_vec[d].operating_station = self.dian_zhan_vec[zl.dev_id].operating_station_she_zhi;
                                 let jizuid_vec = self.get_jizuid_vec_from_dianzhanid(d);
                                 for j in jizuid_vec {
                                     self.ji_zu_vec[j].common_ji.ctrl_mode = simctrl::CtrlMode::Auto;
@@ -2897,6 +2940,7 @@ impl XiTong {
                 _ => {}
             }
         }
+        self.ji_zu_vec[zl.dev_id].common_ji.t_current_range = 0.0;
         self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::TingJiZanTai;
     }
 
