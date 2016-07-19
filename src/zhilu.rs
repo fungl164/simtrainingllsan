@@ -10,6 +10,7 @@ pub struct ZhiLu {
   pub q : f64,
   pub i : f64,
   pub status : ZhiLuStatus,
+  pub is_lian_tong : bool,
 }
 
 impl ZhiLu {
@@ -20,6 +21,7 @@ impl ZhiLu {
             q : 0.0,
             i : 0.0,
             status : ZhiLuStatus::Off,
+            is_lian_tong : false,
         }
     }
 }

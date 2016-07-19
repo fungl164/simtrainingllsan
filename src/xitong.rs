@@ -661,14 +661,14 @@ impl XiTong {
         .map(|jizu_duanluqi|self.duan_lu_qi_vec[jizu_duanluqi.1].status)
     }
     //根据支路断路器状态判断支路通断情况
-    pub fn update_zhilu_status(&mut self) {
+    pub fn update_zhilu_lian_tong(&mut self) {
         for zhi_lu in self.zhi_lu_vec.iter_mut() {
             match self.zhilu_duanluqi_vec.iter()
             .find(|zhilu_duanluqi|zhilu_duanluqi.0 == zhi_lu.uid) {
                 Some(zhilu_duanluqi) => {
                     match self.duan_lu_qi_vec[zhilu_duanluqi.1].status {
-                        duanluqi::DuanLuQiStatus::On{..} => zhi_lu.status = zhilu::ZhiLuStatus::On,
-                        duanluqi::DuanLuQiStatus::Off{..} => zhi_lu.status = zhilu::ZhiLuStatus::Off,
+                        duanluqi::DuanLuQiStatus::On{..} => zhi_lu.is_lian_tong = true,
+                        duanluqi::DuanLuQiStatus::Off{..} => zhi_lu.is_lian_tong = false,
                     }
                 }
                 None => {}
@@ -1044,11 +1044,17 @@ impl XiTong {
     }
     ///判断某个子系统是否有回路
     /// 由于每个子系统均为连通图，所以连通图没有回路的充要条件是连通图为树，即连通图的支路数=节点数-1
-    pub fn is_hui_lu_one_path(&mut self, node_id_group : &Vec<usize>)->bool {
-        let node_group = (*node_id_group).to_vec();
+    pub fn is_hui_lu_one_path(&mut self, node_id_group : Vec<usize>)->bool {
+        let node_group = node_id_group.to_vec();
         let node_group_len = node_group.len();
-        let zhilu_group : Vec<usize> = self.get_zhiluid_group_from_nodeid_group(node_group).unwrap();
-        if zhilu_group.len() < node_group_len {
+
+        let mut zhilu_group : Vec<usize> = self.get_zhiluid_group_from_nodeid_group(node_group).unwrap();
+        for i in zhilu_group.to_vec() {
+            if self.zhi_lu_vec[i].is_lian_tong == false {
+                zhilu_group.retain(|&zhi_lu|zhi_lu != i);
+            }
+        }
+        if zhilu_group.len() >= node_group_len {
             return true;
         }
         return false;
@@ -1058,7 +1064,7 @@ impl XiTong {
     pub fn is_hui_lu(&mut self) -> bool {
         let node_group_vec = self.node_group_vec.to_vec();
         for  group in node_group_vec {
-            if self.is_hui_lu_one_path(&group) {
+            if self.is_hui_lu_one_path(group) {
                 return true;
             }
         }
@@ -1103,10 +1109,18 @@ impl XiTong {
                 }
             }
         }
-        let mut d_vec_r : Vec<usize> = node_vec_r.iter().map(|&n|self.get_dianzhanid_from_nodeid(n).unwrap()).collect();
-        d_vec_r.sort();
-        d_vec_r.dedup();
-        d_vec_r.iter().filter(|d|**d != dianzhan_id).map(|&x|x).collect()
+        let mut d_vec_r = Vec::new();
+        for n in node_vec_r {
+            match self.get_dianzhanid_from_nodeid(n) {
+                Some(id) => {
+                    if id != dianzhan_id && !d_vec_r.contains(&id) {
+                        d_vec_r.push(id);
+                    }
+                }
+                None => {}
+            }
+        }
+        d_vec_r
     }
     /// 电站母联断路器是否全部连通
     /// 由电站uid获取节点uid组
@@ -1142,7 +1156,7 @@ impl XiTong {
         //所有已计算节点列表
         let mut node_computed_vec : Vec<usize> = Vec::new();
         //系统所有支路通断情况更新
-        self.update_zhilu_status();
+        self.update_zhilu_lian_tong();
         //系统所有电机在网情况更新
         for i in 0..simctrl::ZONG_SHU_JI_ZU {
             if self.get_duanluqi_from_jizuid(i).unwrap().is_on() && self.ji_zu_vec[i].common_ji.uab_ext > 0.0 {
@@ -1152,23 +1166,23 @@ impl XiTong {
                 self.ji_zu_vec[i].common_ji.is_online = false;
             }
         }
-        //路径中所有在网支路Map，key为节点，value为支路
-        let mut node_zhi_lu_online_vec : Vec<(usize, usize)> = Vec::new();
-        let mut node_zhi_lu_offline_vec : Vec<(usize, usize)> = Vec::new();
-        let mut zhi_lu_online_vec : Vec<usize> = Vec::new();
-        let mut zhi_lu_offline_vec : Vec<usize> = Vec::new();
+        //路径中所有联通支路Map，key为节点，value为支路
+        let mut node_zhi_lu_lian_tong_vec : Vec<(usize, usize)> = Vec::new();
+        let mut node_zhi_lu_not_lian_tong_vec : Vec<(usize, usize)> = Vec::new();
+        let mut zhi_lu_lian_tong_vec : Vec<usize> = Vec::new();
+        let mut zhi_lu_not_lian_tong_vec : Vec<usize> = Vec::new();
         for z_n in self.zhilu_node_vec.to_vec() {
             if all_node_in_path_vec.contains(&(z_n.1)) {
                 if self.zhi_lu_vec[z_n.0].status == ZhiLuStatus::On {
-                    node_zhi_lu_online_vec.push((z_n.1, z_n.0));
-                    if !zhi_lu_online_vec.contains(&(z_n.0)) {
-                        zhi_lu_online_vec.push(z_n.0);
+                    node_zhi_lu_lian_tong_vec.push((z_n.1, z_n.0));
+                    if !zhi_lu_lian_tong_vec.contains(&(z_n.0)) {
+                        zhi_lu_lian_tong_vec.push(z_n.0);
                     }
                 }
                 else {
-                    node_zhi_lu_offline_vec.push((z_n.1, z_n.0));
-                    if !zhi_lu_offline_vec.contains(&(z_n.0)) {
-                        zhi_lu_offline_vec.push(z_n.0);
+                    node_zhi_lu_not_lian_tong_vec.push((z_n.1, z_n.0));
+                    if !zhi_lu_not_lian_tong_vec.contains(&(z_n.0)) {
+                        zhi_lu_not_lian_tong_vec.push(z_n.0);
                     }
                 }
             }
@@ -1196,10 +1210,10 @@ impl XiTong {
         }
 
         let mut zhi_lu_computed_vec : Vec<usize> = Vec::new();
-        let mut zhi_lu_not_computed_vec : Vec<usize> = zhi_lu_online_vec.to_vec();
+        let mut zhi_lu_not_computed_vec : Vec<usize> = zhi_lu_lian_tong_vec.to_vec();
         //构造节点各列表
         for n in all_node_in_path_vec.to_vec() {
-            let iter = node_zhi_lu_online_vec.iter().filter(|n_z|n_z.0 == n);
+            let iter = node_zhi_lu_lian_tong_vec.iter().filter(|n_z|n_z.0 == n);
             match iter.count(){
                 0 => node_not_computed_0_zhi_lu_vec.push(n),
                 1 => node_not_computed_1_zhi_lu_vec.push(n),
@@ -1226,10 +1240,11 @@ impl XiTong {
             duanluqi.ic = 0.0;
             duanluqi.f = 0.0;
         }
-        for z in zhi_lu_offline_vec.to_vec() {
+        for z in zhi_lu_not_lian_tong_vec.to_vec() {
             self.zhi_lu_vec[z].p = 0.0;
             self.zhi_lu_vec[z].q = 0.0;
             self.zhi_lu_vec[z].i = 0.0;
+            self.zhi_lu_vec[z].status = zhilu::ZhiLuStatus::Off;
             let mut duanluqi = self.get_duanluqi_from_zhiluid(z).unwrap();
             duanluqi.uab = 0.0;
             duanluqi.ubc = 0.0;
@@ -1245,13 +1260,15 @@ impl XiTong {
             for n in all_node_in_path_vec {
                 self.node_vec[n].u = 0.0;
                 self.node_vec[n].f = 0.0;
+                self.node_vec[n].status = node::NodeStatus::Off;
             }
             //所有支路参数为0
             //所有断路器参数为0
-            for z in zhi_lu_online_vec {
+            for z in zhi_lu_lian_tong_vec {
                 self.zhi_lu_vec[z].p = 0.0;
-                self.zhi_lu_vec[z].p = 0.0;
-                self.zhi_lu_vec[z].p = 0.0;
+                self.zhi_lu_vec[z].q = 0.0;
+                self.zhi_lu_vec[z].i = 0.0;
+                self.zhi_lu_vec[z].status = zhilu::ZhiLuStatus::Off;
                 let mut duanluqi = self.get_duanluqi_from_zhiluid(z).unwrap();
                 duanluqi.uab = 0.0;
                 duanluqi.ubc = 0.0;
@@ -1261,249 +1278,248 @@ impl XiTong {
                 duanluqi.ic = 0.0;
                 duanluqi.f = 0.0;
             }
-            return ;
-        }
-
-        //确定所有节点参数
-        for n in all_node_in_path_vec.to_vec() {
-            self.node_vec[n].u = jizu::JI_ZU_E_DING_DIAN_YA;
-            self.node_vec[n].f = jizu::JI_ZU_E_DING_PIN_LV;
-            self.node_vec[n].status = NodeStatus::On;
-        }
-        //2. 由_chaoLiuFangFa选择潮流计算方法
-        //3. _chaoLiuFangFa==0，由机组确定负载值，_chaoLiuFangFa==1，由负载确定机组值
-        let fang_fa = pf_fang_fa;
-        // for j_d in jizuandian_duanluqi_vec {
-        //     if self.duan_lu_qi_vec[j_d.1].is_on() {
-        //         fang_fa = 1;
-        //         break;
-        //     }
-        // }
-        if fang_fa == 0 {
-            let mut all_ji_zu_p = 0.0f64;
-            let mut all_fu_zai_p = 0.0f64;
-            for j in ji_zu_online_vec.to_vec() {
-                all_ji_zu_p += self.ji_zu_vec[j].common_ji.p;
-            }
-            for n in all_node_in_path_vec.to_vec() {
-                let fuzaiid_vec = self.get_fuzaiid_vec_from_nodeid(n);
-                for i in fuzaiid_vec {
-                    all_fu_zai_p += self.fu_zai_vec[i].p;
-                }
-            }
-            if all_ji_zu_p >= all_fu_zai_p {
-                //负载值和机组值都不变，将负载值放入实时负载Map中
-                for n in all_node_in_path_vec.to_vec() {
-                    let fuzaiid_vec = self.get_fuzaiid_vec_from_nodeid(n);
-                    for i in fuzaiid_vec {
-                        pd_online_vec.push((i, self.fu_zai_vec[i].p));
-                    }
-                }
-            }
-            else {
-                //机组输出小于负载需求，从最大的负载开始满足
-                for n in all_node_in_path_vec.to_vec() {
-                    let mut fuzaiid_vec = self.get_fuzaiid_vec_from_nodeid(n);
-                    let mut fuzai_p_vec : Vec<i32> = fuzaiid_vec.iter().map(|&id|self.fu_zai_vec[id].p as i32).collect();
-                    //降序排列
-                    fuzai_p_vec.sort_by(|a, b| b.cmp(a));
-                    for p in fuzai_p_vec {
-                        let id : usize = *(fuzaiid_vec.iter().find(|&&id|self.fu_zai_vec[id].p as i32 == p).unwrap());
-                        fuzaiid_vec.retain(|&fuzaiid|fuzaiid != id);
-                        if all_fu_zai_p > self.fu_zai_vec[id].p {
-                            pd_online_vec.push((id, self.fu_zai_vec[id].p));
-                            all_fu_zai_p -= self.fu_zai_vec[id].p;
-                        }
-                        else {
-                            pd_online_vec.push((id, all_fu_zai_p));
-                            all_fu_zai_p = 0.0;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        //3. _chaoLiuFangFa==1，由负载确定机组值
-        else if fang_fa == 1 {
-            let mut all_fu_zai_p = 0.0;
-            //将负载值放入实时负载Map中
-            for n_f in self.node_fuzai_vec.to_vec() {
-                if all_node_in_path_vec.to_vec().contains(&(n_f.0)) {
-                    all_fu_zai_p += self.fu_zai_vec[n_f.1].p;
-                    pd_online_vec.push((n_f.1, self.fu_zai_vec[n_f.1].p));
-                }
-            }
-            //机组均分功率
-            let ji_zu_p_average = all_fu_zai_p/(ji_zu_online_vec.len()) as f64;
-            for j in ji_zu_online_vec.to_vec() {
-                let u : f64 = self.ji_zu_vec[j].common_ji.uab_ext;
-                let i : f64 = ji_zu_p_average * 1000.0 / (3.0f64.sqrt() * u * jizu::JI_ZU_P_FACTOR);
-                self.ji_zu_vec[j].common_ji.p = ji_zu_p_average;
-                self.ji_zu_vec[j].common_ji.q = ji_zu_p_average * jizu::JI_ZU_Q_P;
-                self.ji_zu_vec[j].common_ji.p_factor = jizu::JI_ZU_P_FACTOR;
-                self.ji_zu_vec[j].common_ji.ia_ext = i;
-                self.ji_zu_vec[j].common_ji.ib_ext = i;
-                self.ji_zu_vec[j].common_ji.ic_ext = i;
-                self.ji_zu_vec[j].common_ji.ia_in = i;
-                self.ji_zu_vec[j].common_ji.ib_in = i;
-                self.ji_zu_vec[j].common_ji.ic_in = i;
-            }
         }
         else {
-            return ;
-        }
-        for j in ji_zu_online_vec.to_vec() {
-            let u : f64 = self.ji_zu_vec[j].common_ji.uab_ext;
-            let i : f64 = self.ji_zu_vec[j].common_ji.ia_ext;
-            let f : f64 = self.ji_zu_vec[j].common_ji.f_ext;
-            let mut duanluqi = self.get_duanluqi_from_jizuid(j).unwrap();
-            duanluqi.uab = u;
-            duanluqi.ubc = u;
-            duanluqi.uca = u;
-            duanluqi.ia = i;
-            duanluqi.ib = i;
-            duanluqi.f = f;
-        }
-        for n in all_node_in_path_vec.to_vec() {
-            let vec : Vec<(usize, usize)> = node_ji_zu_online_vec.iter().filter(|n_j|n_j.0 == n).map(|&n_j|n_j).collect();
-            if !vec.is_empty() {
-                let mut pg : f64 = 0.0;
-                for n_j in vec {
-                    pg += self.ji_zu_vec[n_j.1].common_ji.p;
-                }
-                pg_node_vec.push((n, pg));
+            //确定所有节点参数
+            for n in all_node_in_path_vec.to_vec() {
+                self.node_vec[n].u = jizu::JI_ZU_E_DING_DIAN_YA;
+                self.node_vec[n].f = jizu::JI_ZU_E_DING_PIN_LV;
+                self.node_vec[n].status = NodeStatus::On;
             }
-            else {
-                pg_node_vec.push((n, 0.0));
-            }
-        }
-        //得到节点注入和流出功率Map
-        for n in all_node_in_path_vec.to_vec() {
-            let fuzaiid_vec = self.get_fuzaiid_vec_from_nodeid(n);
-            let pd_online : f64 = pd_online_vec.iter().filter(|f_p|fuzaiid_vec.contains(&(f_p.0))).map(|f_p|f_p.1).sum();
-            pd_node_vec.push((n, pd_online));
-        }
-        //4. 若nodeWeiJiSuan0ZhiLuList不为空，而其他均为空，则计算结束，返回1
-        if !node_not_computed_0_zhi_lu_vec.is_empty() && node_not_computed_1_zhi_lu_vec.is_empty() && node_not_computed_2_zhi_lu_vec.is_empty() && node_not_computed_duo_zhi_lu_vec.is_empty()
-        {
-            return ;
-        }
-        //4. 为简化计算，对当前节点而言，设已计算的支路潮流方向均为流入，待计算的为流出
-        //4. 若node_not_computed_vec不为空
-        while !node_not_computed_vec.is_empty() {
-            //5. node_not_computed_vec遍历，找出一个可计算节点
-            //5. 可计算节点判断条件：若为1支路节点，则可计算
-            //5. 若为2支路节点，则至少有一个支路已计算
-            //5. 若为n支路节点，则至少有（n-1）个支路已计算
-            for n in node_not_computed_vec.to_vec() {
-                if node_not_computed_1_zhi_lu_vec.contains(&n) {
-                    node_not_computed_vec.retain(|&n1|n1 != n);
-                    node_computed_vec.push(n);
-                    //5. 若有未计算支路，计算之
-                    let zhi_lu_id : usize = node_zhi_lu_online_vec.iter().find(|&n_z|n_z.0 == n).unwrap().1;
-                    if zhi_lu_not_computed_vec.contains(&zhi_lu_id) {
-                        //计算支路参数
-                        let u = self.node_vec[n].u;
-                        let f = self.node_vec[n].f;
-                        let p = pg_node_vec.iter().find(|&n_p| n_p.0 == n).unwrap().1 - pd_node_vec.iter().find(|&n_p| n_p.0 == n).unwrap().1;
-                        let i = p * 1000.0f64 / (3.0f64.sqrt() * u * jizu::JI_ZU_P_FACTOR);
-                        self.zhi_lu_vec[zhi_lu_id].p = p;
-                        self.zhi_lu_vec[zhi_lu_id].q = p * jizu::JI_ZU_Q_P;
-                        self.zhi_lu_vec[zhi_lu_id].i = i;
-                        //计算断路器参数
-                        let duanluqi = self.get_duanluqi_from_zhiluid(zhi_lu_id).unwrap();
-                        duanluqi.uab = u;
-                        duanluqi.ubc = u;
-                        duanluqi.uca = u;
-                        duanluqi.ia = i;
-                        duanluqi.ib = i;
-                        duanluqi.f = f;
+            //2. 由_chaoLiuFangFa选择潮流计算方法
+            //3. _chaoLiuFangFa==0，由机组确定负载值，_chaoLiuFangFa==1，由负载确定机组值
+            let fang_fa = pf_fang_fa;
+            // for j_d in jizuandian_duanluqi_vec {
+            //     if self.duan_lu_qi_vec[j_d.1].is_on() {
+            //         fang_fa = 1;
+            //         break;
+            //     }
+            // }
+            if fang_fa == 0 || fang_fa == 1 {
+                if fang_fa == 0 {
+                    let mut all_ji_zu_p = 0.0f64;
+                    let mut all_fu_zai_p = 0.0f64;
+                    for j in ji_zu_online_vec.to_vec() {
+                        all_ji_zu_p += self.ji_zu_vec[j].common_ji.p;
                     }
-                    //将支路从未计算列表移至已计算列表
-                    zhi_lu_not_computed_vec.retain(|&z|z != zhi_lu_id);
-                    zhi_lu_computed_vec.push(zhi_lu_id);
+                    for n in all_node_in_path_vec.to_vec() {
+                        let fuzaiid_vec = self.get_fuzaiid_vec_from_nodeid(n);
+                        for i in fuzaiid_vec {
+                            all_fu_zai_p += self.fu_zai_vec[i].p;
+                        }
+                    }
+                    if all_ji_zu_p >= all_fu_zai_p {
+                        //负载值和机组值都不变，将负载值放入实时负载Map中
+                        for n in all_node_in_path_vec.to_vec() {
+                            let fuzaiid_vec = self.get_fuzaiid_vec_from_nodeid(n);
+                            for i in fuzaiid_vec {
+                                pd_online_vec.push((i, self.fu_zai_vec[i].p));
+                            }
+                        }
+                    }
+                    else {
+                        //机组输出小于负载需求，从最大的负载开始满足
+                        for n in all_node_in_path_vec.to_vec() {
+                            let mut fuzaiid_vec = self.get_fuzaiid_vec_from_nodeid(n);
+                            let mut fuzai_p_vec : Vec<i32> = fuzaiid_vec.iter().map(|&id|self.fu_zai_vec[id].p as i32).collect();
+                            //降序排列
+                            fuzai_p_vec.sort_by(|a, b| b.cmp(a));
+                            for p in fuzai_p_vec {
+                                let id : usize = *(fuzaiid_vec.iter().find(|&&id|self.fu_zai_vec[id].p as i32 == p).unwrap());
+                                fuzaiid_vec.retain(|&fuzaiid|fuzaiid != id);
+                                if all_fu_zai_p > self.fu_zai_vec[id].p {
+                                    pd_online_vec.push((id, self.fu_zai_vec[id].p));
+                                    all_fu_zai_p -= self.fu_zai_vec[id].p;
+                                }
+                                else {
+                                    pd_online_vec.push((id, all_fu_zai_p));
+                                    all_fu_zai_p = 0.0;
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 }
-                else if node_not_computed_2_zhi_lu_vec.contains(&n) {
-                    let zhi_lu_related_vec = self.get_zhiluid_group_from_nodeid(n).unwrap();
-                    let mut i_zhi_lu = usize::max_value();
-                    let mut i_zhi_lu_g = usize::max_value();
-                    if zhi_lu_computed_vec.contains(&(zhi_lu_related_vec[0])) {
-                        i_zhi_lu = zhi_lu_related_vec[1];
-                        i_zhi_lu_g = zhi_lu_related_vec[0];
+                //3. _chaoLiuFangFa==1，由负载确定机组值
+                else if fang_fa == 1 {
+                    let mut all_fu_zai_p = 0.0;
+                    //将负载值放入实时负载Map中
+                    for n_f in self.node_fuzai_vec.to_vec() {
+                        if all_node_in_path_vec.to_vec().contains(&(n_f.0)) {
+                            all_fu_zai_p += self.fu_zai_vec[n_f.1].p;
+                            pd_online_vec.push((n_f.1, self.fu_zai_vec[n_f.1].p));
+                        }
                     }
-                    else if zhi_lu_computed_vec.contains(&(zhi_lu_related_vec[1])) {
-                        i_zhi_lu = zhi_lu_related_vec[0];
-                        i_zhi_lu_g = zhi_lu_related_vec[1];
+                    //机组均分功率
+                    let ji_zu_p_average = all_fu_zai_p/(ji_zu_online_vec.len()) as f64;
+                    for j in ji_zu_online_vec.to_vec() {
+                        let u : f64 = self.ji_zu_vec[j].common_ji.uab_ext;
+                        let i : f64 = ji_zu_p_average * 1000.0 / (3.0f64.sqrt() * u * jizu::JI_ZU_P_FACTOR);
+                        self.ji_zu_vec[j].common_ji.p = ji_zu_p_average;
+                        self.ji_zu_vec[j].common_ji.q = ji_zu_p_average * jizu::JI_ZU_Q_P;
+                        self.ji_zu_vec[j].common_ji.p_factor = jizu::JI_ZU_P_FACTOR;
+                        self.ji_zu_vec[j].common_ji.ia_ext = i;
+                        self.ji_zu_vec[j].common_ji.ib_ext = i;
+                        self.ji_zu_vec[j].common_ji.ic_ext = i;
+                        self.ji_zu_vec[j].common_ji.ia_in = i;
+                        self.ji_zu_vec[j].common_ji.ib_in = i;
+                        self.ji_zu_vec[j].common_ji.ic_in = i;
                     }
-                    if i_zhi_lu != usize::max_value() {
-                        node_not_computed_vec.retain(|&node|node != n);
-                        node_computed_vec.push(n);
-                        if !zhi_lu_computed_vec.contains(&i_zhi_lu) {
-                            //计算支路参数
-                            let u = self.node_vec[n].u;
-                            let f = self.node_vec[n].f;
-                            let p = pg_node_vec.iter().find(|&n_pg|n_pg.0 == n).unwrap().1 + self.zhi_lu_vec[i_zhi_lu_g].p - pd_node_vec.iter().find(|&n_pd|n_pd.0 == n).unwrap().1;
-                            let i = p * 1000.0 / (3.0f64.sqrt() * u * jizu::JI_ZU_P_FACTOR);
-                            self.zhi_lu_vec[i_zhi_lu].p = p;
-                            self.zhi_lu_vec[i_zhi_lu].q = jizu::JI_ZU_Q_P * p;
-                            self.zhi_lu_vec[i_zhi_lu].i = i;
-                            //计算断路器参数
-                            let duanluqi = self.get_duanluqi_from_zhiluid(i_zhi_lu).unwrap();
-                            duanluqi.uab = u;
-                            duanluqi.ubc = u;
-                            duanluqi.uca = u;
-                            duanluqi.ia = i;
-                            duanluqi.ib = i;
-                            duanluqi.f = f;
+                }
+                for j in ji_zu_online_vec.to_vec() {
+                    let u : f64 = self.ji_zu_vec[j].common_ji.uab_ext;
+                    let i : f64 = self.ji_zu_vec[j].common_ji.ia_ext;
+                    let f : f64 = self.ji_zu_vec[j].common_ji.f_ext;
+                    let mut duanluqi = self.get_duanluqi_from_jizuid(j).unwrap();
+                    duanluqi.uab = u;
+                    duanluqi.ubc = u;
+                    duanluqi.uca = u;
+                    duanluqi.ia = i;
+                    duanluqi.ib = i;
+                    duanluqi.f = f;
+                }
+                for n in all_node_in_path_vec.to_vec() {
+                    let vec : Vec<(usize, usize)> = node_ji_zu_online_vec.iter().filter(|n_j|n_j.0 == n).map(|&n_j|n_j).collect();
+                    if !vec.is_empty() {
+                        let mut pg : f64 = 0.0;
+                        for n_j in vec {
+                            pg += self.ji_zu_vec[n_j.1].common_ji.p;
+                        }
+                        pg_node_vec.push((n, pg));
+                    }
+                    else {
+                        pg_node_vec.push((n, 0.0));
+                    }
+                }
+                //得到节点注入和流出功率Map
+                for n in all_node_in_path_vec.to_vec() {
+                    let fuzaiid_vec = self.get_fuzaiid_vec_from_nodeid(n);
+                    let pd_online : f64 = pd_online_vec.iter().filter(|f_p|fuzaiid_vec.contains(&(f_p.0))).map(|f_p|f_p.1).sum();
+                    pd_node_vec.push((n, pd_online));
+                }
+                //4. 若nodeWeiJiSuan0ZhiLuList不为空，而其他均为空，则计算结束，返回1
+                if !node_not_computed_0_zhi_lu_vec.is_empty() && node_not_computed_1_zhi_lu_vec.is_empty() && node_not_computed_2_zhi_lu_vec.is_empty() && node_not_computed_duo_zhi_lu_vec.is_empty() {
+                    return ;
+                }
+                //4. 为简化计算，对当前节点而言，设已计算的支路潮流方向均为流入，待计算的为流出
+                //4. 若node_not_computed_vec不为空
+                while !node_not_computed_vec.is_empty() {
+                    //5. node_not_computed_vec遍历，找出一个可计算节点
+                    //5. 可计算节点判断条件：若为1支路节点，则可计算
+                    //5. 若为2支路节点，则至少有一个支路已计算
+                    //5. 若为n支路节点，则至少有（n-1）个支路已计算
+                    for n in node_not_computed_vec.to_vec() {
+                        if node_not_computed_1_zhi_lu_vec.contains(&n) {
+                            node_not_computed_vec.retain(|&n1|n1 != n);
+                            node_computed_vec.push(n);
+                            //5. 若有未计算支路，计算之
+                            let zhi_lu_id : usize = node_zhi_lu_lian_tong_vec.iter().find(|&n_z|n_z.0 == n).unwrap().1;
+                            if zhi_lu_not_computed_vec.contains(&zhi_lu_id) {
+                                //计算支路参数
+                                let u = self.node_vec[n].u;
+                                let f = self.node_vec[n].f;
+                                let p = pg_node_vec.iter().find(|&n_p| n_p.0 == n).unwrap().1 - pd_node_vec.iter().find(|&n_p| n_p.0 == n).unwrap().1;
+                                let i = p * 1000.0f64 / (3.0f64.sqrt() * u * jizu::JI_ZU_P_FACTOR);
+                                self.zhi_lu_vec[zhi_lu_id].p = p;
+                                self.zhi_lu_vec[zhi_lu_id].q = p * jizu::JI_ZU_Q_P;
+                                self.zhi_lu_vec[zhi_lu_id].i = i;
+                                //计算断路器参数
+                                let duanluqi = self.get_duanluqi_from_zhiluid(zhi_lu_id).unwrap();
+                                duanluqi.uab = u;
+                                duanluqi.ubc = u;
+                                duanluqi.uca = u;
+                                duanluqi.ia = i;
+                                duanluqi.ib = i;
+                                duanluqi.f = f;
+                            }
                             //将支路从未计算列表移至已计算列表
-                            zhi_lu_not_computed_vec.retain(|&zhi_lu|zhi_lu != i_zhi_lu);
-                            zhi_lu_computed_vec.push(i_zhi_lu);
+                            zhi_lu_not_computed_vec.retain(|&z|z != zhi_lu_id);
+                            zhi_lu_computed_vec.push(zhi_lu_id);
+                        }
+                        else if node_not_computed_2_zhi_lu_vec.contains(&n) {
+                            let zhi_lu_related_vec = self.get_zhiluid_group_from_nodeid(n).unwrap();
+                            let mut i_zhi_lu = usize::max_value();
+                            let mut i_zhi_lu_g = usize::max_value();
+                            if zhi_lu_computed_vec.contains(&(zhi_lu_related_vec[0])) {
+                                i_zhi_lu = zhi_lu_related_vec[1];
+                                i_zhi_lu_g = zhi_lu_related_vec[0];
+                            }
+                            else if zhi_lu_computed_vec.contains(&(zhi_lu_related_vec[1])) {
+                                i_zhi_lu = zhi_lu_related_vec[0];
+                                i_zhi_lu_g = zhi_lu_related_vec[1];
+                            }
+                            if i_zhi_lu != usize::max_value() {
+                                node_not_computed_vec.retain(|&node|node != n);
+                                node_computed_vec.push(n);
+                                if !zhi_lu_computed_vec.contains(&i_zhi_lu) {
+                                    //计算支路参数
+                                    let u = self.node_vec[n].u;
+                                    let f = self.node_vec[n].f;
+                                    let p = pg_node_vec.iter().find(|&n_pg|n_pg.0 == n).unwrap().1 + self.zhi_lu_vec[i_zhi_lu_g].p - pd_node_vec.iter().find(|&n_pd|n_pd.0 == n).unwrap().1;
+                                    let i = p * 1000.0 / (3.0f64.sqrt() * u * jizu::JI_ZU_P_FACTOR);
+                                    self.zhi_lu_vec[i_zhi_lu].p = p;
+                                    self.zhi_lu_vec[i_zhi_lu].q = jizu::JI_ZU_Q_P * p;
+                                    self.zhi_lu_vec[i_zhi_lu].i = i;
+                                    //计算断路器参数
+                                    let duanluqi = self.get_duanluqi_from_zhiluid(i_zhi_lu).unwrap();
+                                    duanluqi.uab = u;
+                                    duanluqi.ubc = u;
+                                    duanluqi.uca = u;
+                                    duanluqi.ia = i;
+                                    duanluqi.ib = i;
+                                    duanluqi.f = f;
+                                    //将支路从未计算列表移至已计算列表
+                                    zhi_lu_not_computed_vec.retain(|&zhi_lu|zhi_lu != i_zhi_lu);
+                                    zhi_lu_computed_vec.push(i_zhi_lu);
+                                }
+                            }
+                        }
+                        else if node_not_computed_duo_zhi_lu_vec.contains(&n) {
+                            let zhi_lu_related_vec = self.get_zhiluid_group_from_nodeid(n).unwrap();
+                            let mut i_zhi_lu = usize::max_value();
+                            let mut zhi_lu_not_computed_num = 0;
+                            let mut all_zhi_lu_g_p = 0.0f64;
+                            for z in  zhi_lu_related_vec {
+                                if zhi_lu_not_computed_vec.contains(&z) {
+                                    i_zhi_lu = z;
+                                    zhi_lu_not_computed_num += 1;
+                                }
+                                else {
+                                    all_zhi_lu_g_p += self.zhi_lu_vec[z].p;
+                                }
+                            }
+                            node_not_computed_vec.retain(|&node|node != n);
+                            node_computed_vec.push(n);
+                            if zhi_lu_not_computed_num == 1 {
+                                //计算支路参数
+                                let u = self.node_vec[n].u;
+                                let f = self.node_vec[n].f;
+                                let p = pg_node_vec.iter().find(|&n_pg|n_pg.0 == n).unwrap().1 + all_zhi_lu_g_p - pd_node_vec.iter().find(|&n_pd|n_pd.0 == n).unwrap().1;
+                                let i = p * 1000.0 / (3.0f64.sqrt() * u * jizu::JI_ZU_P_FACTOR);
+                                self.zhi_lu_vec[i_zhi_lu].p = p;
+                                self.zhi_lu_vec[i_zhi_lu].q = jizu::JI_ZU_Q_P * p;
+                                self.zhi_lu_vec[i_zhi_lu].i = i;
+                                //计算断路器参数
+                                let duanluqi = self.get_duanluqi_from_zhiluid(i_zhi_lu).unwrap();
+                                duanluqi.uab = u;
+                                duanluqi.ubc = u;
+                                duanluqi.uca = u;
+                                duanluqi.ia = i;
+                                duanluqi.ib = i;
+                                duanluqi.f = f;
+                                //将支路从未计算列表移至已计算列表
+                                zhi_lu_not_computed_vec.retain(|&zhi_lu|zhi_lu != i_zhi_lu);
+                                zhi_lu_computed_vec.push(i_zhi_lu);
+                            }
                         }
                     }
-                }
-                else if node_not_computed_duo_zhi_lu_vec.contains(&n) {
-                    let zhi_lu_related_vec = self.get_zhiluid_group_from_nodeid(n).unwrap();
-                    let mut i_zhi_lu = usize::max_value();
-                    let mut zhi_lu_not_computed_num = 0;
-                    let mut all_zhi_lu_g_p = 0.0f64;
-                    for z in  zhi_lu_related_vec {
-                        if zhi_lu_not_computed_vec.contains(&z) {
-                            i_zhi_lu = z;
-                            zhi_lu_not_computed_num += 1;
-                        }
-                        else {
-                            all_zhi_lu_g_p += self.zhi_lu_vec[z].p;
-                        }
-                    }
-                    node_not_computed_vec.retain(|&node|node != n);
-                    node_computed_vec.push(n);
-                    if zhi_lu_not_computed_num == 1 {
-                        //计算支路参数
-                        let u = self.node_vec[n].u;
-                        let f = self.node_vec[n].f;
-                        let p = pg_node_vec.iter().find(|&n_pg|n_pg.0 == n).unwrap().1 + all_zhi_lu_g_p - pd_node_vec.iter().find(|&n_pd|n_pd.0 == n).unwrap().1;
-                        let i = p * 1000.0 / (3.0f64.sqrt() * u * jizu::JI_ZU_P_FACTOR);
-                        self.zhi_lu_vec[i_zhi_lu].p = p;
-                        self.zhi_lu_vec[i_zhi_lu].q = jizu::JI_ZU_Q_P * p;
-                        self.zhi_lu_vec[i_zhi_lu].i = i;
-                        //计算断路器参数
-                        let duanluqi = self.get_duanluqi_from_zhiluid(i_zhi_lu).unwrap();
-                        duanluqi.uab = u;
-                        duanluqi.ubc = u;
-                        duanluqi.uca = u;
-                        duanluqi.ia = i;
-                        duanluqi.ib = i;
-                        duanluqi.f = f;
-                        //将支路从未计算列表移至已计算列表
-                        zhi_lu_not_computed_vec.retain(|&zhi_lu|zhi_lu != i_zhi_lu);
-                        zhi_lu_computed_vec.push(i_zhi_lu);
-                    }
+                    //6. 根据已知条件计算可计算节点关联的唯一未知参数支路
+                    //7. 将已计算的节点和支路放入已计算列表，并从未计算列表中去除
+                    //8. 继续遍历，直到nodeWeiJiSuanList为空
                 }
             }
-            //6. 根据已知条件计算可计算节点关联的唯一未知参数支路
-            //7. 将已计算的节点和支路放入已计算列表，并从未计算列表中去除
-            //8. 继续遍历，直到nodeWeiJiSuanList为空
         }
+
     }
 
     //计算系统的潮流
@@ -1611,10 +1627,12 @@ impl XiTong {
             let nodeid = self.get_nodeid_from_fuzaiid(fu_zai_id).unwrap();
             let u = self.node_vec[nodeid].u;
             if u != 0.0 && self.fu_zai_vec[fu_zai_id].is_online {
+                self.fu_zai_vec[fu_zai_id].u = u;
                 self.fu_zai_vec[fu_zai_id].i = self.fu_zai_vec[fu_zai_id].p * 1000f64 /(3f64.sqrt() * u * fuzai::FU_ZAI_P_FACTOR);
             }
             else {
                 self.fu_zai_vec[fu_zai_id].is_online = false;
+                self.fu_zai_vec[fu_zai_id].u = 0.0;
                 self.fu_zai_vec[fu_zai_id].p = 0.0;
                 self.fu_zai_vec[fu_zai_id].q = 0.0;
                 self.fu_zai_vec[fu_zai_id].i = 0.0;
@@ -2543,6 +2561,7 @@ impl XiTong {
                             self.is_xiao_sheng = false;
                             self.is_ying_da = false;
                             self.ji_zu_vec[zl.dev_id].common_ji.gu_zhang_lei_xing = jizu::GuZhangLeiXing::YiBan;
+                            self.ji_zu_vec[zl.dev_id].common_ji.zong_he_gu_zhang_bao_jing = true;
                         }
                     }
                     _ => {}
@@ -2561,7 +2580,24 @@ impl XiTong {
     pub fn handle_ji_zu_qi_ta_gu_zhang(&mut self, _zl : &ZhiLing) {
     }
 
-    pub fn eliminate_ji_zu_yi_ban_gu_zhang(&mut self, _zl : &ZhiLing) {
+    pub fn eliminate_ji_zu_yi_ban_gu_zhang(&mut self, zl : &ZhiLing) {
+        match zl.zhi_ling_type {
+            zhiling::ZhiLingType::EliminateYiBanGuZhang(f) => {
+                match f {
+                    zhiling::FaultType::RanYouXieLou => {
+                        if self.is_chai_you_by_id(zl.dev_id) {
+                            self.ji_zu_vec[zl.dev_id].common_ji.ran_you_xie_lou = false;
+                            self.is_xiao_sheng = true;
+                            self.is_ying_da = true;
+                            self.ji_zu_vec[zl.dev_id].common_ji.gu_zhang_lei_xing = jizu::GuZhangLeiXing::Wu;
+                            self.ji_zu_vec[zl.dev_id].common_ji.zong_he_gu_zhang_bao_jing = false;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
     }
 
     pub fn eliminate_ji_zu_yi_ji_gu_zhang(&mut self, _zl : &ZhiLing) {
@@ -2931,17 +2967,18 @@ impl XiTong {
                 self.handle_zhi_ling_result_msg( Err(YingDaErr::JinJiTingJiFail(*zl, String::from(zhiling::JIN_JI_TING_JI_FAIL_DESC), String::from(zhiling:: CAUSE_JIN_JI_TING_JI_FAIL))));
                 return ;
             }
-            _ => {}
-        }
-        let duanluqiid = self.get_duanluqiid_from_jizuid(zl.dev_id).unwrap();
-        if self.duan_lu_qi_vec[duanluqiid].is_on() {
-            match self.duan_lu_qi_vec[duanluqiid].status {
-                duanluqi::DuanLuQiStatus::On {..} => self.duan_lu_qi_vec[duanluqiid].set_off(),
-                _ => {}
+            _ => {
+                let duanluqiid = self.get_duanluqiid_from_jizuid(zl.dev_id).unwrap();
+                if self.duan_lu_qi_vec[duanluqiid].is_on() {
+                    match self.duan_lu_qi_vec[duanluqiid].status {
+                        duanluqi::DuanLuQiStatus::On {..} => self.duan_lu_qi_vec[duanluqiid].set_off(),
+                        _ => {}
+                    }
+                }
+                self.ji_zu_vec[zl.dev_id].common_ji.t_current_range = 0.0;
+                self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::TingJiZanTai;
             }
         }
-        self.ji_zu_vec[zl.dev_id].common_ji.t_current_range = 0.0;
-        self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::TingJiZanTai;
     }
 
     pub fn handle_xiao_sheng(&mut self, zl : &ZhiLing) {
@@ -2949,6 +2986,7 @@ impl XiTong {
             self.handle_zhi_ling_result_msg( Err(YingDaErr::XiaoShengFail(*zl, String::from(zhiling::XIAO_SHENG_FAIL_DESC), String::from(zhiling:: CAUSE_XIAO_SHENG_FAIL))));
         }
         else{
+            self.is_xiao_sheng = true;
             self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
         }
     }
@@ -2958,6 +2996,8 @@ impl XiTong {
             self.handle_zhi_ling_result_msg( Err(YingDaErr::YingDaFail(*zl, String::from(zhiling::XIAO_SHENG_FAIL_DESC), String::from(zhiling:: CAUSE_XIAO_SHENG_FAIL))));
         }
         else{
+            self.is_xiao_sheng = true;
+            self.is_ying_da = true;
             self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
         }
     }

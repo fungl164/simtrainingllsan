@@ -21,90 +21,73 @@ use std::time::Duration;
 use simtraining::jizu::{JiZuCtrl};
 
 fn main() {
-    //机组并联：电站0/1（控制方式半自动---操作部位集控）---机组0（备车--启动--合闸）--负载0（加载）--断路器2/4/32/33（合闸）--机组1（备车--启动--并车)---机组3（备车--启动--合闸）---断路器9并车----机组3(解列---停机）---断路器2解列------机组1(分闸---停机）---机组0（分闸--停机）
-    let mut flow = vec![ZhiLing::from_params(ZhiLingType::BeiChe, simctrl::DevType::JiZu, 0, 0, 0, simctrl::ZhanWeiType::JiaoLian); 26];
+    //机组并联：电站0/1（控制方式半自动---操作部位集控）---机组0（备车--启动--合闸）--负载0（加载）--断路器2/4/32/33（合闸）---机组3（备车--启动--合闸）---断路器9并车----机组3(解列---停机）---断路器2解列---机组0（分闸--停机）
+    let mut flow = vec![ZhiLing::from_params(ZhiLingType::BeiChe, simctrl::DevType::JiZu, 0, 0, 0, simctrl::ZhanWeiType::JiaoLian); 21];
 
-    flow[25].zhi_ling_type = ZhiLingType::OperatingStation(simctrl::OperatingStation::JiKong);
-    flow[25].dev_type = simctrl::DevType::DianZhan;
+    flow[20].zhi_ling_type = ZhiLingType::OperatingStation(simctrl::OperatingStation::JiKong);
+    flow[20].dev_type = simctrl::DevType::DianZhan;
 
-    flow[24].zhi_ling_type = ZhiLingType::CtrlMode(simctrl::CtrlMode::SemiAuto);
-    flow[24].dev_type = simctrl::DevType::DianZhan;
+    flow[19].zhi_ling_type = ZhiLingType::CtrlMode(simctrl::CtrlMode::SemiAuto);
+    flow[19].dev_type = simctrl::DevType::DianZhan;
 
-    flow[23].zhi_ling_type = ZhiLingType::OperatingStation(simctrl::OperatingStation::JiKong);
-    flow[23].dev_type = simctrl::DevType::DianZhan;
-    flow[23].dev_id = 1;
+    flow[18].zhi_ling_type = ZhiLingType::OperatingStation(simctrl::OperatingStation::JiKong);
+    flow[18].dev_type = simctrl::DevType::DianZhan;
+    flow[18].dev_id = 1;
 
-    flow[22].zhi_ling_type = ZhiLingType::CtrlMode(simctrl::CtrlMode::SemiAuto);
-    flow[22].dev_type = simctrl::DevType::DianZhan;
-    flow[22].dev_id = 1;
+    flow[17].zhi_ling_type = ZhiLingType::CtrlMode(simctrl::CtrlMode::SemiAuto);
+    flow[17].dev_type = simctrl::DevType::DianZhan;
+    flow[17].dev_id = 1;
 
-    //机组并联：电站0/1（控制方式半自动---操作部位集控）---机组0（备车--启动--合闸）--负载0（加载）--断路器2/4/32/33（合闸）--机组1（备车--启动--并车)---机组3（备车--启动--合闸）---断路器9并车----机组3(解列---停机）---断路器2解列------机组1(分闸---停机）---机组0（分闸--停机）
-    flow[21].zhi_ling_type = ZhiLingType::BeiChe;
+    //机组并联：电站0/1（控制方式半自动---操作部位集控）---机组0（备车--启动--合闸）--负载0（加载）--断路器2/4/32/33（合闸）---机组3（备车--启动--合闸）---断路器9并车----机组3(解列---停机）---断路器2解列---机组0（分闸--停机）
+    flow[16].zhi_ling_type = ZhiLingType::BeiChe;
 
-    flow[20].zhi_ling_type = ZhiLingType::QiDong;
-
-    flow[19].zhi_ling_type = ZhiLingType::HeZhaBingChe;
-
-    flow[18].zhi_ling_type = ZhiLingType::BianZai(1600.0, 1200.0);
-    flow[18].dev_type = simctrl::DevType::FuZai;
-
-    flow[17].zhi_ling_type = ZhiLingType::HeZhaBingChe;
-    flow[17].dev_type = simctrl::DevType::DuanLuQi;
-    flow[17].dev_id = 2;
-
-    flow[16].zhi_ling_type = ZhiLingType::HeZhaBingChe;
-    flow[16].dev_type = simctrl::DevType::DuanLuQi;
-    flow[16].dev_id = 4;
-
-    flow[15].zhi_ling_type = ZhiLingType::HeZhaBingChe;
-    flow[15].dev_type = simctrl::DevType::DuanLuQi;
-    flow[15].dev_id = 32;
+    flow[15].zhi_ling_type = ZhiLingType::QiDong;
 
     flow[14].zhi_ling_type = ZhiLingType::HeZhaBingChe;
-    flow[14].dev_type = simctrl::DevType::DuanLuQi;
-    flow[14].dev_id = 33;
 
-    //机组并联：电站0/1（控制方式半自动---操作部位集控）---机组0（备车--启动--合闸）--负载0（加载）--断路器2/4/32/33（合闸）--机组1（备车--启动--并车)---机组3（备车--启动--合闸）---断路器9并车----机组3(解列---停机）---断路器2解列------机组1(分闸---停机）---机组0（分闸--停机）
+    flow[13].zhi_ling_type = ZhiLingType::BianZai(1200.0, 900.0);
+    flow[13].dev_type = simctrl::DevType::FuZai;
 
-    flow[13].zhi_ling_type = ZhiLingType::BeiChe;
-    flow[13].dev_id = 1;
-
-    flow[12].zhi_ling_type = ZhiLingType::QiDong;
-    flow[12].dev_id = 1;
+    flow[12].zhi_ling_type = ZhiLingType::HeZhaBingChe;
+    flow[12].dev_type = simctrl::DevType::DuanLuQi;
+    flow[12].dev_id = 2;
 
     flow[11].zhi_ling_type = ZhiLingType::HeZhaBingChe;
-    flow[11].dev_id = 1;
+    flow[11].dev_type = simctrl::DevType::DuanLuQi;
+    flow[11].dev_id = 4;
 
-    flow[10].zhi_ling_type = ZhiLingType::BeiChe;
-    flow[10].dev_id = 3;
+    flow[10].zhi_ling_type = ZhiLingType::HeZhaBingChe;
+    flow[10].dev_type = simctrl::DevType::DuanLuQi;
+    flow[10].dev_id = 32;
 
-    flow[9].zhi_ling_type = ZhiLingType::QiDong;
-    flow[9].dev_id = 3;
+    flow[9].zhi_ling_type = ZhiLingType::HeZhaBingChe;
+    flow[9].dev_type = simctrl::DevType::DuanLuQi;
+    flow[9].dev_id = 33;
 
-    flow[8].zhi_ling_type = ZhiLingType::HeZhaBingChe;
+    //机组并联：电站0/1（控制方式半自动---操作部位集控）---机组0（备车--启动--合闸）--负载0（加载）--断路器2/4/32/33（合闸）---机组3（备车--启动--合闸）---断路器9并车----机组3(解列---停机）---断路器2解列---机组0（分闸--停机）
+    flow[8].zhi_ling_type = ZhiLingType::BeiChe;
     flow[8].dev_id = 3;
 
-    flow[7].zhi_ling_type = ZhiLingType::HeZhaBingChe;
-    flow[7].dev_type = simctrl::DevType::DuanLuQi;
-    flow[7].dev_id = 9;
+    flow[7].zhi_ling_type = ZhiLingType::QiDong;
+    flow[7].dev_id = 3;
 
-    //机组并联：电站0/1（控制方式半自动---操作部位集控）---机组0（备车--启动--合闸）--负载0（加载）--断路器2/4/32/33（合闸）--机组1（备车--启动--并车)---机组3（备车--启动--合闸）---断路器9并车----机组3(解列---停机）---断路器2解列------机组1(分闸---停机）---机组0（分闸--停机）
-
-    flow[6].zhi_ling_type = ZhiLingType::FenZhaJieLie;
+    flow[6].zhi_ling_type = ZhiLingType::HeZhaBingChe;
     flow[6].dev_id = 3;
 
-    flow[5].zhi_ling_type = ZhiLingType::TingJi;
-    flow[5].dev_id = 3;
+    flow[5].zhi_ling_type = ZhiLingType::HeZhaBingChe;
+    flow[5].dev_type = simctrl::DevType::DuanLuQi;
+    flow[5].dev_id = 9;
 
+    //机组并联：电站0/1（控制方式半自动---操作部位集控）---机组0（备车--启动--合闸）--负载0（加载）--断路器2/4/32/33（合闸）---机组3（备车--启动--合闸）---断路器9并车----机组3(解列---停机）---断路器2解列---机组0（分闸--停机）
     flow[4].zhi_ling_type = ZhiLingType::FenZhaJieLie;
-    flow[4].dev_type = simctrl::DevType::DuanLuQi;
-    flow[4].dev_id = 2;
+    flow[4].dev_id = 3;
 
-    flow[3].zhi_ling_type = ZhiLingType::FenZhaJieLie;
-    flow[3].dev_id = 1;
+    flow[3].zhi_ling_type = ZhiLingType::TingJi;
+    flow[3].dev_id = 3;
 
-    flow[2].zhi_ling_type = ZhiLingType::TingJi;
-    flow[2].dev_id = 1;
+    flow[2].zhi_ling_type = ZhiLingType::FenZhaJieLie;
+    flow[2].dev_type = simctrl::DevType::DuanLuQi;
+    flow[2].dev_id = 2;
 
     flow[1].zhi_ling_type = ZhiLingType::FenZhaJieLie;
     flow[1].dev_id = 0;

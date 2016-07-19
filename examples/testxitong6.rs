@@ -112,7 +112,6 @@ fn main() {
     flow[0].zhi_ling_type = ZhiLingType::TingJi;
     flow[0].dev_id = 0;
 
-
     let xt = XiTongThread::new(0, flow);
     let zl = ZhiLingHandler { xt : xt.xt.clone() };
     let mut router_xt = Router::new();
@@ -253,11 +252,22 @@ impl XiTongThread {
                         tick = 0;
                         // println!("uid:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}, bei_che_t:{:?}", i, xt_raw.ji_zu_vec[i].common_ji.current_range, xt_raw.ji_zu_vec[i].common_ji.uab_ext, xt_raw.ji_zu_vec[i].common_ji.zhuan_su, xt_raw.ji_zu_vec[i].common_ji.f_ext, xt_raw.ji_zu_vec[i].common_ji.t_current_range,  xt_raw.ji_zu_vec[i].common_ji.bei_che_t);
                         // println!("uid:{}, 状态:{:?}, u:{}, 转速:{}, f:{}， t_current_range:{:?}, bei_che_t:{:?}, bian_su_t:{:?}, bian_ya_t:{:?}", i, xt_raw.ji_zu_vec[i].common_ji.current_range, xt_raw.ji_zu_vec[i].common_ji.uab_ext, xt_raw.ji_zu_vec[i].common_ji.zhuan_su, xt_raw.ji_zu_vec[i].common_ji.f_ext, xt_raw.ji_zu_vec[i].common_ji.t_current_range,  xt_raw.ji_zu_vec[i].common_ji.bei_che_t,  xt_raw.ji_zu_vec[i].common_ji.bian_su_t,  xt_raw.ji_zu_vec[i].common_ji.bian_ya_t);
-                        println!("电站0-1（uid, 控制方式, 操作部位, 控制方式设置, 操作部位设置, u, p）:\n({:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?})", xt_raw.dian_zhan_vec[0].uid, xt_raw.dian_zhan_vec[0].ctrl_mode, xt_raw.dian_zhan_vec[0].operating_station, xt_raw.dian_zhan_vec[0].ctrl_mode_she_zhi, xt_raw.dian_zhan_vec[0].operating_station_she_zhi, xt_raw.dian_zhan_vec[0].u, xt_raw.dian_zhan_vec[0].p, xt_raw.dian_zhan_vec[1].uid, xt_raw.dian_zhan_vec[1].ctrl_mode, xt_raw.dian_zhan_vec[1].operating_station, xt_raw.dian_zhan_vec[1].ctrl_mode_she_zhi, xt_raw.dian_zhan_vec[1].operating_station_she_zhi, xt_raw.dian_zhan_vec[1].u, xt_raw.dian_zhan_vec[1].p);
-                        println!("机组0-2（uid, current_range, u, f, p, 控制方式, 操作部位）:\n({:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?}, {:?}, {:?}, {:?})", xt_raw.ji_zu_vec[0].uid, xt_raw.ji_zu_vec[0].common_ji.current_range, xt_raw.ji_zu_vec[0].common_ji.uab_ext, xt_raw.ji_zu_vec[0].common_ji.f_ext, xt_raw.ji_zu_vec[0].common_ji.p, xt_raw.ji_zu_vec[0].common_ji.ctrl_mode, xt_raw.ji_zu_vec[0].common_ji.operating_station, xt_raw.ji_zu_vec[1].uid, xt_raw.ji_zu_vec[1].common_ji.current_range, xt_raw.ji_zu_vec[1].common_ji.uab_ext, xt_raw.ji_zu_vec[1].common_ji.f_ext, xt_raw.ji_zu_vec[1].common_ji.p, xt_raw.ji_zu_vec[1].common_ji.ctrl_mode, xt_raw.ji_zu_vec[1].common_ji.operating_station, xt_raw.ji_zu_vec[3].uid, xt_raw.ji_zu_vec[3].common_ji.current_range, xt_raw.ji_zu_vec[3].common_ji.uab_ext, xt_raw.ji_zu_vec[3].common_ji.f_ext, xt_raw.ji_zu_vec[3].common_ji.p, xt_raw.ji_zu_vec[3].common_ji.ctrl_mode, xt_raw.ji_zu_vec[3].common_ji.operating_station);
-                        println!("节点1-3,7-9（uid, u, f, 状态）:\n({:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?})", xt_raw.node_vec[1].uid, xt_raw.node_vec[1].u, xt_raw.node_vec[1].f, xt_raw.node_vec[1].status, xt_raw.node_vec[2].uid, xt_raw.node_vec[2].u, xt_raw.node_vec[2].f, xt_raw.node_vec[2].status, xt_raw.node_vec[3].uid, xt_raw.node_vec[3].u, xt_raw.node_vec[3].f, xt_raw.node_vec[3].status, xt_raw.node_vec[7].uid, xt_raw.node_vec[7].u, xt_raw.node_vec[7].f, xt_raw.node_vec[7].status, xt_raw.node_vec[8].uid, xt_raw.node_vec[8].u, xt_raw.node_vec[8].f, xt_raw.node_vec[8].status, xt_raw.node_vec[9].uid, xt_raw.node_vec[9].u, xt_raw.node_vec[9].f, xt_raw.node_vec[9].status);
-                        println!("支路0,2,5,19,20（uid, p, i, 状态）:\n({:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?})\n({:?}, {:?}, {:?}, {:?})", xt_raw.zhi_lu_vec[0].uid, xt_raw.zhi_lu_vec[0].p, xt_raw.zhi_lu_vec[0].i, xt_raw.zhi_lu_vec[0].status, xt_raw.zhi_lu_vec[2].uid, xt_raw.zhi_lu_vec[2].p, xt_raw.zhi_lu_vec[2].i, xt_raw.zhi_lu_vec[2].status, xt_raw.zhi_lu_vec[5].uid, xt_raw.zhi_lu_vec[5].p, xt_raw.zhi_lu_vec[5].i, xt_raw.zhi_lu_vec[5].status, xt_raw.zhi_lu_vec[19].uid, xt_raw.zhi_lu_vec[19].p, xt_raw.zhi_lu_vec[19].i, xt_raw.zhi_lu_vec[19].status, xt_raw.zhi_lu_vec[20].uid, xt_raw.zhi_lu_vec[20].p, xt_raw.zhi_lu_vec[20].i, xt_raw.zhi_lu_vec[20].status);
-                        println!("断路器0,1,2,4,6,9,32,33（uid, 状态）:\n({:?}, {:?})  ({:?}, {:?})  ({:?}, {:?})  ({:?}, {:?})\n({:?}, {:?})  ({:?}, {:?})  ({:?}, {:?})  ({:?}, {:?})\n", xt_raw.duan_lu_qi_vec[0].uid, xt_raw.duan_lu_qi_vec[0].is_on(), xt_raw.duan_lu_qi_vec[1].uid, xt_raw.duan_lu_qi_vec[1].is_on(), xt_raw.duan_lu_qi_vec[2].uid, xt_raw.duan_lu_qi_vec[2].is_on(), xt_raw.duan_lu_qi_vec[4].uid, xt_raw.duan_lu_qi_vec[4].is_on(), xt_raw.duan_lu_qi_vec[6].uid, xt_raw.duan_lu_qi_vec[6].is_on(), xt_raw.duan_lu_qi_vec[9].uid, xt_raw.duan_lu_qi_vec[9].is_on(), xt_raw.duan_lu_qi_vec[32].uid, xt_raw.duan_lu_qi_vec[32].is_on(), xt_raw.duan_lu_qi_vec[33].uid, xt_raw.duan_lu_qi_vec[33].is_on());
+                        println!("电站（uid, 控制方式, 操作部位, 控制方式设置, 操作部位设置）:");
+                        for i in 0..simctrl::ZONG_SHU_DIAN_ZHAN {
+                            println!("({:?}, {:?}, {:?}, {:?}, {:?})", xt_raw.dian_zhan_vec[i].uid, xt_raw.dian_zhan_vec[i].ctrl_mode, xt_raw.dian_zhan_vec[i].operating_station, xt_raw.dian_zhan_vec[i].ctrl_mode_she_zhi, xt_raw.dian_zhan_vec[i].operating_station_she_zhi);
+                        }
+                        println!("机组（uid, 当前运行状态, u, f, p）:");
+                        for i in 0..(simctrl::ZONG_SHU_JI_ZU) {
+                            println!("({:?}, {:?}, {:?}, {:?}, {:?})", xt_raw.ji_zu_vec[i].uid, xt_raw.ji_zu_vec[i].common_ji.current_range, xt_raw.ji_zu_vec[i].common_ji.uab_ext, xt_raw.ji_zu_vec[i].common_ji.f_ext, xt_raw.ji_zu_vec[i].common_ji.p, );
+                        }
+                        println!("断路器（uid, 状态）:");
+                        for i in 0..simctrl::ZONG_SHU_DUAN_LU_QI {
+                            println!("({:?}, {:?})", xt_raw.duan_lu_qi_vec[i].uid, xt_raw.duan_lu_qi_vec[i].is_on());
+                        }
+                        println!("负载（uid, u, p, 是否在网）:");
+                        for i in 0..simctrl::ZONG_SHU_FU_ZAI {
+                            println!("({:?}, {:?}, {:?}, {:?})", xt_raw.fu_zai_vec[i].uid, xt_raw.fu_zai_vec[i].u, xt_raw.fu_zai_vec[i].p, xt_raw.fu_zai_vec[i].is_online);
+                        }
                     }
                 }
                 thread::sleep(Duration::from_millis(simctrl::FANG_ZHEN_BU_CHANG as u64));

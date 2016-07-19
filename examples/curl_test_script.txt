@@ -99,3 +99,24 @@ curl -X POST --header 'Content-Type: application/json' --header 'Accept: applica
 机组DG1停机：
 curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"TingJi":[]},"dev_type":{"JiZu":[]},"dev_id":0,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
 其他机组和电站类似
+
+岸电接通：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"AnDianOn":[]},"dev_type":{"AnDian":[]},"dev_id":9,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+岸电停：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"AnDianOff":[]},"dev_type":{"AnDian":[]},"dev_id":9,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+岸电合闸：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"HeZhaBingChe":[]},"dev_type":{"AnDian":[]},"dev_id":9,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+岸电分闸：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"FenZhaJieLie":[]},"dev_type":{"AnDian":[]},"dev_id":9,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"JiaoLian":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+燃油泄露：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"GenerateYiBanGuZhang":{"RanYouXieLou":[]}},"dev_type":{"JiZu":[]},"dev_id":0,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"Internal":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+燃油泄露消除：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"EliminateYiBanGuZhang":{"RanYouXieLou":[]}},"dev_type":{"JiZu":[]},"dev_id":0,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"Internal":[]}}' 'http://localhost:3000/api/v1/zhiling'
+
+应答：
+curl -X POST --header 'Content-Type: application/json' --header 'Accept: application/json' -d '{"zhi_ling_type":{"YingDa":[]},"dev_type":{"JiZu":[]},"dev_id":0,"actor_id":0,"zhan_wei_id":0,"zhan_wei_type":{"Internal":[]}}' 'http://localhost:3000/api/v1/zhiling'

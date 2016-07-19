@@ -169,7 +169,7 @@ impl ZhiLing {
     }
     pub fn zhi_ling_example_handler(_: &mut Request) -> IronResult<Response> {
         let mut z = ZhiLing::new();
-        z.zhi_ling_type = ZhiLingType::BianZai(150.0, 150.0);
+        z.zhi_ling_type = ZhiLingType::GenerateYiBanGuZhang(FaultType::RanYouXieLou);
         z.dev_type = simctrl::DevType::FuZai;
         z.dev_id = 0;
         z.actor_id = 0;
@@ -181,7 +181,7 @@ impl ZhiLing {
     }
     pub fn zhi_ling_example_pretty_handler(_: &mut Request) -> IronResult<Response> {
         let mut z = ZhiLing::new();
-        z.zhi_ling_type = ZhiLingType::BianZai(150.0, 150.0);
+        z.zhi_ling_type = ZhiLingType::GenerateYiBanGuZhang(FaultType::RanYouXieLou);
         z.dev_type = simctrl::DevType::FuZai;
         z.dev_id = 0;
         z.actor_id = 0;
