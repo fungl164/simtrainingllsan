@@ -21,8 +21,8 @@ mount = "^0.1.0"
 staticfile = "^0.2.0"
 diesel = { git = "https://github.com/diesel-rs/diesel.git", features = ["large-tables"] }
 diesel_codegen = { git = "https://github.com/diesel-rs/diesel.git", default-features = false, features = ["nightly", "postgres"] }
-dotenv = "^0.8.0"
-dotenv_macros = "^0.8.0"
+dotenv = "^0.8"
+dotenv_macros = "^0.8"
 # rustless = "^0.7"
 # rustc-serialize = "^0.3"
 # valico = "^0.8"

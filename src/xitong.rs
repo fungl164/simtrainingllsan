@@ -1817,35 +1817,28 @@ impl XiTong {
     pub fn is_zhi_ling_valid(&mut self, zl : &ZhiLing) -> bool {
         //let zhan_wei_type = zhiLing.zhan_wei_type;
         if !self.is_dev_id_valid(zl.dev_id, zl.dev_type) {
-            self.handle_zhi_ling_result_msg(Err(zhiling::YingDaErr::IdNotMatch(*zl, String::from(zhiling::ID_NOT_MATCH_DESC), String::from(zhiling::CAUSE_ID_NOT_MATCH))));
             return false;
         }
         match zl.zhan_wei_type {
             simctrl::ZhanWeiType::Admin | simctrl::ZhanWeiType::JiaoLian | simctrl::ZhanWeiType::Internal => {
-                self.handle_zhi_ling_result_msg(Ok(zhiling::YingDaType::Valid(*zl)));
                 return true;
             }
             _ => {
                 match zl.dev_type {
                     simctrl::DevType::JiZu => {
                         if zl.zhan_wei_type == simctrl::ZhanWeiType::JiPang {
-                            self.handle_zhi_ling_result_msg(Ok(zhiling::YingDaType::Valid(*zl)));
                             return true;
                         }
                         else if zl.zhan_wei_type == simctrl::ZhanWeiType::ZhuKongZhiPing && self.ji_zu_vec[zl.dev_id].common_ji.operating_station == simctrl::OperatingStation::Remote {
-                            self.handle_zhi_ling_result_msg(Ok(zhiling::YingDaType::Valid(*zl)));
                             return true;
                         }
                         else if (zl.zhan_wei_type == simctrl::ZhanWeiType::DianZhanJianKongTai || zl.zhan_wei_type == simctrl::ZhanWeiType::JiZuKongZhiQi || zl.zhan_wei_type == simctrl::ZhanWeiType::DianZhanKongZhiQi) && self.ji_zu_vec[zl.dev_id].common_ji.operating_station == simctrl::OperatingStation::Remote && self.get_dianzhan_from_jizuid(zl.dev_id).unwrap().operating_station == simctrl::OperatingStation::Local && ( self.get_dianzhan_from_jizuid(zl.dev_id).unwrap().ctrl_mode == simctrl::CtrlMode::SemiAuto || self.get_dianzhan_from_jizuid(zl.dev_id).unwrap().ctrl_mode == simctrl::CtrlMode::Auto ) {
-                            self.handle_zhi_ling_result_msg(Ok(zhiling::YingDaType::Valid(*zl)));
                             return true;
                         }
                         else if (zl.zhan_wei_type == simctrl::ZhanWeiType::JiKongTai || zl.zhan_wei_type == simctrl::ZhanWeiType::BeiYongJiKongTai) && self.ji_zu_vec[zl.dev_id].common_ji.operating_station == simctrl::OperatingStation::Remote && self.get_dianzhan_from_jizuid(zl.dev_id).unwrap().operating_station == simctrl::OperatingStation::JiKong && ( self.get_dianzhan_from_jizuid(zl.dev_id).unwrap().ctrl_mode == simctrl::CtrlMode::SemiAuto || self.get_dianzhan_from_jizuid(zl.dev_id).unwrap().ctrl_mode == simctrl::CtrlMode::Auto ) {
-                            self.handle_zhi_ling_result_msg(Ok(zhiling::YingDaType::Valid(*zl)));
                             return true;
                         }
                         else {
-                            self.handle_zhi_ling_result_msg( Err(YingDaErr::CtrlModeAndOperatingStationFail(*zl, String::from(zhiling::CTRL_MODE_AND_OPERATING_STATION_FAIL_DESC), String::from(zhiling::CAUSE_CTRL_MODE_AND_OPERATING_STATION_INVALID))));
                             return false;
                         }
                     }
@@ -1853,7 +1846,7 @@ impl XiTong {
                         let mut dian_zhan_id = usize::max_value();
                         if zl.dev_type == simctrl::DevType::DuanLuQi {
                             if self.is_an_dian_duan_lu_qi(zl.dev_id) {
-                                self.handle_zhi_ling_result_msg(Ok(zhiling::YingDaType::Valid(*zl)));
+                                return true;
                             }
                             dian_zhan_id = self.get_dianzhanid_from_duanluqiid(zl.dev_id).unwrap();
                         }
@@ -1861,28 +1854,22 @@ impl XiTong {
                             dian_zhan_id = zl.dev_id;
                         }
                         if zl.zhan_wei_type == simctrl::ZhanWeiType::JiPang || zl.zhan_wei_type == simctrl::ZhanWeiType::ZhuKongZhiPing {
-                            self.handle_zhi_ling_result_msg(Ok(zhiling::YingDaType::Valid(*zl)));
                             return true;
                         }
                         else if (zl.zhan_wei_type == simctrl::ZhanWeiType::DianZhanJianKongTai || zl.zhan_wei_type == simctrl::ZhanWeiType::JiZuKongZhiQi || zl.zhan_wei_type == simctrl::ZhanWeiType::DianZhanKongZhiQi) && self.dian_zhan_vec[dian_zhan_id].operating_station == simctrl::OperatingStation::Local && ( self.dian_zhan_vec[dian_zhan_id].ctrl_mode == simctrl::CtrlMode::SemiAuto || self.dian_zhan_vec[dian_zhan_id].ctrl_mode == simctrl::CtrlMode::Auto ) {
-                            self.handle_zhi_ling_result_msg(Ok(zhiling::YingDaType::Valid(*zl)));
                             return true;
                         }
                         else if (zl.zhan_wei_type == simctrl::ZhanWeiType::JiKongTai || zl.zhan_wei_type == simctrl::ZhanWeiType::BeiYongJiKongTai) &&  self.dian_zhan_vec[dian_zhan_id].operating_station == simctrl::OperatingStation::JiKong && ( self.dian_zhan_vec[dian_zhan_id].ctrl_mode == simctrl::CtrlMode::SemiAuto || self.dian_zhan_vec[dian_zhan_id].ctrl_mode == simctrl::CtrlMode::Auto ) {
-                            self.handle_zhi_ling_result_msg(Ok(zhiling::YingDaType::Valid(*zl)));
                             return true;
                         }
                         else {
-                            self.handle_zhi_ling_result_msg( Err(YingDaErr::CtrlModeAndOperatingStationFail(*zl, String::from(zhiling::CTRL_MODE_AND_OPERATING_STATION_FAIL_DESC), String::from(zhiling::CAUSE_CTRL_MODE_AND_OPERATING_STATION_INVALID))));
                             return false;
                         }
                     }
                     simctrl::DevType::FuZai | simctrl::DevType::AnDian => {
-                        self.handle_zhi_ling_result_msg(Ok(zhiling::YingDaType::Valid(*zl)));
                         return true;
                     }
                     _ => {
-                        self.handle_zhi_ling_result_msg(Err(YingDaErr::CtrlModeAndOperatingStationFail(*zl, String::from(zhiling::CTRL_MODE_AND_OPERATING_STATION_FAIL_DESC), String::from(zhiling::CAUSE_CTRL_MODE_AND_OPERATING_STATION_INVALID) )));
                         return false;
                     }
                 }
@@ -1890,209 +1877,274 @@ impl XiTong {
         }
     }
 
-    pub fn handle_zhi_ling(&mut self, zl : &ZhiLing) {
-        self.handle_zhi_ling_result_msg(Ok(YingDaType::ACK(*zl)));
+    pub fn handle_zhi_ling(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
+        // self.handle_zhi_ling_result_msg(Ok(YingDaType::ACK(*zl)));
         match zl.dev_type {
             simctrl::DevType::JiZu => {
                 match zl.zhi_ling_type {
-                    ZhiLingType::BeiChe => self.handle_bei_che(zl),
-                    ZhiLingType::OperatingStation(simctrl::OperatingStation::JiPang) | ZhiLingType::OperatingStation(simctrl::OperatingStation::Remote) => self.handle_operating_station(zl),
-                    ZhiLingType::Prio => self.handle_prio(zl),
-                    ZhiLingType::GenerateYiBanGuZhang(..) => self.handle_ji_zu_yi_ban_gu_zhang(zl),
-                    ZhiLingType::EliminateYiBanGuZhang(..) => self.eliminate_ji_zu_yi_ban_gu_zhang(zl),
+                    ZhiLingType::BeiChe => return self.handle_bei_che(zl),
+                    ZhiLingType::OperatingStation(simctrl::OperatingStation::JiPang) | ZhiLingType::OperatingStation(simctrl::OperatingStation::Remote) => return self.handle_operating_station(zl),
+                    ZhiLingType::Prio => return self.handle_prio(zl),
+                    ZhiLingType::GenerateYiBanGuZhang(..) => return self.handle_ji_zu_yi_ban_gu_zhang(zl),
+                    ZhiLingType::EliminateYiBanGuZhang(..) => return self.eliminate_ji_zu_yi_ban_gu_zhang(zl),
 
-                    ZhiLingType::GenerateYiJiGuZhang(..) => self.handle_ji_zu_yi_ji_gu_zhang(zl),
-                    ZhiLingType::EliminateYiJiGuZhang(..) => self.eliminate_ji_zu_yi_ji_gu_zhang(zl),
+                    ZhiLingType::GenerateYiJiGuZhang(..) => return self.handle_ji_zu_yi_ji_gu_zhang(zl),
+                    ZhiLingType::EliminateYiJiGuZhang(..) => return self.eliminate_ji_zu_yi_ji_gu_zhang(zl),
 
-                    ZhiLingType::GenerateErJiGuZhang(..) => self.handle_ji_zu_er_ji_gu_zhang(zl),
-                    ZhiLingType::EliminateErJiGuZhang(..) => self.eliminate_ji_zu_er_ji_gu_zhang(zl),
+                    ZhiLingType::GenerateErJiGuZhang(..) => return self.handle_ji_zu_er_ji_gu_zhang(zl),
+                    ZhiLingType::EliminateErJiGuZhang(..) => return self.eliminate_ji_zu_er_ji_gu_zhang(zl),
 
-                    ZhiLingType::GenerateQiTaGuZhang(..) => self.handle_ji_zu_qi_ta_gu_zhang(zl),
-                    ZhiLingType::EliminateQiTaGuZhang(..) => self.eliminate_ji_zu_qi_ta_gu_zhang(zl),
+                    ZhiLingType::GenerateQiTaGuZhang(..) => return self.handle_ji_zu_qi_ta_gu_zhang(zl),
+                    ZhiLingType::EliminateQiTaGuZhang(..) => return self.eliminate_ji_zu_qi_ta_gu_zhang(zl),
 
                     ZhiLingType::JinJiTingJi => {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_jin_ji_ting_ji(zl);
+                            return self.handle_jin_ji_ting_ji(zl);
+                        }
+                        else {
+                            return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)));
                         }
                     }
                     ZhiLingType::QiDong => {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_qi_dong(zl);
+                            return self.handle_qi_dong(zl);
+                        }
+                        else {
+                            return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)));
                         }
                     }
                     ZhiLingType::TingJi =>  {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_ting_ji(zl);
+                            return self.handle_ting_ji(zl);
+                        }
+                        else {
+                            return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)));
                         }
                     }
                     ZhiLingType::TouRu =>  {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_tou_ru(zl);
+                            return self.handle_tou_ru(zl);
+                        }
+                        else {
+                            return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)));
                         }
                     }
                     ZhiLingType::TuiChu => {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_tui_chu(zl);
+                            return self.handle_tui_chu(zl);
+                        }
+                        else {
+                            return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)));
                         }
                     }
                     ZhiLingType::HeZhaBingChe =>  {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_he_zha_bing_che(zl);
+                            return self.handle_he_zha_bing_che(zl);
+                        }
+                        else {
+                            return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)));
                         }
                     }
                     ZhiLingType::FenZhaJieLie =>  {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_fen_zha_jie_lie(zl);
+                            return self.handle_fen_zha_jie_lie(zl);
+                        }
+                        else {
+                            return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)));
                         }
                     }
                     ZhiLingType::BianSu(..) =>  {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_bian_su(zl);
+                            return self.handle_bian_su(zl);
+                        }
+                        else {
+                            return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)));
                         }
                     }
                     ZhiLingType::BianYa(..) =>  {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_bian_ya(zl);
+                            return self.handle_bian_ya(zl);
+                        }
+                        else {
+                            return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)));
                         }
                     }
                     ZhiLingType::XiaoSheng =>  {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_xiao_sheng(zl);
+                            return self.handle_xiao_sheng(zl);
+                        }
+                        else {
+                            return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)));
                         }
                     }
                     ZhiLingType::YingDa =>  {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_ying_da(zl);
+                            return self.handle_ying_da(zl);
+                        }
+                        else {
+                            return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)));
                         }
                     }
 
-                    _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)))),
+                    _ => return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID))),
                 }
             }
             simctrl::DevType::DianZhan => {
                 match zl.zhi_ling_type {
-                    ZhiLingType::OperatingStation(simctrl::OperatingStation::Local) | ZhiLingType::OperatingStation(simctrl::OperatingStation::JiKong) => self.handle_operating_station(zl),
-                    ZhiLingType::CtrlMode(..) => self.handle_ctrl_mode(zl),
-                    ZhiLingType::Prio => self.handle_prio(zl),
+                    ZhiLingType::OperatingStation(simctrl::OperatingStation::Local) | ZhiLingType::OperatingStation(simctrl::OperatingStation::JiKong) => return self.handle_operating_station(zl),
+                    ZhiLingType::CtrlMode(..) => return self.handle_ctrl_mode(zl),
+                    ZhiLingType::Prio => return self.handle_prio(zl),
 
                     ZhiLingType::XiaoSheng => {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_xiao_sheng(zl);
+                            return self.handle_xiao_sheng(zl);
+                        }
+                        else {
+                            return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)));
                         }
                     }
                     ZhiLingType::YingDa =>  {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_ying_da(zl);
+                            return self.handle_ying_da(zl);
+                        }
+                        else {
+                            return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)));
                         }
                     }
 
-                    _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)))),
+                    _ => Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID))),
                 }
             }
             simctrl::DevType::DuanLuQi => {
                 match zl.zhi_ling_type {
                     ZhiLingType::HeZhaBingChe => {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_he_zha_bing_che_duan_lu_qi(zl);
+                            return self.handle_he_zha_bing_che_duan_lu_qi(zl);
+                        }
+                        else {
+                            return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)));
                         }
                     }
                     ZhiLingType::FenZhaJieLie => {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_fen_zha_jie_lie_duan_lu_qi(zl);
+                            return self.handle_fen_zha_jie_lie_duan_lu_qi(zl);
+                        }
+                        else {
+                            return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)));
                         }
                     }
 
                     ZhiLingType::XiaoSheng => {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_xiao_sheng(zl);
+                            return self.handle_xiao_sheng(zl);
+                        }
+                        else {
+                            return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)));
                         }
                     }
                     ZhiLingType::YingDa => {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_ying_da(zl);
+                            return self.handle_ying_da(zl);
+                        }
+                        else {
+                            return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)));
                         }
                     }
 
-                    _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)))),
+                    _ => return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID))),
                 }
             }
             simctrl::DevType::AnDian => {
                 match zl.zhi_ling_type {
-                    ZhiLingType::AnDianOn => self.handle_an_dian_on(zl),
-                    ZhiLingType::AnDianOff => self.handle_an_dian_off(zl),
+                    ZhiLingType::AnDianOn => return self.handle_an_dian_on(zl),
+                    ZhiLingType::AnDianOff => return self.handle_an_dian_off(zl),
                     ZhiLingType::HeZhaBingChe => {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_an_dian_he_zha(zl);
+                            return self.handle_an_dian_he_zha(zl);
+                        }
+                        else {
+                            return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)));
                         }
                     }
                     ZhiLingType::FenZhaJieLie => {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_an_dian_fen_zha(zl);
+                            return self.handle_an_dian_fen_zha(zl);
+                        }
+                        else {
+                            return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)));
                         }
                     }
 
                     ZhiLingType::XiaoSheng => {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_xiao_sheng(zl);
+                            return self.handle_xiao_sheng(zl);
+                        }
+                        else {
+                            return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)));
                         }
                     }
                     ZhiLingType::YingDa => {
                         if self.is_zhi_ling_valid(zl) {
-                            self.handle_ying_da(zl);
+                            return self.handle_ying_da(zl);
+                        }
+                        else {
+                            return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)));
                         }
                     }
 
-                    _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)))),
+                    _ => return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID))),
                 }
             }
             simctrl::DevType::FuZai => {
                 match zl.zhi_ling_type {
-                    ZhiLingType::BianZai(..) => self.handle_bian_zai(zl),
-                    ZhiLingType::ZhongZaiJiaZai(..) => self.handle_zhong_zai_jia_zai(zl),
+                    ZhiLingType::BianZai(..) => return self.handle_bian_zai(zl),
+                    ZhiLingType::ZhongZaiJiaZai(..) => return self.handle_zhong_zai_jia_zai(zl),
 
-                    _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)))),
+                    _ => return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID))),
                 }
             }
 
             simctrl::DevType::Wu => {
                 match zl.zhi_ling_type {
-                    ZhiLingType::YueKong => self.handle_yue_kong(zl),
+                    ZhiLingType::YueKong => return self.handle_yue_kong(zl),
 
-                    _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)))),
+                    _ => return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID))),
                 }
             }
-            _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)))),
+            _ => return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID))),
         }
     }
 
-    pub fn handle_zhi_ling_result_msg(&mut self, _result : Result<YingDaType, YingDaErr>) {
+    // pub fn handle_zhi_ling_result_msg(&mut self, _result : Result<YingDaType, YingDaErr>) {
+    //
+    // }
 
-    }
-
-    pub fn handle_bei_che(&mut self, zl : &ZhiLing) {
+    pub fn handle_bei_che(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
         match self.ji_zu_vec[zl.dev_id].common_ji.current_range {
             jizu::JiZuRangeLeiXing::TingJi => {
                 self.ji_zu_vec[zl.dev_id].common_ji.t_current_range = 0.0;
                 self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::BeiCheZanTai;
+                return Ok(YingDaType::Success(*zl));
             },
-            _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::BeiCheFail(*zl, String::from(zhiling::BEI_CHE_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_1)))),
+            _ => return Err(YingDaErr::BeiCheFail(*zl, String::from(zhiling::BEI_CHE_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_1))),
         }
     }
-    pub fn handle_qi_dong(&mut self, zl : &ZhiLing) {
+    pub fn handle_qi_dong(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
         if self.get_duanluqi_from_jizuid(zl.dev_id).unwrap().is_off() {
             match self.ji_zu_vec[zl.dev_id].common_ji.current_range {
                 jizu::JiZuRangeLeiXing::BeiCheWanBi => {
                     self.ji_zu_vec[zl.dev_id].common_ji.t_current_range = 0.0;
                     self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::QiDong;
+                    return Ok(YingDaType::Success(*zl));
                 }
-                _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::QiDongFail(*zl,  String::from(zhiling::QI_DONG_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_2)))),
+                _ => return Err(YingDaErr::QiDongFail(*zl,  String::from(zhiling::QI_DONG_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_2))),
             }
         }
         else {
-            self.handle_zhi_ling_result_msg( Err(YingDaErr::QiDongFail(*zl, String::from(zhiling::QI_DONG_FAIL_DESC),  String::from(zhiling::CAUSE_DUAN_LU_QI_BI_HE_HUO_GU_ZHANG))));
+            return Err(YingDaErr::QiDongFail(*zl, String::from(zhiling::QI_DONG_FAIL_DESC),  String::from(zhiling::CAUSE_DUAN_LU_QI_BI_HE_HUO_GU_ZHANG)));
         }
     }
-    pub fn handle_he_zha_bing_che(&mut self, zl : &ZhiLing) {
+    pub fn handle_he_zha_bing_che(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
         if self.get_duanluqi_from_jizuid(zl.dev_id).unwrap().is_off() {
             let duanluqi_id = self.get_duanluqiid_from_jizuid(zl.dev_id).unwrap();
             let mut xt_temp = self.clone();
@@ -2117,9 +2169,9 @@ impl XiTong {
                            duanluqi::DuanLuQiStatus::Off{..} => self.duan_lu_qi_vec[duanluqi_id].set_on(),
                            duanluqi::DuanLuQiStatus::On{..} => {},
                        }
-                       self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                       return Ok(YingDaType::Success(*zl));
                     }
-                    _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling:: CAUSE_JI_ZU_RANGE_DISMATCH_6)))),
+                    _ => return Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling:: CAUSE_JI_ZU_RANGE_DISMATCH_6))),
                 }
             }
             //若不为空则为并车
@@ -2136,7 +2188,10 @@ impl XiTong {
                                duanluqi::DuanLuQiStatus::Off{..} => self.duan_lu_qi_vec[duanluqi_id].set_on(),
                                duanluqi::DuanLuQiStatus::On{..} => {},
                            }
-                           self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                           return Ok(YingDaType::Success(*zl));
+                        }
+                        else {
+                            return Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_7)));
                         }
                     }
                     //否则自动合闸
@@ -2148,54 +2203,57 @@ impl XiTong {
                        //设定待并机组频率为电网频率+JI_ZU_BING_CHE_PIN_LV_DELTA
                        let f_delta = self.ji_zu_vec[ji_zu_vec_bing_lian_temp[0]].common_ji.f_ext + jizu::JI_ZU_BING_CHE_PIN_LV_DELTA - self.ji_zu_vec[zl.dev_id].common_ji.f_ext;
                        self.ji_zu_vec[zl.dev_id].set_bian_pin_params(f_delta, false);
-                       self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                       return Ok(YingDaType::Success(*zl));
                     }
                 }
                 else {
                     //如果有机组不处于稳态，则报错
-                    self.handle_zhi_ling_result_msg( Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_6))));
+                    return Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_6)));
                 }
             }
 
         }
         else {
-            self.handle_zhi_ling_result_msg( Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling::CAUSE_DUAN_LU_QI_BI_HE_HUO_GU_ZHANG))));
+            return Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling::CAUSE_DUAN_LU_QI_BI_HE_HUO_GU_ZHANG)));
         }
     }
-    pub fn handle_ting_ji(&mut self, zl : &ZhiLing) {
+    pub fn handle_ting_ji(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
         if self.get_duanluqi_from_jizuid(zl.dev_id).unwrap().is_off() {
             match self.ji_zu_vec[zl.dev_id].common_ji.current_range {
                 jizu::JiZuRangeLeiXing::Wen | jizu::JiZuRangeLeiXing::BianSu | jizu::JiZuRangeLeiXing::BianYa => {
                     self.ji_zu_vec[zl.dev_id].common_ji.t_current_range = 0.0;
                     self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::TingJiZanTai;
+                    return Ok(YingDaType::Success(*zl));
                 }
-                _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::BeiCheFail(*zl,  String::from(zhiling::TING_JI_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_3)))),
+                _ => return Err(YingDaErr::BeiCheFail(*zl,  String::from(zhiling::TING_JI_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_3))),
             }
         }
         else {
-            self.handle_zhi_ling_result_msg( Err(YingDaErr::TingJiFail(*zl, String::from(zhiling::TING_JI_FAIL_DESC),  String::from(zhiling::CAUSE_DUAN_LU_QI_BI_HE_HUO_GU_ZHANG))));
+            return Err(YingDaErr::TingJiFail(*zl, String::from(zhiling::TING_JI_FAIL_DESC),  String::from(zhiling::CAUSE_DUAN_LU_QI_BI_HE_HUO_GU_ZHANG)));
         }
     }
 
-    pub fn handle_yue_kong(&mut self, zl : &ZhiLing) {
+    pub fn handle_yue_kong(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
         self.yue_kong = true;
-        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+        return Ok(YingDaType::Success(*zl));
     }
 
-    pub fn handle_tou_ru(&mut self, _zl : &ZhiLing) {
+    pub fn handle_tou_ru(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
+        return Ok(YingDaType::Success(*zl));
     }
 
-    pub fn handle_tui_chu(&mut self, _zl : &ZhiLing) {
+    pub fn handle_tui_chu(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
+        return Ok(YingDaType::Success(*zl));
     }
 
-    pub fn handle_he_zha_bing_che_duan_lu_qi(&mut self, zl : &ZhiLing) {
+    pub fn handle_he_zha_bing_che_duan_lu_qi(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
         if self.duan_lu_qi_vec[zl.dev_id].is_off() {
             let duanluqi_id = zl.dev_id;
             let mut xt_temp = self.clone();
             xt_temp.duan_lu_qi_vec[duanluqi_id].set_on();
             xt_temp.update_node_group_vec();
             if xt_temp.is_hui_lu() {
-                self.handle_zhi_ling_result_msg( Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling:: CAUSE_XI_TONG_HUI_LU_EXIST))));
+                return Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling:: CAUSE_XI_TONG_HUI_LU_EXIST)));
             }
             else {
                 // let ji_zu_vec_bing_lian_temp : Vec<usize> = xt_temp.get_jizuid_vec_bing_lian_from_id(zl.dev_id);
@@ -2211,9 +2269,9 @@ impl XiTong {
                 if jizu_vec_vec_bing_che_len == 2 {
                     if jizu_vec_vec_bing_che[0].len()==0 || jizu_vec_vec_bing_che[1].len()==0 {
                         self.duan_lu_qi_vec[duanluqi_id].set_on();
-                        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
-                        // self.update_node_group_vec();
                         self.compute_xi_tong_pf();
+                        return Ok(YingDaType::Success(*zl));
+                        // self.update_node_group_vec();
                     }
                     //如果两组中有一个元素个数为1，另一个>=1，则为并车
                     else if jizu_vec_vec_bing_che[0].len()==1 && jizu_vec_vec_bing_che[1].len()>=1 {
@@ -2233,7 +2291,10 @@ impl XiTong {
                                        duanluqi::DuanLuQiStatus::Off{..} => self.duan_lu_qi_vec[duanluqi_id].set_on(),
                                        duanluqi::DuanLuQiStatus::On{..} => {},
                                    }
-                                   self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                                   return Ok(YingDaType::Success(*zl));
+                                }
+                                else {
+                                    return Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_7)));
                                 }
                             }
                             //否则自动合闸
@@ -2245,12 +2306,12 @@ impl XiTong {
                                //设定待并机组频率为电网频率+JI_ZU_BING_CHE_PIN_LV_DELTA
                                let f_delta = self.ji_zu_vec[jizuid].common_ji.f_ext + jizu::JI_ZU_BING_CHE_PIN_LV_DELTA - self.ji_zu_vec[jizuid].common_ji.f_ext;
                                self.ji_zu_vec[jizuid].set_bian_pin_params(f_delta, false);
-                               self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                               return Ok(YingDaType::Success(*zl));
                             }
                         }
                         else {
                             //如果有机组不处于稳态，则报错
-                            self.handle_zhi_ling_result_msg( Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_6))));
+                            return Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_6)));
                         }
 
                     }
@@ -2272,7 +2333,10 @@ impl XiTong {
                                        duanluqi::DuanLuQiStatus::Off{..} => self.duan_lu_qi_vec[duanluqi_id].set_on(),
                                        duanluqi::DuanLuQiStatus::On{..} => {},
                                    }
-                                   self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                                   return Ok(YingDaType::Success(*zl));
+                                }
+                                else {
+                                    return Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_7)));
                                 }
                             }
                             //否则自动合闸
@@ -2284,103 +2348,34 @@ impl XiTong {
                                //设定待并机组频率为电网频率+JI_ZU_BING_CHE_PIN_LV_DELTA
                                let f_delta = self.ji_zu_vec[jizuid].common_ji.f_ext + jizu::JI_ZU_BING_CHE_PIN_LV_DELTA - self.ji_zu_vec[jizuid].common_ji.f_ext;
                                self.ji_zu_vec[jizuid].set_bian_pin_params(f_delta, false);
-                               self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                               return Ok(YingDaType::Success(*zl));
                             }
                         }
                         else {
                             //如果有机组不处于稳态，则报错
-                            self.handle_zhi_ling_result_msg( Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_6))));
+                            return Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_6)));
                         }
 
                     }
                     //如果两组中两个元素个数都大于1，则并车失败，提示消息返回“试图一次并联多个机组”
                     else if jizu_vec_vec_bing_che[0].len()>1 &&
                             jizu_vec_vec_bing_che[1].len()>1 {
-                        self.handle_zhi_ling_result_msg( Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling::CAUSE_DUO_JI_ZU_TONG_SHI_BING_LIAN))));
+                        return Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling::CAUSE_DUO_JI_ZU_TONG_SHI_BING_LIAN)));
                     }
 
                 }
                 else {
-                    self.handle_zhi_ling_result_msg( Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling:: CAUSE_POWER_FLOW_ERR))));
+                    return Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling:: CAUSE_POWER_FLOW_ERR)));
                 }
             }
-            // let ji_zu_vec_bing_lian_temp : Vec<usize> = xt_temp.get_jizuid_vec_bing_lian_from_id(zl.dev_id);
-            // xt_temp.update_node_group_vec();
-            // xt_temp.compute_xi_tong_pf();
-            // self.update_node_group_vec();
-            // self.compute_xi_tong_pf();
-            // let mut p_q_yi_qian_vec : Vec<(f64, f64)> = Vec::new();
-            // for j in ji_zu_vec_bing_lian_temp.to_vec() {
-            //     p_q_yi_qian_vec.push((self.ji_zu_vec[j].common_ji.p, self.ji_zu_vec[j].common_ji.q));
-            // }
-            // //对每台并联的机组变到变载过程
-            // let mut is_bing_lian_ji_zu_bu_wen_ding = false;
-            // //如果jiZuListBingLian为空则为合闸
-            // if ji_zu_vec_bing_lian_temp.is_empty() {
-            //     match self.ji_zu_vec[zl.dev_id].common_ji.current_range {
-            //         jizu::JiZuRangeLeiXing::Wen => {
-            //             let mut v = Vec::new();
-            //             v.push(zl.dev_id);
-            //             self.set_ji_zu_vec_bian_zai_params(v, xt_temp.ji_zu_vec[zl.dev_id].common_ji.p);
-            //         }
-            //         _ => is_bing_lian_ji_zu_bu_wen_ding = true,
-            //     }
-            //     match is_bing_lian_ji_zu_bu_wen_ding {
-            //         true => {
-            //             match self.duan_lu_qi_vec[duanluqi_id].status {
-            //                duanluqi::DuanLuQiStatus::Off{fault : f, ..} => self.duan_lu_qi_vec[duanluqi_id].status = duanluqi::DuanLuQiStatus::On{fault : f, ready_to_jie_lie : false},
-            //                duanluqi::DuanLuQiStatus::On{..} => {},
-            //            }
-            //            self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
-            //         }
-            //         false => {
-            //             self.handle_zhi_ling_result_msg( Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling:: CAUSE_JI_ZU_RANGE_DISMATCH_6))));
-            //         }
-            //     }
-            // }
-            // //若不为空则为并车
-            // else {
-            //     //判断所有并联机组是否处于稳态，如果处于则并车，如果不处于则不并车
-            //     // is_bing_lian_ji_zu_bu_wen_ding = false;
-            //     let mut ji_zu_vec_bing_lian = ji_zu_vec_bing_lian_temp.to_vec();
-            //     ji_zu_vec_bing_lian.push(zl.dev_id);
-            //     if ji_zu_vec_bing_lian.iter().all(|&j|self.ji_zu_vec[j].common_ji.current_range == jizu::JiZuRangeLeiXing::Wen) {
-            //         //如果为手动合闸，则判断是否经过手动并车
-            //         if self.ji_zu_vec[zl.dev_id].common_ji.ctrl_mode == simctrl::CtrlMode::Manual {
-            //             if self.ji_zu_vec[zl.dev_id].common_ji.f_ext > self.ji_zu_vec[ji_zu_vec_bing_lian_temp[0]].common_ji.f_ext && self.ji_zu_vec[zl.dev_id].common_ji.f_ext - self.ji_zu_vec[ji_zu_vec_bing_lian_temp[0]].common_ji.f_ext <= jizu::JI_ZU_PIN_LV_BIAN_HUA_YU_ZHI_WEN_TAI && self.ji_zu_vec[zl.dev_id].common_ji.uab_ext <= jizu::JI_ZU_DIAN_YA_WEN_TAI_ZUI_DA_YU_ZHI && self.ji_zu_vec[zl.dev_id].common_ji.uab_ext >= jizu::JI_ZU_DIAN_YA_WEN_TAI_ZUI_XIAO_YU_ZHI {
-            //                 match self.duan_lu_qi_vec[duanluqi_id].status {
-            //                    duanluqi::DuanLuQiStatus::Off{fault : f, ..} => self.duan_lu_qi_vec[duanluqi_id].status = duanluqi::DuanLuQiStatus::On{fault : f, ready_to_jie_lie : false},
-            //                    duanluqi::DuanLuQiStatus::On{..} => {},
-            //                }
-            //                self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
-            //             }
-            //         }
-            //         //否则自动合闸
-            //         else if self.ji_zu_vec[zl.dev_id].common_ji.ctrl_mode == simctrl::CtrlMode::Auto || self.ji_zu_vec[zl.dev_id].common_ji.ctrl_mode == simctrl::CtrlMode::SemiAuto{
-            //             match self.duan_lu_qi_vec[duanluqi_id].status {
-            //                duanluqi::DuanLuQiStatus::Off{fault : f, ready_to_bing_che : false} => self.duan_lu_qi_vec[duanluqi_id].status = duanluqi::DuanLuQiStatus::Off{fault : f, ready_to_bing_che : true},
-            //                _ => {},
-            //            }
-            //            //设定待并机组频率为电网频率+JI_ZU_BING_CHE_PIN_LV_DELTA
-            //            let f_delta = self.ji_zu_vec[ji_zu_vec_bing_lian_temp[0]].common_ji.f_ext + jizu::JI_ZU_BING_CHE_PIN_LV_DELTA - self.ji_zu_vec[zl.dev_id].common_ji.f_ext;
-            //            self.ji_zu_vec[zl.dev_id].set_bian_pin_params(f_delta, false);
-            //            self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
-            //         }
-            //     }
-            //     else {
-            //         //如果有机组不处于稳态，则报错
-            //         self.handle_zhi_ling_result_msg( Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_6))));
-            //     }
-            // }
-
         }
         else {
-            self.handle_zhi_ling_result_msg( Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling::CAUSE_DUAN_LU_QI_BI_HE_HUO_GU_ZHANG))));
+            return Err(YingDaErr::HeZhaBingCheFail(*zl, String::from(zhiling::HE_ZHA_BING_CHE_FAIL_DESC), String::from(zhiling::CAUSE_DUAN_LU_QI_BI_HE_HUO_GU_ZHANG)));
         }
 
     }
 
-    pub fn handle_fen_zha_jie_lie(&mut self, zl : &ZhiLing) {
+    pub fn handle_fen_zha_jie_lie(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
         let jizuid = zl.dev_id;
         let duanluqiid = self.get_duanluqiid_from_jizuid(jizuid).unwrap();
         if self.duan_lu_qi_vec[duanluqiid].is_on(){
@@ -2393,12 +2388,12 @@ impl XiTong {
                 if self.ji_zu_vec[jizuid].common_ji.current_range == JiZuRangeLeiXing::Wen {
                     if self.ji_zu_vec[jizuid].common_ji.p <= jizu::JI_ZU_JIE_LIE_GONG_LV_YU_ZHI {
                         self.duan_lu_qi_vec[duanluqiid].set_off();
-                        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
                         let p_delta = 0.0 - self.ji_zu_vec[jizuid].common_ji.p;
                         self.ji_zu_vec[jizuid].set_bian_zai_params(p_delta);
+                        return Ok(YingDaType::Success(*zl));
                     }
                     else if self.ji_zu_vec[zl.dev_id].common_ji.ctrl_mode == simctrl::CtrlMode::Manual {
-                        self.handle_zhi_ling_result_msg( Err(YingDaErr::FenZhaJieLieFail(*zl, String::from(zhiling::FEN_ZHA_JIE_LIE_FAIL_DESC), String::from(zhiling::CAUSE_FEN_ZHA_JIE_LIE_WEI_SHOU_DONG_JIAN_ZAI))));
+                        return Err(YingDaErr::FenZhaJieLieFail(*zl, String::from(zhiling::FEN_ZHA_JIE_LIE_FAIL_DESC), String::from(zhiling::CAUSE_FEN_ZHA_JIE_LIE_WEI_SHOU_DONG_JIAN_ZAI)));
                     }
                     //否则自动解列
                     else if self.ji_zu_vec[zl.dev_id].common_ji.ctrl_mode == simctrl::CtrlMode::Auto || self.ji_zu_vec[zl.dev_id].common_ji.ctrl_mode == simctrl::CtrlMode::SemiAuto{
@@ -2407,12 +2402,12 @@ impl XiTong {
                         //设定待并机组频率为电网频率+JI_ZU_BING_CHE_PIN_LV_DELTA
                         let p_delta = jizu::JI_ZU_JIE_LIE_GONG_LV_YU_ZHI - self.ji_zu_vec[jizuid].common_ji.p;
                         self.ji_zu_vec[zl.dev_id].set_bian_zai_params(p_delta);
-                        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                        return Ok(YingDaType::Success(*zl));
                     }
 
                 }
                 else{
-                    self.handle_zhi_ling_result_msg( Err(YingDaErr::FenZhaJieLieFail(*zl, String::from(zhiling::FEN_ZHA_JIE_LIE_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_6))));
+                    return Err(YingDaErr::FenZhaJieLieFail(*zl, String::from(zhiling::FEN_ZHA_JIE_LIE_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_6)));
                 }
             }
             else{//若不为空则为解列
@@ -2435,17 +2430,17 @@ impl XiTong {
                             self.duan_lu_qi_vec[duanluqiid].set_off();
                             let p_delta = 0.0 - self.ji_zu_vec[jizuid].common_ji.p;
                             self.ji_zu_vec[zl.dev_id].set_bian_zai_params(p_delta);
-                            self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
                             //其余并联机组根据潮流计算结果进行变载
                             for i in ji_zu_vec_bing_lian.to_vec() {
                                 let p_delta = xt_temp.ji_zu_vec[i].common_ji.p - self.ji_zu_vec[i].common_ji.p;
                                 self.ji_zu_vec[i].set_bian_zai_params(p_delta);
                             }
+                            return Ok(YingDaType::Success(*zl));
                         }
                         else {
                             //需要减载解列
                             if self.ji_zu_vec[zl.dev_id].common_ji.ctrl_mode == simctrl::CtrlMode::Manual {
-                                self.handle_zhi_ling_result_msg( Err(YingDaErr::FenZhaJieLieFail(*zl, String::from(zhiling::FEN_ZHA_JIE_LIE_FAIL_DESC), String::from(zhiling::CAUSE_FEN_ZHA_JIE_LIE_WEI_SHOU_DONG_JIAN_ZAI))));
+                                return Err(YingDaErr::FenZhaJieLieFail(*zl, String::from(zhiling::FEN_ZHA_JIE_LIE_FAIL_DESC), String::from(zhiling::CAUSE_FEN_ZHA_JIE_LIE_WEI_SHOU_DONG_JIAN_ZAI)));
                             }
                             //否则自动解列
                             else if self.ji_zu_vec[zl.dev_id].common_ji.ctrl_mode == simctrl::CtrlMode::Auto || self.ji_zu_vec[zl.dev_id].common_ji.ctrl_mode == simctrl::CtrlMode::SemiAuto{
@@ -2454,30 +2449,30 @@ impl XiTong {
                                 //设定待并机组频率为电网频率+JI_ZU_BING_CHE_PIN_LV_DELTA
                                 let p_delta = jizu::JI_ZU_JIE_LIE_GONG_LV_YU_ZHI - self.ji_zu_vec[jizuid].common_ji.p;
                                 self.ji_zu_vec[zl.dev_id].set_bian_zai_params(p_delta);
-                                self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
                                 //其余并联机组根据潮流计算结果进行变载
                                 for i in ji_zu_vec_bing_lian.to_vec() {
                                     let p_delta = xt_temp.ji_zu_vec[i].common_ji.p - self.ji_zu_vec[i].common_ji.p;
                                     self.ji_zu_vec[i].set_bian_zai_params(p_delta);
                                 }
+                                return Ok(YingDaType::Success(*zl));
                             }
                         }
                     }
                     else{//功率不够用
-                        self.handle_zhi_ling_result_msg( Err(YingDaErr::FenZhaJieLieFail(*zl, String::from(zhiling::FEN_ZHA_JIE_LIE_FAIL_DESC), String::from(zhiling::CAUSE_FEN_ZHA_JIE_LIE_ZONG_GONG_LV_BU_GOU_YONG))));
+                        return Err(YingDaErr::FenZhaJieLieFail(*zl, String::from(zhiling::FEN_ZHA_JIE_LIE_FAIL_DESC), String::from(zhiling::CAUSE_FEN_ZHA_JIE_LIE_ZONG_GONG_LV_BU_GOU_YONG)));
                     }
                 }
                 else{
-                    self.handle_zhi_ling_result_msg( Err(YingDaErr::FenZhaJieLieFail(*zl, String::from(zhiling::FEN_ZHA_JIE_LIE_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_6))));
+                    return Err(YingDaErr::FenZhaJieLieFail(*zl, String::from(zhiling::FEN_ZHA_JIE_LIE_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_6)));
                 }
             }
         }
         else{
-            self.handle_zhi_ling_result_msg( Err(YingDaErr::FenZhaJieLieFail(*zl, String::from(zhiling::FEN_ZHA_JIE_LIE_FAIL_DESC), String::from(zhiling::CAUSE_DUAN_LU_QI_FEN_DUAN_HUO_GU_ZHANG))));
+            return Err(YingDaErr::FenZhaJieLieFail(*zl, String::from(zhiling::FEN_ZHA_JIE_LIE_FAIL_DESC), String::from(zhiling::CAUSE_DUAN_LU_QI_FEN_DUAN_HUO_GU_ZHANG)));
         }
     }
 
-    pub fn handle_fen_zha_jie_lie_duan_lu_qi(&mut self, zl : &ZhiLing) {
+    pub fn handle_fen_zha_jie_lie_duan_lu_qi(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
         let duanluqiid = zl.dev_id;
         if self.duan_lu_qi_vec[duanluqiid].is_on(){
             let mut xt_temp = self.clone();
@@ -2492,9 +2487,9 @@ impl XiTong {
                 //如果两组中有一个元素个数为零，则拓扑无变化，直接分闸
                 if fen_zha_ji_zu_group[0].len() == 0 || fen_zha_ji_zu_group[1].len() == 0 {
                     self.duan_lu_qi_vec[duanluqiid].set_off();
-                    self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
                     self.update_node_group_vec();
                     self.compute_xi_tong_pf();
+                    return Ok(YingDaType::Success(*zl));
                 }
                 else {
                     //否则为解列
@@ -2523,9 +2518,9 @@ impl XiTong {
                         //小于等于0.1倍机组额定功率,则直接分闸
                         if (fen_zha_zong_gong_lv_ji_zu_group_0 - fen_zha_zong_gong_lv_fu_zai_group_0).abs() <= jizu::JI_ZU_JIE_LIE_GONG_LV_YU_ZHI {
                             self.duan_lu_qi_vec[duanluqiid].set_off();
-                            self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
                             self.update_node_group_vec();
                             self.compute_xi_tong_pf();
+                            return Ok(YingDaType::Success(*zl));
                         }
                         else {
                             let is_fault = xt_temp.duan_lu_qi_vec[duanluqiid].is_fault();
@@ -2537,21 +2532,24 @@ impl XiTong {
                                     self.ji_zu_vec[j].set_bian_zai_params(p_delta);
                                 }
                             }
-                            self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                            return Ok(YingDaType::Success(*zl));
                         }
                     }
                     else {
-                        self.handle_zhi_ling_result_msg( Err(YingDaErr::FenZhaJieLieFail(*zl, String::from(zhiling::FEN_ZHA_JIE_LIE_FAIL_DESC), String::from(zhiling::CAUSE_FEN_ZHA_JIE_LIE_ZONG_GONG_LV_BU_GOU_YONG))));
+                        return Err(YingDaErr::FenZhaJieLieFail(*zl, String::from(zhiling::FEN_ZHA_JIE_LIE_FAIL_DESC), String::from(zhiling::CAUSE_FEN_ZHA_JIE_LIE_ZONG_GONG_LV_BU_GOU_YONG)));
                     }
                 }
             }
+            else {
+                return Err(YingDaErr::FenZhaJieLieFail(*zl, String::from(zhiling::FEN_ZHA_JIE_LIE_FAIL_DESC), String::from(zhiling::CAUSE_TUO_PU_FEN_XI_SUAN_FA_CUO_WU)));
+            }
         }
         else{
-            self.handle_zhi_ling_result_msg( Err(YingDaErr::FenZhaJieLieFail(*zl, String::from(zhiling::FEN_ZHA_JIE_LIE_FAIL_DESC), String::from(zhiling::CAUSE_DUAN_LU_QI_FEN_DUAN_HUO_GU_ZHANG))));
+            return Err(YingDaErr::FenZhaJieLieFail(*zl, String::from(zhiling::FEN_ZHA_JIE_LIE_FAIL_DESC), String::from(zhiling::CAUSE_DUAN_LU_QI_FEN_DUAN_HUO_GU_ZHANG)));
         }
     }
 
-    pub fn handle_ji_zu_yi_ban_gu_zhang(&mut self, zl : &ZhiLing) {
+    pub fn handle_ji_zu_yi_ban_gu_zhang(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
         match zl.zhi_ling_type {
             zhiling::ZhiLingType::GenerateYiBanGuZhang(f) => {
                 match f {
@@ -2562,25 +2560,29 @@ impl XiTong {
                             self.is_ying_da = false;
                             self.ji_zu_vec[zl.dev_id].common_ji.gu_zhang_lei_xing = jizu::GuZhangLeiXing::YiBan;
                             self.ji_zu_vec[zl.dev_id].common_ji.zong_he_gu_zhang_bao_jing = true;
+                            return Ok(YingDaType::Success(*zl));
                         }
                     }
-                    _ => {}
+                    _ => return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID))),
                 }
             }
-            _ => {}
+            _ => return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID))),
         }
     }
 
-    pub fn handle_ji_zu_yi_ji_gu_zhang(&mut self, _zl : &ZhiLing) {
+    pub fn handle_ji_zu_yi_ji_gu_zhang(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
+        Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)))
     }
 
-    pub fn handle_ji_zu_er_ji_gu_zhang(&mut self, _zl : &ZhiLing) {
+    pub fn handle_ji_zu_er_ji_gu_zhang(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
+        Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)))
     }
 
-    pub fn handle_ji_zu_qi_ta_gu_zhang(&mut self, _zl : &ZhiLing) {
+    pub fn handle_ji_zu_qi_ta_gu_zhang(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
+        Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)))
     }
 
-    pub fn eliminate_ji_zu_yi_ban_gu_zhang(&mut self, zl : &ZhiLing) {
+    pub fn eliminate_ji_zu_yi_ban_gu_zhang(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
         match zl.zhi_ling_type {
             zhiling::ZhiLingType::EliminateYiBanGuZhang(f) => {
                 match f {
@@ -2591,25 +2593,29 @@ impl XiTong {
                             self.is_ying_da = true;
                             self.ji_zu_vec[zl.dev_id].common_ji.gu_zhang_lei_xing = jizu::GuZhangLeiXing::Wu;
                             self.ji_zu_vec[zl.dev_id].common_ji.zong_he_gu_zhang_bao_jing = false;
+                            return Ok(YingDaType::Success(*zl));
                         }
                     }
-                    _ => {}
+                    _ => return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID))),
                 }
             }
-            _ => {}
+            _ => return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID))),
         }
     }
 
-    pub fn eliminate_ji_zu_yi_ji_gu_zhang(&mut self, _zl : &ZhiLing) {
+    pub fn eliminate_ji_zu_yi_ji_gu_zhang(&mut self, _zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
+        Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)))
     }
 
-    pub fn eliminate_ji_zu_er_ji_gu_zhang(&mut self, _zl : &ZhiLing) {
+    pub fn eliminate_ji_zu_er_ji_gu_zhang(&mut self, _zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
+        Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)))
     }
 
-    pub fn eliminate_ji_zu_qi_ta_gu_zhang(&mut self, _zl : &ZhiLing) {
+    pub fn eliminate_ji_zu_qi_ta_gu_zhang(&mut self, _zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
+        Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)))
     }
 
-    pub fn handle_bian_zai(&mut self, zl : &ZhiLing) {
+    pub fn handle_bian_zai(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
         let mut xt_temp = self.clone();
         match zl.zhi_ling_type {
             zhiling::ZhiLingType::BianZai(p, q) => {
@@ -2637,7 +2643,7 @@ impl XiTong {
                     xt_temp.fu_zai_vec[zl.dev_id].is_online = true;
                 }
             }
-            _ => {}
+            _ => return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID))),
         }
         xt_temp.compute_xi_tong_pf();
         self.fu_zai_vec[zl.dev_id].p = xt_temp.fu_zai_vec[zl.dev_id].p;
@@ -2651,10 +2657,10 @@ impl XiTong {
             }
             self.ji_zu_vec[j].set_bian_zai_params(xt_temp.ji_zu_vec[j].common_ji.p);
         }
-        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+        return Ok(YingDaType::Success(*zl));
     }
 
-    pub fn handle_zhong_zai_jia_zai(&mut self, zl : &ZhiLing) {
+    pub fn handle_zhong_zai_jia_zai(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
         let ji_zu_group = self.get_ji_zu_group_from_fu_zai_id(zl.dev_id);
         let group_len = ji_zu_group.len();
         let mut xt_temp = self.clone();
@@ -2674,31 +2680,31 @@ impl XiTong {
                     zl_temp.zhan_wei_id = usize::max_value();
                     zl_temp.zhan_wei_type = simctrl::ZhanWeiType::Internal;
                     self.handle_bian_zai(&zl_temp);
-                    self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                    return Ok(YingDaType::Success(*zl));
                 }
                 else {
-                    self.handle_zhi_ling_result_msg( Err(YingDaErr::ZhongZaiAskFail(*zl, String::from(zhiling::ZHONG_ZAI_ASK_FAIL_DESC), String::from(zhiling::CAUSE_ZHONG_ZAI_ASK_FAIL))));
+                    return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID)));
                 }
             }
-            _ => {}
+            _ => return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID))),
         }
     }
 
-    pub fn handle_operating_station(&mut self, zl : &ZhiLing) {
+    pub fn handle_operating_station(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
         match zl.dev_type {
             simctrl::DevType::JiZu => {
                 match zl.zhi_ling_type {
                     ZhiLingType::OperatingStation(simctrl::OperatingStation::JiPang) => {
                         self.ji_zu_vec[zl.dev_id].common_ji.operating_station_she_zhi = simctrl::OperatingStation::JiPang;
                         self.ji_zu_vec[zl.dev_id].common_ji.operating_station = simctrl::OperatingStation::JiPang;
-                        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                        return Ok(YingDaType::Success(*zl));
                     }
                     ZhiLingType::OperatingStation(simctrl::OperatingStation::Remote) => {
                         self.ji_zu_vec[zl.dev_id].common_ji.operating_station_she_zhi = simctrl::OperatingStation::Remote;
                         self.ji_zu_vec[zl.dev_id].common_ji.operating_station = simctrl::OperatingStation::Remote;
-                        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                        return Ok(YingDaType::Success(*zl));
                     }
-                    _ =>  self.handle_zhi_ling_result_msg( Err(YingDaErr::OperatingStationFail(*zl, String::from(zhiling::OPERATING_STATION_FAIL_DESC), String::from(zhiling::CAUSE_OPERATING_STATION_INVALID)))),
+                    _ =>  return Err(YingDaErr::OperatingStationFail(*zl, String::from(zhiling::OPERATING_STATION_FAIL_DESC), String::from(zhiling::CAUSE_OPERATING_STATION_INVALID))),
                 }
             }
             simctrl::DevType::DianZhan => {
@@ -2706,20 +2712,20 @@ impl XiTong {
                     ZhiLingType::OperatingStation(simctrl::OperatingStation::Local) => {
                         self.dian_zhan_vec[zl.dev_id].operating_station_she_zhi = simctrl::OperatingStation::Local;
                         self.dian_zhan_vec[zl.dev_id].operating_station = simctrl::OperatingStation::Local;
-                        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                        return Ok(YingDaType::Success(*zl));
                     }
                     ZhiLingType::OperatingStation(simctrl::OperatingStation::JiKong) => {
                         self.dian_zhan_vec[zl.dev_id].operating_station_she_zhi = simctrl::OperatingStation::JiKong;
                         self.dian_zhan_vec[zl.dev_id].operating_station = simctrl::OperatingStation::JiKong;
-                        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                        return Ok(YingDaType::Success(*zl));
                     }
-                    _ =>  self.handle_zhi_ling_result_msg( Err(YingDaErr::OperatingStationFail(*zl, String::from(zhiling::OPERATING_STATION_FAIL_DESC), String::from(zhiling::CAUSE_OPERATING_STATION_INVALID)))),
+                    _ =>  return Err(YingDaErr::OperatingStationFail(*zl, String::from(zhiling::OPERATING_STATION_FAIL_DESC), String::from(zhiling::CAUSE_OPERATING_STATION_INVALID))),
                 }
             }
-            _ => {}
+            _ => return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID))),
         }
     }
-    pub fn handle_ctrl_mode(&mut self, zl : &ZhiLing) {
+    pub fn handle_ctrl_mode(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
         match zl.dev_type {
             simctrl::DevType::DianZhan => {
                 match zl.zhi_ling_type {
@@ -2744,7 +2750,7 @@ impl XiTong {
                                 self.ji_zu_vec[j].common_ji.ctrl_mode = simctrl::CtrlMode::Manual;
                             }
                         }
-                        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                        return Ok(YingDaType::Success(*zl));
                     }
                     ZhiLingType::CtrlMode(simctrl::CtrlMode::SemiAuto) => {
                         self.dian_zhan_vec[zl.dev_id].ctrl_mode_she_zhi = simctrl::CtrlMode::SemiAuto;
@@ -2796,7 +2802,7 @@ impl XiTong {
                                 }
                             }
                         }
-                        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                        return Ok(YingDaType::Success(*zl));
                     }
                     ZhiLingType::CtrlMode(simctrl::CtrlMode::Auto) => {
                         self.dian_zhan_vec[zl.dev_id].ctrl_mode_she_zhi = simctrl::CtrlMode::Auto;
@@ -2866,16 +2872,16 @@ impl XiTong {
                                 }
                             }
                         }
-                        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                        return Ok(YingDaType::Success(*zl));
                     }
-                    _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::CtrlModeFail(*zl, String::from(zhiling::CTRL_MODE_FAIL_DESC), String::from(zhiling::CAUSE_CTRL_MODE_INVALID)))),
+                    _ => return Err(YingDaErr::CtrlModeFail(*zl, String::from(zhiling::CTRL_MODE_FAIL_DESC), String::from(zhiling::CAUSE_CTRL_MODE_INVALID))),
                 }
             }
-            _ => {}
+            _ => return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID))),
         }
     }
 
-    pub fn handle_prio(&mut self, zl : &ZhiLing) {
+    pub fn handle_prio(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
         match zl.dev_type {
             simctrl::DevType::DianZhan => {
                 for d in 0..simctrl::ZONG_SHU_DIAN_ZHAN {
@@ -2886,7 +2892,7 @@ impl XiTong {
                         self.dian_zhan_vec[d].prio = true;
                     }
                 }
-                self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                return Ok(YingDaType::Success(*zl));
             }
             simctrl::DevType::JiZu => {
                 let jizuid_vec = self.get_jizuid_vec_from_dianzhanid(zl.dev_id);
@@ -2898,107 +2904,104 @@ impl XiTong {
                         self.ji_zu_vec[j].common_ji.prio = true;
                     }
                 }
-                self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                return Ok(YingDaType::Success(*zl));
             }
-            _ => {}
+            _ => return Err(YingDaErr::Invalid(*zl, String::from(zhiling::COMMON_INVALID_DESC), String::from(zhiling::CAUSE_COMMON_INVALID))),
         }
     }
 
-    pub fn handle_an_dian_on(&mut self, zl : &ZhiLing) {
+    pub fn handle_an_dian_on(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> -> Result<YingDaType, YingDaErr> {
         self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::Wen;
-        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+        return Ok(YingDaType::Success(*zl));
     }
 
-    pub fn handle_an_dian_off(&mut self, zl : &ZhiLing) {
+    pub fn handle_an_dian_off(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
         self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::TingJi;
-        self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+        return Ok(YingDaType::Success(*zl));
     }
 
-    pub fn handle_an_dian_he_zha(&mut self, zl : &ZhiLing) {
-        self.handle_he_zha_bing_che(zl);
+    pub fn handle_an_dian_he_zha(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
+        self.handle_he_zha_bing_che(zl)
     }
 
-    pub fn handle_an_dian_fen_zha(&mut self, zl : &ZhiLing) {
-        self.handle_fen_zha_jie_lie(zl);
+    pub fn handle_an_dian_fen_zha(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
+        self.handle_fen_zha_jie_lie(zl)
     }
 
-    pub fn handle_bian_su(&mut self, zl : &ZhiLing) {
+    pub fn handle_bian_su(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
         let duanluqi_status = self.get_duanluqi_from_jizuid(zl.dev_id).unwrap().is_on();
         match zl.zhi_ling_type {
             ZhiLingType::BianSu(delta) => {
                 match self.ji_zu_vec[zl.dev_id].common_ji.current_range {
                     jizu::JiZuRangeLeiXing::Wen | jizu::JiZuRangeLeiXing::BianSu => {
                         if !self.ji_zu_vec[zl.dev_id].set_bian_su_params(delta, duanluqi_status) {
-                            self.handle_zhi_ling_result_msg( Err(YingDaErr::BianSuFail(*zl, String::from(zhiling::BIAN_SU_FAIL_DESC), String::from(zhiling::CAUSE_BIAN_SU_FAIL_OUT_OF_LIMIT))));
+                            return Err(YingDaErr::BianSuFail(*zl, String::from(zhiling::BIAN_SU_FAIL_DESC), String::from(zhiling::CAUSE_BIAN_SU_FAIL_OUT_OF_LIMIT)));
                         }
                         else {
-                            self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                            return Ok(YingDaType::Success(*zl));
                         }
                     }
-                    _ =>  self.handle_zhi_ling_result_msg( Err(YingDaErr::BianSuFail(*zl, String::from(zhiling::BIAN_SU_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_4)))),
+                    _ =>  return Err(YingDaErr::BianSuFail(*zl, String::from(zhiling::BIAN_SU_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_4))),
                 }
             }
-            _ => self.handle_zhi_ling_result_msg( Err(YingDaErr::BianSuFail(*zl, String::from(zhiling::BIAN_SU_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_4)))),
+            _ => return Err(YingDaErr::BianSuFail(*zl, String::from(zhiling::BIAN_SU_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_4))),
         }
     }
 
-    pub fn handle_bian_ya(&mut self, zl : &ZhiLing) {
+    pub fn handle_bian_ya(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
         match zl.zhi_ling_type {
             ZhiLingType::BianYa(delta) => {
                 match self.ji_zu_vec[zl.dev_id].common_ji.current_range {
                     jizu::JiZuRangeLeiXing::Wen | jizu::JiZuRangeLeiXing::BianYa => {
                         if !self.ji_zu_vec[zl.dev_id].set_bian_ya_params(delta) {
-                            self.handle_zhi_ling_result_msg( Err(YingDaErr::BianYaFail(*zl, String::from(zhiling::BIAN_YA_FAIL_DESC), String::from(zhiling::CAUSE_BIAN_YA_FAIL_OUT_OF_LIMIT))));
+                            return Err(YingDaErr::BianYaFail(*zl, String::from(zhiling::BIAN_YA_FAIL_DESC), String::from(zhiling::CAUSE_BIAN_YA_FAIL_OUT_OF_LIMIT)));
                         }
                         else {
-                            self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+                            return Ok(YingDaType::Success(*zl));
                         }
                     }
-                    _ =>  self.handle_zhi_ling_result_msg( Err(YingDaErr::BianYaFail(*zl, String::from(zhiling::BIAN_YA_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_5)))),
+                    _ =>  return Err(YingDaErr::BianYaFail(*zl, String::from(zhiling::BIAN_YA_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_5))),
                 }
             }
-            _ =>  self.handle_zhi_ling_result_msg( Err(YingDaErr::BianYaFail(*zl, String::from(zhiling::BIAN_YA_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_5)))),
+            _ =>  return Err(YingDaErr::BianYaFail(*zl, String::from(zhiling::BIAN_YA_FAIL_DESC), String::from(zhiling::CAUSE_JI_ZU_RANGE_DISMATCH_5))),
         }
     }
 
-    pub fn handle_jin_ji_ting_ji(&mut self, zl : &ZhiLing) {
+    pub fn handle_jin_ji_ting_ji(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
         match self.ji_zu_vec[zl.dev_id].common_ji.current_range {
             jizu::JiZuRangeLeiXing::TingJi | jizu::JiZuRangeLeiXing::BeiCheZanTai | jizu::JiZuRangeLeiXing::BeiCheWanBi | jizu::JiZuRangeLeiXing::TingJiZanTai | jizu::JiZuRangeLeiXing::JinJiTingJiZanTai => {
-                self.handle_zhi_ling_result_msg( Err(YingDaErr::JinJiTingJiFail(*zl, String::from(zhiling::JIN_JI_TING_JI_FAIL_DESC), String::from(zhiling:: CAUSE_JIN_JI_TING_JI_FAIL))));
-                return ;
+                return Err(YingDaErr::JinJiTingJiFail(*zl, String::from(zhiling::JIN_JI_TING_JI_FAIL_DESC), String::from(zhiling:: CAUSE_JIN_JI_TING_JI_FAIL)));
             }
             _ => {
                 let duanluqiid = self.get_duanluqiid_from_jizuid(zl.dev_id).unwrap();
                 if self.duan_lu_qi_vec[duanluqiid].is_on() {
-                    match self.duan_lu_qi_vec[duanluqiid].status {
-                        duanluqi::DuanLuQiStatus::On {..} => self.duan_lu_qi_vec[duanluqiid].set_off(),
-                        _ => {}
-                    }
+                    self.duan_lu_qi_vec[duanluqiid].set_off(),
                 }
                 self.ji_zu_vec[zl.dev_id].common_ji.t_current_range = 0.0;
                 self.ji_zu_vec[zl.dev_id].common_ji.current_range = jizu::JiZuRangeLeiXing::TingJiZanTai;
+                return Ok(YingDaType::Success(*zl));
             }
         }
     }
 
-    pub fn handle_xiao_sheng(&mut self, zl : &ZhiLing) {
+    pub fn handle_xiao_sheng(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
         if self.is_xiao_sheng {
-            self.handle_zhi_ling_result_msg( Err(YingDaErr::XiaoShengFail(*zl, String::from(zhiling::XIAO_SHENG_FAIL_DESC), String::from(zhiling:: CAUSE_XIAO_SHENG_FAIL))));
+            return Err(YingDaErr::XiaoShengFail(*zl, String::from(zhiling::XIAO_SHENG_FAIL_DESC), String::from(zhiling:: CAUSE_XIAO_SHENG_FAIL)));
         }
         else{
             self.is_xiao_sheng = true;
-            self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+            return Ok(YingDaType::Success(*zl));
         }
     }
 
-    pub fn handle_ying_da(&mut self, zl : &ZhiLing) {
+    pub fn handle_ying_da(&mut self, zl : &ZhiLing) -> Result<YingDaType, YingDaErr> {
         if self.is_ying_da {
-            self.handle_zhi_ling_result_msg( Err(YingDaErr::YingDaFail(*zl, String::from(zhiling::XIAO_SHENG_FAIL_DESC), String::from(zhiling:: CAUSE_XIAO_SHENG_FAIL))));
+            return Err(YingDaErr::YingDaFail(*zl, String::from(zhiling::XIAO_SHENG_FAIL_DESC), String::from(zhiling:: CAUSE_XIAO_SHENG_FAIL)));
         }
         else{
             self.is_xiao_sheng = true;
             self.is_ying_da = true;
-            self.handle_zhi_ling_result_msg(Ok(YingDaType::Success(*zl)));
+            return Ok(YingDaType::Success(*zl));
         }
     }
     pub fn query_xi_tong(&self, _req: &mut Request) -> IronResult<Response> {

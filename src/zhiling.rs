@@ -420,12 +420,14 @@ pub const CAUSE_JI_ZU_RANGE_DISMATCH_2 : &'static str = "机组未完成备车�
 
 pub const HE_ZHA_BING_CHE_FAIL_DESC : &'static str = "合闸/并车失败";
 pub const CAUSE_JI_ZU_RANGE_DISMATCH_6 : &'static str = "机组不处于稳态";
+pub const CAUSE_JI_ZU_RANGE_DISMATCH_7 : &'static str = "手动情况下应将待并机组调整至合适状态才能并车";
 pub const CAUSE_XI_TONG_HUI_LU_EXIST : &'static str = "系统中存在回路";
 pub const CAUSE_POWER_FLOW_ERR : &'static str = "系统拓扑分析算法存在问题，请修复";
 pub const CAUSE_DUO_JI_ZU_TONG_SHI_BING_LIAN : &'static str = "不能一次同时将多台机组并到电网上";
 
 pub const FEN_ZHA_JIE_LIE_FAIL_DESC : &'static str = "分闸/解列失败";
 pub const CAUSE_DUAN_LU_QI_FEN_DUAN_HUO_GU_ZHANG : &'static str = "机组断路器已经分断或者故障";
+pub const CAUSE_TUO_PU_FEN_XI_SUAN_FA_CUO_WU : &'static str = "系统拓扑分析算法有bug，请修正";
 pub const CAUSE_FEN_ZHA_JIE_LIE_WEI_SHOU_DONG_JIAN_ZAI : &'static str = "应对机组进行手动减载直至额定功率的10%";
 pub const CAUSE_FEN_ZHA_JIE_LIE_ZONG_GONG_LV_BU_GOU_YONG : &'static str = "解列后电网总输出功率不满足负载需求";
 
@@ -450,8 +452,8 @@ pub const CAUSE_AN_DIAN_HE_ZHA_INVALID : &'static str = "岸电合闸指令不�
 pub const AN_DIAN_FEN_ZHA_FAIL_DESC : &'static str = "岸电分闸失败";
 pub const CAUSE_AN_DIAN_FEN_ZHA_INVALID : &'static str = "岸电分闸指令不合法";
 
-pub const COMMON_INVALID_DESC : &'static str = "指令类型无效";
-pub const CAUSE_COMMON_INVALID : &'static str = "指令类型不合法或者指令类型与设备类型不匹配";
+pub const COMMON_INVALID_DESC : &'static str = "指令无效";
+pub const CAUSE_COMMON_INVALID : &'static str = "指令类型不合法，或者指令类型与设备类型不匹配，或者指令操作部位不满足当前的控制方式";
 
 pub const BIAN_SU_FAIL_DESC : &'static str = "变速指令执行失败";
 pub const CAUSE_JI_ZU_RANGE_DISMATCH_4 : &'static str = "机组不处于可变速状态，一般当且仅当机组处于稳态或者变速状态时才可以变速";
