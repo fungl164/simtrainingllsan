@@ -9,8 +9,8 @@ pub struct ZhiLu {
   pub p : f64,
   pub q : f64,
   pub i : f64,
-  pub status : ZhiLuStatus,
-  pub is_lian_tong : bool,
+  pub status : ZhiLuStatus,  //代表支路是否在网,不仅拓扑要联通,而且必须有电
+  pub is_lian_tong : bool,   //代表支路在拓扑上是否联通
 }
 
 impl ZhiLu {

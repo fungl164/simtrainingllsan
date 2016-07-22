@@ -136,6 +136,241 @@ pub trait Condition {
     fn can_exec(&self, xt : &mut XiTong) -> bool;
 }
 
+#[derive(PartialEq, Clone, Debug, Serialize, Deserialize)]
+pub struct ZhiLingResponse {
+    pub code : i32,            //状态编码: 0表示指令处理失败, 1表示指令处理成功.
+    pub response : String,       //指令响应字符串,只取两个值:(1)如果处理成功,则显示"指令处理成功, 请等待被操控设备状态转换完成"; (2)如果处理失败,则显示"指令处理失败"
+    pub description : String,   //指令处理失败时的具体描述, 若成功则为空
+    pub cause : String,         //指令处理失败的原因, 若成功则为空
+
+    pub zhi_ling_type : String, //指令类型
+    pub dev_type : String,      //设备类型
+    pub dev_id : usize,         //设备id
+    pub actor_id : usize,       //用户id
+    pub zhan_wei_id : usize,    //站位id
+    pub zhan_wei_type : String, //站位类型
+}
+
+impl ZhiLingResponse {
+    pub fn new() -> ZhiLingResponse {
+        ZhiLingResponse {
+            code : -1,
+            response : "".to_string(),
+            description : "".to_string(),
+            cause : "".to_string(),
+
+            zhi_ling_type : "".to_string(),
+            dev_type : "".to_string(),
+            dev_id : 0,
+            actor_id : 0,
+            zhan_wei_id : 0,
+            zhan_wei_type : "".to_string(),
+        }
+    }
+    pub fn from_result(result : Result<YingDaType, YingDaErr>) -> ZhiLingResponse {
+        match result {
+            Ok(t) => {
+                match t {
+                    YingDaType::Success(zl) => {
+                        return ZhiLingResponse {
+                            code : 1,
+                            response : "指令处理成功, 请等待被操控设备状态转换完成".to_string(),
+                            description : "".to_string(),
+                            cause : "".to_string(),
+
+                            zhi_ling_type : match zl.zhi_ling_type {
+                                ZhiLingType::Tick => "心跳".to_string(),
+                                ZhiLingType::ZhongZaiAsk => "重载询问".to_string(),
+                                ZhiLingType::CtrlMode(ctrl_mode) => match ctrl_mode {
+                                    simctrl::CtrlMode::Manual => "控制方式: 手动".to_string(),
+                                    simctrl::CtrlMode::SemiAuto => "控制方式: 半自动".to_string(),
+                                    simctrl::CtrlMode::Auto => "控制方式: 自动".to_string(),
+                                },
+                                ZhiLingType::OperatingStation(o_s) => match o_s {
+                                    simctrl::OperatingStation::JiPang => "操作部位: 机旁".to_string(),
+                                    simctrl::OperatingStation::Remote => "操作部位: 遥控".to_string(),
+                                    simctrl::OperatingStation::Local => "操作部位: 本地".to_string(),
+                                    simctrl::OperatingStation::JiKong => "操作部位: 集控".to_string(),
+                                },
+                                ZhiLingType::Prio => "优先级".to_string(),
+                                ZhiLingType::QiDong => "启动".to_string(),
+                                ZhiLingType::TingJi => "停机".to_string(),
+                                ZhiLingType::HeZhaBingChe => "合闸/并车".to_string(),
+                                ZhiLingType::FenZhaJieLie => "分闸/解列".to_string(),
+                                ZhiLingType::FenJiXieZai => "分级卸载".to_string(),
+                                ZhiLingType::YueKong => "越控".to_string(),
+                                ZhiLingType::ShiDianZiQiDong => "失电自启动".to_string(),
+                                ZhiLingType::ZiDongTouWang => "自动投网".to_string(),
+                                ZhiLingType::ZiDongGouWang => "自动构网".to_string(),
+                                ZhiLingType::GongLvYuanZeZiDongZengJi => "功率原则自动增机".to_string(),
+                                ZhiLingType::DianLiuYuanZeZiDongZengJi => "电流原则自动增机".to_string(),
+                                ZhiLingType::GongLvYuanZeZiDongJianJi => "功率原则自动减机".to_string(),
+                                ZhiLingType::GuZhangZiDongChuLi => "故障自动处理".to_string(),
+                                ZhiLingType::WangLuoChongGou => "网络重构".to_string(),
+                                ZhiLingType::BeiChe => "备车".to_string(),
+                                ZhiLingType::BianZai(p, q) => format!("变载:{{p:{},q:{}}}", p, q),
+                                ZhiLingType::ZhongZaiJiaZai(p, q) => format!("重载加载:{{p:{},q:{}}}", p, q),
+                                ZhiLingType::AnDianOn => "岸电接通".to_string(),
+                                ZhiLingType::AnDianOff => "岸电挂断".to_string(),
+                                ZhiLingType::AnDianHeZha => "岸电合闸".to_string(),
+                                ZhiLingType::AnDianFenZha => "岸电分闸".to_string(),
+                                ZhiLingType::TouRu => "投入".to_string(),
+                                ZhiLingType::TuiChu => "退出".to_string(),
+                                ZhiLingType::BianSu(zhuan_su) => format!("变速:{{zhuan_su:{}}}", zhuan_su),
+                                ZhiLingType::BianYa(u) => format!("变压:{{u:{}}}", u),
+                                ZhiLingType::JinJiTingJi => "紧急停机".to_string(),
+                                ZhiLingType::XiaoSheng => "消声".to_string(),
+                                ZhiLingType::YingDa => "应答".to_string(),
+
+                                ZhiLingType::KaiShiKaoHe => "开始考核".to_string(),
+                                ZhiLingType::JieShuKaoHe => "结束考核".to_string(),
+
+                                ZhiLingType::GenerateYiBanGuZhang(fault_type) => format!("产生一般故障:{{fault_type:{:?}}}", fault_type),
+                                ZhiLingType::EliminateYiBanGuZhang(fault_type) => format!("消除一般故障:{{fault_type:{:?}}}", fault_type),
+
+                                ZhiLingType::GenerateYiJiGuZhang(fault_type) => format!("产生一级故障:{{fault_type:{:?}}}", fault_type),
+                                ZhiLingType::EliminateYiJiGuZhang(fault_type) => format!("消除一级故障:{{fault_type:{:?}}}", fault_type),
+
+                                ZhiLingType::GenerateErJiGuZhang(fault_type) => format!("产生二级故障:{{fault_type:{:?}}}", fault_type),
+                                ZhiLingType::EliminateErJiGuZhang(fault_type) => format!("消除二般故障:{{fault_type:{:?}}}", fault_type),
+
+                                ZhiLingType::GenerateQiTaGuZhang(fault_type) => format!("产生其他故障:{{fault_type:{:?}}}", fault_type),
+                                ZhiLingType::EliminateQiTaGuZhang(fault_type) => format!("消除其他故障:{{fault_type:{:?}}}", fault_type),
+                            },
+                            dev_type : match zl.dev_type {
+                                simctrl::DevType::JiZu => format!("机组"),
+                                simctrl::DevType::DuanLuQi => format!("断路器"),
+                                simctrl::DevType::FuZai => format!("负载"),
+                                simctrl::DevType::DianZhan => format!("电站"),
+                                simctrl::DevType::AnDian => format!("岸电"),
+                                simctrl::DevType::Node => format!("节点"),
+                                simctrl::DevType::ZhiLu => format!("支路"),
+                                simctrl::DevType::Wu => format!("无"),
+                            },
+                            dev_id : zl.dev_id,
+                            actor_id : zl.actor_id,
+                            zhan_wei_id : zl.zhan_wei_id,
+                            zhan_wei_type : match zl.zhan_wei_type {
+                                simctrl::ZhanWeiType::JiPang => format!("机旁"),
+                                simctrl::ZhanWeiType::ZhuKongZhiPing => format!("主控制屏"),
+                                simctrl::ZhanWeiType::JiZuKongZhiQi => format!("机组控制器"),
+                                simctrl::ZhanWeiType::DianZhanKongZhiQi => format!("电站控制器"),
+                                simctrl::ZhanWeiType::DianZhanJianKongTai => format!("电站监控台"),
+                                simctrl::ZhanWeiType::JiKongTai => format!("主集控台"),
+                                simctrl::ZhanWeiType::BeiYongJiKongTai => format!("备用集控台"),
+                                simctrl::ZhanWeiType::JiaoLian => format!("教练"),
+                                simctrl::ZhanWeiType::Admin => format!("管理员"),
+                                simctrl::ZhanWeiType::Internal => format!("内部"),
+                                simctrl::ZhanWeiType::Wu => format!("无"),
+                            },
+                        };
+                    }
+                    _ => return ZhiLingResponse::new(),
+                }
+            },
+            Err(e) => {
+                match e {
+                    YingDaErr::ZhongZaiAskFail(zl, d, c) | YingDaErr::BeiCheFail(zl, d, c) | YingDaErr::QiDongFail(zl, d, c) | YingDaErr::HeZhaBingCheFail(zl, d, c) | YingDaErr::FenZhaJieLieFail(zl, d, c) | YingDaErr::TingJiFail(zl, d, c) | YingDaErr::CtrlModeFail(zl, d, c) | YingDaErr::OperatingStationFail(zl, d, c) | YingDaErr::CtrlModeAndOperatingStationFail(zl, d, c) | YingDaErr::AnDianFail(zl, d, c) | YingDaErr::AnDianHeZhaFail(zl, d, c) | YingDaErr::AnDianFenZhaFail(zl, d, c) | YingDaErr::BianSuFail(zl, d, c) | YingDaErr::BianYaFail(zl, d, c) | YingDaErr::JinJiTingJiFail(zl, d, c) | YingDaErr::PrioFail(zl, d, c) | YingDaErr::TouRuFail(zl, d, c) | YingDaErr::TuiChuFail(zl, d, c) | YingDaErr::XiaoShengFail(zl, d, c) | YingDaErr::YingDaFail(zl, d, c) | YingDaErr::GuZhangHuanJiFail(zl, d, c) | YingDaErr::DevNotExist(zl, d, c) | YingDaErr::DevTypeNotMatch(zl, d, c) | YingDaErr::Invalid(zl, d, c) | YingDaErr::IdNotMatch(zl, d, c) => {
+                        return ZhiLingResponse {
+                            code : 0,
+                            response : "指令处理失败".to_string(),
+                            description : d.to_string(),
+                            cause : c.to_string(),
+
+                            zhi_ling_type : match zl.zhi_ling_type {
+                                ZhiLingType::Tick => "心跳".to_string(),
+                                ZhiLingType::ZhongZaiAsk => "重载询问".to_string(),
+                                ZhiLingType::CtrlMode(ctrl_mode) => match ctrl_mode {
+                                    simctrl::CtrlMode::Manual => "控制方式: 手动".to_string(),
+                                    simctrl::CtrlMode::SemiAuto => "控制方式: 半自动".to_string(),
+                                    simctrl::CtrlMode::Auto => "控制方式: 自动".to_string(),
+                                },
+                                ZhiLingType::OperatingStation(o_s) => match o_s {
+                                    simctrl::OperatingStation::JiPang => "操作部位: 机旁".to_string(),
+                                    simctrl::OperatingStation::Remote => "操作部位: 遥控".to_string(),
+                                    simctrl::OperatingStation::Local => "操作部位: 本地".to_string(),
+                                    simctrl::OperatingStation::JiKong => "操作部位: 集控".to_string(),
+                                },
+                                ZhiLingType::Prio => "优先级".to_string(),
+                                ZhiLingType::QiDong => "启动".to_string(),
+                                ZhiLingType::TingJi => "停机".to_string(),
+                                ZhiLingType::HeZhaBingChe => "合闸/并车".to_string(),
+                                ZhiLingType::FenZhaJieLie => "分闸/解列".to_string(),
+                                ZhiLingType::FenJiXieZai => "分级卸载".to_string(),
+                                ZhiLingType::YueKong => "越控".to_string(),
+                                ZhiLingType::ShiDianZiQiDong => "失电自启动".to_string(),
+                                ZhiLingType::ZiDongTouWang => "自动投网".to_string(),
+                                ZhiLingType::ZiDongGouWang => "自动构网".to_string(),
+                                ZhiLingType::GongLvYuanZeZiDongZengJi => "功率原则自动增机".to_string(),
+                                ZhiLingType::DianLiuYuanZeZiDongZengJi => "电流原则自动增机".to_string(),
+                                ZhiLingType::GongLvYuanZeZiDongJianJi => "功率原则自动减机".to_string(),
+                                ZhiLingType::GuZhangZiDongChuLi => "故障自动处理".to_string(),
+                                ZhiLingType::WangLuoChongGou => "网络重构".to_string(),
+                                ZhiLingType::BeiChe => "备车".to_string(),
+                                ZhiLingType::BianZai(p, q) => format!("变载:{{p:{},q:{}}}", p, q),
+                                ZhiLingType::ZhongZaiJiaZai(p, q) => format!("重载加载:{{p:{},q:{}}}", p, q),
+                                ZhiLingType::AnDianOn => "岸电接通".to_string(),
+                                ZhiLingType::AnDianOff => "岸电挂断".to_string(),
+                                ZhiLingType::AnDianHeZha => "岸电合闸".to_string(),
+                                ZhiLingType::AnDianFenZha => "岸电分闸".to_string(),
+                                ZhiLingType::TouRu => "投入".to_string(),
+                                ZhiLingType::TuiChu => "退出".to_string(),
+                                ZhiLingType::BianSu(zhuan_su) => format!("变速:{{zhuan_su:{}}}", zhuan_su),
+                                ZhiLingType::BianYa(u) => format!("变压:{{u:{}}}", u),
+                                ZhiLingType::JinJiTingJi => "紧急停机".to_string(),
+                                ZhiLingType::XiaoSheng => "消声".to_string(),
+                                ZhiLingType::YingDa => "应答".to_string(),
+
+                                ZhiLingType::KaiShiKaoHe => "开始考核".to_string(),
+                                ZhiLingType::JieShuKaoHe => "结束考核".to_string(),
+
+                                ZhiLingType::GenerateYiBanGuZhang(fault_type) => format!("产生一般故障:{{fault_type:{:?}}}", fault_type),
+                                ZhiLingType::EliminateYiBanGuZhang(fault_type) => format!("消除一般故障:{{fault_type:{:?}}}", fault_type),
+
+                                ZhiLingType::GenerateYiJiGuZhang(fault_type) => format!("产生一级故障:{{fault_type:{:?}}}", fault_type),
+                                ZhiLingType::EliminateYiJiGuZhang(fault_type) => format!("消除一级故障:{{fault_type:{:?}}}", fault_type),
+
+                                ZhiLingType::GenerateErJiGuZhang(fault_type) => format!("产生二级故障:{{fault_type:{:?}}}", fault_type),
+                                ZhiLingType::EliminateErJiGuZhang(fault_type) => format!("消除二般故障:{{fault_type:{:?}}}", fault_type),
+
+                                ZhiLingType::GenerateQiTaGuZhang(fault_type) => format!("产生其他故障:{{fault_type:{:?}}}", fault_type),
+                                ZhiLingType::EliminateQiTaGuZhang(fault_type) => format!("消除其他故障:{{fault_type:{:?}}}", fault_type),
+                            },
+                            dev_type : match zl.dev_type {
+                                simctrl::DevType::JiZu => format!("机组"),
+                                simctrl::DevType::DuanLuQi => format!("断路器"),
+                                simctrl::DevType::FuZai => format!("负载"),
+                                simctrl::DevType::DianZhan => format!("电站"),
+                                simctrl::DevType::AnDian => format!("岸电"),
+                                simctrl::DevType::Node => format!("节点"),
+                                simctrl::DevType::ZhiLu => format!("支路"),
+                                simctrl::DevType::Wu => format!("无"),
+                            },
+                            dev_id : zl.dev_id,
+                            actor_id : zl.actor_id,
+                            zhan_wei_id : zl.zhan_wei_id,
+                            zhan_wei_type : match zl.zhan_wei_type {
+                                simctrl::ZhanWeiType::JiPang => format!("机旁"),
+                                simctrl::ZhanWeiType::ZhuKongZhiPing => format!("主控制屏"),
+                                simctrl::ZhanWeiType::JiZuKongZhiQi => format!("机组控制器"),
+                                simctrl::ZhanWeiType::DianZhanKongZhiQi => format!("电站控制器"),
+                                simctrl::ZhanWeiType::DianZhanJianKongTai => format!("电站监控台"),
+                                simctrl::ZhanWeiType::JiKongTai => format!("主集控台"),
+                                simctrl::ZhanWeiType::BeiYongJiKongTai => format!("备用集控台"),
+                                simctrl::ZhanWeiType::JiaoLian => format!("教练"),
+                                simctrl::ZhanWeiType::Admin => format!("管理员"),
+                                simctrl::ZhanWeiType::Internal => format!("内部"),
+                                simctrl::ZhanWeiType::Wu => format!("无"),
+                            },
+                        };
+                    }
+                }
+            },
+        }
+    }
+
+}
+
 #[derive(PartialEq, Copy, Clone, Debug, Serialize, Deserialize)]
 pub struct ZhiLing {
   pub zhi_ling_type : ZhiLingType,
@@ -167,17 +402,65 @@ impl ZhiLing {
             zhan_wei_type : zhan_wei_type,
         }
     }
-    pub fn zhi_ling_example_handler(_: &mut Request) -> IronResult<Response> {
+    pub fn zhi_ling_example_generate_yi_ban_gu_zhang_handler(_: &mut Request) -> IronResult<Response> {
         let mut z = ZhiLing::new();
         z.zhi_ling_type = ZhiLingType::GenerateYiBanGuZhang(FaultType::RanYouXieLou);
-        z.dev_type = simctrl::DevType::FuZai;
+        z.dev_type = simctrl::DevType::JiZu;
         z.dev_id = 0;
         z.actor_id = 0;
         z.zhan_wei_id = 0;
         z.zhan_wei_type = simctrl::ZhanWeiType::JiaoLian;
-        let z_ser_pretty = serde_json::to_string(&z).unwrap();
+        let z_ser = serde_json::to_string(&z).unwrap();
         let content_type = "application/json".parse::<Mime>().unwrap();
-        Ok(Response::with((content_type, status::Ok, z_ser_pretty)))
+        Ok(Response::with((content_type, status::Ok, z_ser)))
+    }
+    pub fn zhi_ling_example_eliminate_yi_ban_gu_zhang_handler(_: &mut Request) -> IronResult<Response> {
+        let mut z = ZhiLing::new();
+        z.zhi_ling_type = ZhiLingType::EliminateYiBanGuZhang(FaultType::RanYouXieLou);
+        z.dev_type = simctrl::DevType::JiZu;
+        z.dev_id = 0;
+        z.actor_id = 0;
+        z.zhan_wei_id = 0;
+        z.zhan_wei_type = simctrl::ZhanWeiType::JiaoLian;
+        let z_ser = serde_json::to_string(&z).unwrap();
+        let content_type = "application/json".parse::<Mime>().unwrap();
+        Ok(Response::with((content_type, status::Ok, z_ser)))
+    }
+    pub fn zhi_ling_example_operating_station_handler(_: &mut Request) -> IronResult<Response> {
+        let mut z = ZhiLing::new();
+        z.zhi_ling_type = ZhiLingType::OperatingStation(simctrl::OperatingStation::JiKong);
+        z.dev_type = simctrl::DevType::DianZhan;
+        z.dev_id = 0;
+        z.actor_id = 0;
+        z.zhan_wei_id = 0;
+        z.zhan_wei_type = simctrl::ZhanWeiType::JiaoLian;
+        let z_ser = serde_json::to_string(&z).unwrap();
+        let content_type = "application/json".parse::<Mime>().unwrap();
+        Ok(Response::with((content_type, status::Ok, z_ser)))
+    }
+    pub fn zhi_ling_example_ctrl_mode_handler(_: &mut Request) -> IronResult<Response> {
+        let mut z = ZhiLing::new();
+        z.zhi_ling_type = ZhiLingType::CtrlMode(simctrl::CtrlMode::SemiAuto);
+        z.dev_type = simctrl::DevType::DianZhan;
+        z.dev_id = 0;
+        z.actor_id = 0;
+        z.zhan_wei_id = 0;
+        z.zhan_wei_type = simctrl::ZhanWeiType::JiaoLian;
+        let z_ser = serde_json::to_string(&z).unwrap();
+        let content_type = "application/json".parse::<Mime>().unwrap();
+        Ok(Response::with((content_type, status::Ok, z_ser)))
+    }
+    pub fn zhi_ling_example_prio_handler(_: &mut Request) -> IronResult<Response> {
+        let mut z = ZhiLing::new();
+        z.zhi_ling_type = ZhiLingType::Prio;
+        z.dev_type = simctrl::DevType::JiZu;
+        z.dev_id = 0;
+        z.actor_id = 0;
+        z.zhan_wei_id = 0;
+        z.zhan_wei_type = simctrl::ZhanWeiType::JiaoLian;
+        let z_ser = serde_json::to_string(&z).unwrap();
+        let content_type = "application/json".parse::<Mime>().unwrap();
+        Ok(Response::with((content_type, status::Ok, z_ser)))
     }
     pub fn zhi_ling_example_pretty_handler(_: &mut Request) -> IronResult<Response> {
         let mut z = ZhiLing::new();
@@ -409,7 +692,7 @@ pub const DEV_TYPE_NOT_MATCH_DESC : &'static str = "指令与设备类型不匹�
 pub const CAUSE_DEV_TYPE_NOT_MATCH : &'static str = "硬件或软件制造方的错误，或者是被黑客入侵";
 
 pub const ID_NOT_MATCH_DESC : &'static str = "此ID号的设备不存在";
-pub const CAUSE_ID_NOT_MATCH : &'static str = "硬件或软件制造方的错误，或者指令错误，可能是恶意入侵造成";
+pub const CAUSE_ID_NOT_MATCH : &'static str = "硬件或软件制造方的错误，或者教练操控台指令错误，或者是恶意入侵造成";
 
 pub const BEI_CHE_FAIL_DESC : &'static str = "备车失败";
 pub const CAUSE_JI_ZU_RANGE_DISMATCH_1 : &'static str = "机组不处于停机状态";
@@ -419,7 +702,7 @@ pub const CAUSE_DUAN_LU_QI_BI_HE_HUO_GU_ZHANG : &'static str = "机组断路器�
 pub const CAUSE_JI_ZU_RANGE_DISMATCH_2 : &'static str = "机组未完成备车或者已经启动";
 
 pub const HE_ZHA_BING_CHE_FAIL_DESC : &'static str = "合闸/并车失败";
-pub const CAUSE_JI_ZU_RANGE_DISMATCH_6 : &'static str = "机组不处于稳态";
+pub const CAUSE_JI_ZU_RANGE_DISMATCH_6 : &'static str = "机组不处于稳定运行状态";
 pub const CAUSE_JI_ZU_RANGE_DISMATCH_7 : &'static str = "手动情况下应将待并机组调整至合适状态才能并车";
 pub const CAUSE_XI_TONG_HUI_LU_EXIST : &'static str = "系统中存在回路";
 pub const CAUSE_POWER_FLOW_ERR : &'static str = "系统拓扑分析算法存在问题，请修复";
@@ -448,9 +731,12 @@ pub const CAUSE_AN_DIAN_INVALID : &'static str = "岸电指令不能设置为不
 
 pub const AN_DIAN_HE_ZHA_FAIL_DESC : &'static str = "岸电合闸失败";
 pub const CAUSE_AN_DIAN_HE_ZHA_INVALID : &'static str = "岸电合闸指令不合法";
+pub const CAUSE_AN_DIAN_YI_JING_HE_ZHA : &'static str = "此岸电已经合闸";
+pub const CAUSE_AN_DIAN_YI_JING_HE_ZHA_IN_SAME_DIAN_ZHAN : &'static str = "同一电站中已经有岸电合闸";
 
 pub const AN_DIAN_FEN_ZHA_FAIL_DESC : &'static str = "岸电分闸失败";
 pub const CAUSE_AN_DIAN_FEN_ZHA_INVALID : &'static str = "岸电分闸指令不合法";
+pub const CAUSE_AN_DIAN_YI_JING_FEN_ZHA : &'static str = "此岸电已经分闸";
 
 pub const COMMON_INVALID_DESC : &'static str = "指令无效";
 pub const CAUSE_COMMON_INVALID : &'static str = "指令类型不合法，或者指令类型与设备类型不匹配，或者指令操作部位不满足当前的控制方式";

@@ -7,7 +7,6 @@ use user::User;
 use zhanwei::ZhanWei;
 use trainingsession::TrainingSession;
 use trainingaction::TrainingAction;
-use zhiling::ZhiLing;
 
 pub fn build_route() -> Mount {
     let mut mount_api = Mount::new();
@@ -53,12 +52,12 @@ pub fn build_training_action_route() -> Router {
     return router;
 }
 
-pub fn build_zhi_ling_route() -> Router {
-    let mut router = Router::new();
-    router.get("/", ZhiLing::zhi_ling_example_handler);
-    router.post("/:id", ZhiLing::zhi_ling_handler);
-    return router;
-}
+// pub fn build_zhi_ling_route() -> Router {
+//     let mut router = Router::new();
+//     router.get("/", ZhiLing::zhi_ling_example_handler);
+//     router.post("/:id", ZhiLing::zhi_ling_handler);
+//     return router;
+// }
 
 pub fn build_zhan_wei_route() -> Router {
     let mut router = Router::new();

@@ -226,7 +226,7 @@ pub struct JiZuInf {
     pub is_online : bool, // 指示机组是否在网
 
     pub gu_zhang_lei_xing : String,
-    pub ran_you_xie_lou : bool,
+    pub ran_you_xie_lou_err : bool,
     pub qu_zhou_xiang_ya_li_gao : bool,
     pub qu_zhou_xiang_kong_qi_ya_li_di : bool,
     pub fa_dong_ji_leng_que_qi_hai_shui_xie_lou : bool,
@@ -434,7 +434,7 @@ impl JiZuInf {
                 jizu::GuZhangLeiXing::QiTa => "其他".to_string(),
                 jizu::GuZhangLeiXing::Wu => "无".to_string(),
             },
-            ran_you_xie_lou : ob.common_ji.ran_you_xie_lou,
+            ran_you_xie_lou_err : ob.common_ji.ran_you_xie_lou,
             qu_zhou_xiang_ya_li_gao : ob.common_ji.qu_zhou_xiang_ya_li_gao,
             qu_zhou_xiang_kong_qi_ya_li_di : ob.common_ji.qu_zhou_xiang_kong_qi_ya_li_di,
             fa_dong_ji_leng_que_qi_hai_shui_xie_lou : ob.common_ji.fa_dong_ji_leng_que_qi_hai_shui_xie_lou,
@@ -493,15 +493,15 @@ impl JiZuInf {
 
             current_range : match ob.common_ji.current_range {
                 jizu::JiZuRangeLeiXing::TingJi => "停机".to_string(),
-                jizu::JiZuRangeLeiXing::BeiCheZanTai => "停机".to_string(),
-                jizu::JiZuRangeLeiXing::BeiCheWanBi => "停机".to_string(),
-                jizu::JiZuRangeLeiXing::QiDong => "停机".to_string(),
-                jizu::JiZuRangeLeiXing::Wen => "停机".to_string(),
-                jizu::JiZuRangeLeiXing::TingJiZanTai => "停机".to_string(),
-                jizu::JiZuRangeLeiXing::BianSu => "停机".to_string(),
-                jizu::JiZuRangeLeiXing::BianYa => "停机".to_string(),
-                jizu::JiZuRangeLeiXing::JinJiTingJiZanTai => "停机".to_string(),
-                jizu::JiZuRangeLeiXing::JinJiGuZhang => "停机".to_string(),
+                jizu::JiZuRangeLeiXing::BeiCheZanTai => "备车暂态".to_string(),
+                jizu::JiZuRangeLeiXing::BeiCheWanBi => "备车完毕".to_string(),
+                jizu::JiZuRangeLeiXing::QiDong => "启动".to_string(),
+                jizu::JiZuRangeLeiXing::Wen => "稳态".to_string(),
+                jizu::JiZuRangeLeiXing::TingJiZanTai => "停机暂态".to_string(),
+                jizu::JiZuRangeLeiXing::BianSu => "变速".to_string(),
+                jizu::JiZuRangeLeiXing::BianYa => "变压".to_string(),
+                jizu::JiZuRangeLeiXing::JinJiTingJiZanTai => "紧急停机暂态".to_string(),
+                jizu::JiZuRangeLeiXing::JinJiGuZhang => "紧急故障".to_string(),
             },
             bian_zai_lei_xing : match ob.common_ji.bian_zai_lei_xing {
                 jizu::JiZuBianZaiLeiXing::HeZha => "合闸".to_string(),

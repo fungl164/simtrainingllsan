@@ -21,8 +21,8 @@ pub const JI_ZU_Q_FACTOR:f64 =  0.6f64;
 pub const JI_ZU_Q_P:f64 =  0.75f64;
 pub const JI_ZU_JIE_LIE_GONG_LV_YU_ZHI : f64= 0.1 * JI_ZU_E_DING_GONG_LV;
 pub const GONG_LV_YIN_SHU_ZAO_SHENG_XIANG_DUI_FU_ZHI:f64 =  0.05f64;
-//机组备车完毕后的最大空闲时间，超过此时间将转入停机状��?
-pub const JI_ZU_BEI_CHE_WAN_BI_FREE_T : f64 = 900000.0;
+//机组备车完毕后的最大空闲时间，超过此时间将转入停机状态?
+pub const JI_ZU_BEI_CHE_WAN_BI_FREE_T : f64 = 36000000.0;
 //转移负载后机组停机总时��?
 pub const JI_ZU_TING_JI_T : f64 = 7000.0;
 //机组解列后的变载时间
@@ -485,6 +485,7 @@ impl AttrSetter for JiZuCommonJi {
         self.u_delta = 0.0f64;
         self.f_delta = 0.0f64;
         self.p_delta = 0.0f64;
+        self.bei_che_wan_bi = false;
     }
     fn wen_setter(&mut self) {
         self.f_ext = JI_ZU_E_DING_PIN_LV;
@@ -507,9 +508,11 @@ impl AttrSetter for JiZuCommonJi {
         self.u_delta = 0.0f64;
         self.f_delta = 0.0f64;
         self.p_delta = 0.0f64;
-    }
+        self.bei_che_wan_bi = false;
+}
     fn bei_che_wan_bi_setter(&mut self){
         self.ting_ji_setter();
+        self.bei_che_wan_bi = true;
     }
     fn bei_che_zan_tai_setter(&mut self){
         self.ting_ji_setter();
@@ -553,6 +556,7 @@ impl AttrSetter for JiZuCommonJi {
         if zhuan_su >= JI_ZU_E_DING_ZHUAN_SU - JI_ZU_ZHUAN_SU_BIAN_HUA_YU_ZHI_WEN_TAI || zhuan_su <= JI_ZU_E_DING_ZHUAN_SU + JI_ZU_ZHUAN_SU_BIAN_HUA_YU_ZHI_WEN_TAI {
             self.zhuan_su = zhuan_su;
         }
+        self.bei_che_wan_bi = false;
     }
     fn bian_ya_setter(&mut self){
         if self.bian_ya_t == 0.0 {
@@ -567,9 +571,11 @@ impl AttrSetter for JiZuCommonJi {
             self.ubc_in = u;
             self.uca_in = u;
         }
+        self.bei_che_wan_bi = false;
     }
     fn qi_dong_setter(&mut self){
         //启动时电流功率均为零
+        self.bei_che_wan_bi = true;
         self.p_factor = JI_ZU_SHU_CHU_GONG_LV_YIN_SHU;
         if self.t_current_range  <= JI_ZU_QI_DONG_TA {
             self.uab_ext = GEN_V_START_REMAINDER;
@@ -596,6 +602,7 @@ impl AttrSetter for JiZuCommonJi {
         }
     }
     fn ting_ji_zan_tai_setter(&mut self){
+        self.bei_che_wan_bi = true;
         self.sheng_ya = false;
         self.jiang_ya = true;
         self.jian_su = true;
@@ -1007,26 +1014,29 @@ impl<J> JiZu<J> {
 }
 fn ji_zu_ting_ji_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>){
     ji_zu.common_ji.ting_ji_setter();
+    ji_zu.common_ji.yun_xing_zhuang_tai = JiZuYunXingZhuangTai::TingJi;
     ji_zu.ji_can_shu_ji.ting_ji_setter();
 }
 fn ji_zu_bei_che_wan_bi_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>){
     if ji_zu.common_ji.t_current_range < JI_ZU_BEI_CHE_WAN_BI_FREE_T{
         ji_zu.common_ji.bei_che_wan_bi_setter();
+        ji_zu.common_ji.yun_xing_zhuang_tai = JiZuYunXingZhuangTai::JiuXu;
         ji_zu.ji_can_shu_ji.bei_che_wan_bi_setter();
     }
     else {
-        ji_zu.common_ji.current_range = JiZuRangeLeiXing::TingJi;
         ji_zu.common_ji.yun_xing_zhuang_tai = JiZuYunXingZhuangTai::TingJi;
         ji_zu.common_ji.t_current_range = 0.0;
     }
 }
 fn ji_zu_wen_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>){
     ji_zu.common_ji.wen_setter();
+    ji_zu.common_ji.yun_xing_zhuang_tai = JiZuYunXingZhuangTai::YunXing;
     ji_zu.ji_can_shu_ji.wen_setter();
 }
 fn ji_zu_bei_che_zan_tai_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>){
     if ji_zu.common_ji.t_current_range < ji_zu.common_ji.bei_che_t {
         ji_zu.common_ji.bei_che_zan_tai_setter();
+        ji_zu.common_ji.yun_xing_zhuang_tai = JiZuYunXingZhuangTai::TingJi;
         ji_zu.ji_can_shu_ji.bei_che_zan_tai_setter();
     }
     else{
@@ -1038,6 +1048,7 @@ fn ji_zu_bei_che_zan_tai_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>){
 fn ji_zu_bian_su_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>){
     if ji_zu.common_ji.t_current_range < ji_zu.common_ji.bian_su_t {
         ji_zu.common_ji.bian_su_setter();
+        ji_zu.common_ji.yun_xing_zhuang_tai = JiZuYunXingZhuangTai::YunXing;
         ji_zu.ji_can_shu_ji.bian_su_setter();
     }
     else {
@@ -1049,6 +1060,7 @@ fn ji_zu_bian_su_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>){
 fn ji_zu_bian_ya_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>){
     if ji_zu.common_ji.t_current_range < ji_zu.common_ji.bian_ya_t {
         ji_zu.common_ji.bian_ya_setter();
+        ji_zu.common_ji.yun_xing_zhuang_tai = JiZuYunXingZhuangTai::YunXing;
         ji_zu.ji_can_shu_ji.bian_ya_setter();
     }
     else {
@@ -1060,6 +1072,7 @@ fn ji_zu_bian_ya_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>){
 fn ji_zu_qi_dong_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>){
     if ji_zu.common_ji.t_current_range < JI_ZU_QI_DONG_TB {
         ji_zu.common_ji.qi_dong_setter();
+        ji_zu.common_ji.yun_xing_zhuang_tai = JiZuYunXingZhuangTai::YunXing;
         ji_zu.ji_can_shu_ji.qi_dong_setter();
     }
     else {
@@ -1071,6 +1084,7 @@ fn ji_zu_qi_dong_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>){
 fn ji_zu_ting_ji_zan_tai_setter<J:AttrSetter>(ji_zu:&mut JiZu<J>){
     if ji_zu.common_ji.t_current_range < JI_ZU_TING_JI_T {
         ji_zu.common_ji.ting_ji_zan_tai_setter();
+        ji_zu.common_ji.yun_xing_zhuang_tai = JiZuYunXingZhuangTai::YunXing;
         ji_zu.ji_can_shu_ji.ting_ji_zan_tai_setter();
     }
     else {
