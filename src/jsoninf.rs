@@ -226,7 +226,7 @@ pub struct JiZuInf {
     pub is_online : bool, // 指示机组是否在网
 
     pub gu_zhang_lei_xing : String,
-    pub ran_you_xie_lou_err : bool,
+    pub ran_you_xie_lou : bool,
     pub qu_zhou_xiang_ya_li_gao : bool,
     pub qu_zhou_xiang_kong_qi_ya_li_di : bool,
     pub fa_dong_ji_leng_que_qi_hai_shui_xie_lou : bool,
@@ -434,7 +434,7 @@ impl JiZuInf {
                 jizu::GuZhangLeiXing::QiTa => "其他".to_string(),
                 jizu::GuZhangLeiXing::Wu => "无".to_string(),
             },
-            ran_you_xie_lou_err : ob.common_ji.ran_you_xie_lou,
+            ran_you_xie_lou : ob.common_ji.ran_you_xie_lou,
             qu_zhou_xiang_ya_li_gao : ob.common_ji.qu_zhou_xiang_ya_li_gao,
             qu_zhou_xiang_kong_qi_ya_li_di : ob.common_ji.qu_zhou_xiang_kong_qi_ya_li_di,
             fa_dong_ji_leng_que_qi_hai_shui_xie_lou : ob.common_ji.fa_dong_ji_leng_que_qi_hai_shui_xie_lou,
